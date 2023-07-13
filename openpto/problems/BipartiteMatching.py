@@ -11,7 +11,7 @@ import pymetis as metis
 import cvxpy as cp
 from cvxpylayers.torch import CvxpyLayer
 
-from PTOProblem import PTOProblem
+from openpto.problems.PTOProblem import PTOProblem
 # from SubmodularOptimizer import SubmodularOptimizer
 
 class BipartiteMatching(PTOProblem):
@@ -68,7 +68,7 @@ class BipartiteMatching(PTOProblem):
         Loads the labels (Ys) of the prediction from a file, and returns a subset of it parameterised by instances.
         """
         # Load the labels dataset
-        g = nx.read_edgelist('data/cora.cites')
+        g = nx.read_edgelist('openpto/data/cora.cites')
         g = g.to_directed()  # remove directionality to make the problem easier
         nodes_before = [int(v) for v in g.nodes()]
         g = nx.convert_node_labels_to_integers(g, first_label=0)
@@ -80,7 +80,10 @@ class BipartiteMatching(PTOProblem):
         assert num_subsets <= total_nodes // (num_nodes * 2)
 
         #   Whittle (coarse-grained)
+        # print("g: ", g)
+        # TODO: check metis bug
         _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
+        # _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=0)
         g_part = [nx.Graph(nx.subgraph(g, list(np.where(np.array(mapping) == i)[0]))) for i in range(num_subsets)]
 
         #   Ensure each part has n_nodes * 2 nodes
@@ -259,5 +262,5 @@ class BipartiteMatching(PTOProblem):
     #     return G, h
 
 if __name__=="__main__":
-    pdb.set_trace()
+    # pdb.set_trace()
     problem = BipartiteMatching()

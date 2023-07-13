@@ -5,7 +5,7 @@ import numpy as np
 
 import torch
 
-from PTOProblem import PTOProblem
+from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.SubmodularOptimizer import SubmodularOptimizer
 
 class BudgetAllocation(PTOProblem):

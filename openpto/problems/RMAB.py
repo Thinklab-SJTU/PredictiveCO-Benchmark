@@ -1,20 +1,21 @@
-from pip import main
-from PThenO import PThenO
 from itertools import product
 import random
 import pdb
+
 import numpy as np
-from RMABSolver import RMABSolver
+
 import torch
 from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
-from models import dense_nn
-from utils import gather_incomplete_left
+from openpto.method.models.models import dense_nn
+from openpto.method.opt_utils import gather_incomplete_left
 
+from openpto.problems.PTOProblem import PTOProblem
+from openpto.method.Optimizer.RMABSolver import RMABSolver
 
 # TODO: Remove default
-class RMAB(PThenO):
+class RMAB(PTOProblem):
     """A 2-state 2-action RMAB problem cobbled together from multiple sources."""
 
     def __init__(
@@ -26,7 +27,7 @@ class RMAB(PThenO):
         min_lift=0.2,  # minimum amount of benefit associated with acting
         budget=1,  # number of arms that can be picked per timestep
         gamma=0.99,  # discount factor
-        num_features=16,  # number of features for the PThenO problem
+        num_features=16,  # number of features for the PTOProblem problem
         num_intermediate=64,  # number of intermediate nodes in the "scrambling" NN to generate features
         num_layers=3,  # number of layers in the "scrambling" NN
         noise_std=1,  # noise to be added to the features after scrambling

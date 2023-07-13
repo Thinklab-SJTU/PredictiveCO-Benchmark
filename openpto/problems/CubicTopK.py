@@ -7,7 +7,7 @@ from torch.distributions import Normal, Bernoulli
 import random
 import pdb
 
-from PTOProblem import PTOProblem
+from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.RMABSolver import TopK_custom
 
 class CubicTopK(PTOProblem):
