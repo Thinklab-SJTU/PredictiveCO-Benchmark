@@ -130,3 +130,5 @@ dmypy.json
 
 
 saved_models/
+saved_records/
+openpto/data/

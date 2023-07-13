@@ -58,5 +58,5 @@ if __name__ == '__main__':
 
 
     method = eval('{}Solver(conf, problem)'.format(args.method.upper()))
-    exp = ExpManager(method, n_runs=1, debug=args.debug, save_path='records')
+    exp = ExpManager(method, n_runs=1, debug=args.debug, save_path='saved_records')
     exp.run()
