@@ -19,7 +19,7 @@ def get_args():
     parser.add_argument('--gpu', type=str, default='0', help="Visible GPU")
 
     # training
-    parser.add_argument('--loadnew', type=ast.literal_eval, default=False)
+    # parser.add_argument('--loadnew', type=ast.literal_eval, default=False)
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--earlystopping', type=ast.literal_eval, default=True)
     parser.add_argument('--patience', type=int, default=100)
@@ -35,10 +35,10 @@ def get_args():
     parser.add_argument('--valfreq', type=int, default=5)
 
     # model
-    parser.add_argument('--model', type=str, choices=['dense'], default='dense')
+    parser.add_argument('--model', type=str, choices=['LR','dense'], default='dense')
     parser.add_argument('--layers', type=int, default=2)
-    parser.add_argument('--loss', type=str, choices=['mse', 'msesum', 'dense', 'weightedmse', 'weightedmse++', 'weightedce', 'weightedmsesum', 'dfl', 'quad', 'quad++', 'ce'], default='mse')
-
+    parser.add_argument('--loss', type=str, choices=['mse', 'msesum', 'dense', 'weightedmse', 'weightedmse++', 
+                                'weightedce', 'weightedmsesum', 'dfl', 'quad', 'quad++', 'ce'], default='mse')
     #   Domain-specific: BudgetAllocation or CubicTopK
     parser.add_argument('--budget', type=int, default=1)
     parser.add_argument('--numitems', type=int, default=50)

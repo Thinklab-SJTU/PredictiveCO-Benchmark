@@ -23,47 +23,27 @@ class ExpManager:
 
     '''
     def __init__(self, prob_args, save_path=None, args=None):
-        # self.method = method
-        # self.conf = solver.conf
-        # self.method = solver.method_name
-        # self.dataset = solver.dataset
         self.args = args
         self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
         print(f"Running on {self.device}")
         # you can change random seed here
         # self.train_seeds = [i for i in range(400)]
         # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        self.save_path = None
-        # if save_path:
-        #     if not os.path.exists(save_path):
-        #         os.makedirs(save_path)
-        #     self.save_path = save_path
-        # if 'save_graph' in self.conf.analysis and self.conf.analysis['save_graph']:
-        #     assert 'save_graph_path' in self.conf.analysis and self.conf.analysis['save_graph_path'] is not None, 'Specify the path to save graph'
-        #     self.save_graph_path = os.path.join(self.conf.analysis['save_graph_path'], self.method)
-        # if 'load_graph' in self.conf.analysis and self.conf.analysis['load_graph']:
-        #     assert 'load_graph_path' in self.conf.analysis and self.conf.analysis[
-        #         'load_graph_path'] is not None, 'Specify the path to load graph'
-        #     self.load_graph_path = self.conf.analysis['load_graph_path']
-        # assert self.save_graph_path is None or self.load_graph_path is None, 'GNN does not save graph, GSL does not load graph'
-        
+        # TODO: seed?
         # prediction model
-
         ipdim, opdim = prob_args["ipdim"], prob_args['opdim']
         from openpto.method.models.pred_model import dense_nn
         model_dict = {'dense': dense_nn}
-        # TODO:automate model dict
+        # TODO:more pred model
         model_builder = model_dict[args.model]
-        self.pred_model = model_builder(
-            num_features=ipdim,
-            num_targets=opdim,
-            num_layers=args.layers,
-            intermediate_size=500,
-            output_activation=prob_args["out_act"])
-        print(f"Built [{args.model}] Model")
+        self.pred_model = model_builder(num_features=ipdim,
+                                        num_targets=opdim,
+                                        num_layers=args.layers,
+                                        intermediate_size=500,
+                                        output_activation=prob_args["out_act"])
+        print(f"Built [{args.model}] Prediction Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
-
 
     def run(self, problem, loss_fn, n_epochs=1, debug=False):
         #   Move everything to GPU, if available
