@@ -1,7 +1,7 @@
 import os
-import time as time
-from tqdm import tqdm
 import random
+import time
+from tqdm import tqdm
 from copy import deepcopy
 
 import torch

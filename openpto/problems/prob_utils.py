@@ -20,6 +20,51 @@ def str2prob(prob_str):
     # TODO: more problems
     return prob_dict[prob_str]
 
+def prob2args(args):
+    if args.problem == 'budgetalloc':
+        problem_kwargs =    {'num_train_instances': args.instances,
+                            'num_test_instances': args.testinstances,
+                            'num_targets': args.numtargets,
+                            'num_items': args.numitems,
+                            'budget': args.budget,
+                            'num_fake_targets': args.fakefeatures,
+                            'rand_seed': args.seed,
+                            'val_frac': args.valfrac,}
+    elif args.problem == 'cubic':
+        problem_kwargs =    {'num_train_instances': args.instances,
+                            'num_test_instances': args.testinstances,
+                            'num_items': args.numitems,
+                            'budget': args.budget,
+                            'rand_seed': args.seed,
+                            'val_frac': args.valfrac,}
+    elif args.problem == 'bipartitematching':
+        problem_kwargs =    {'num_train_instances': args.instances,
+                            'num_test_instances': args.testinstances,
+                            'num_nodes': args.nodes,
+                            'val_frac': args.valfrac,
+                            'rand_seed': args.seed,}
+    elif args.problem == 'rmab':
+        problem_kwargs =    {'num_train_instances': args.instances,
+                            'num_test_instances': args.testinstances,
+                            'num_arms': args.numarms,
+                            'eval_method': args.eval,
+                            'min_lift': args.minlift,
+                            'budget': args.rmabbudget,
+                            'gamma': args.gamma,
+                            'num_features': args.numfeatures,
+                            'num_intermediate': args.scramblingsize,
+                            'num_layers': args.scramblinglayers,
+                            'noise_std': args.noisestd,
+                            'val_frac': args.valfrac,
+                            'rand_seed': args.seed,}
+    elif args.problem == 'portfolio':
+        problem_kwargs =    {'num_train_instances': args.instances,
+                            'num_test_instances': args.testinstances,
+                            'num_stocks': args.stocks,
+                            'alpha': args.stockalpha,
+                            'val_frac': args.valfrac,
+                            'rand_seed': args.seed,}
+    return problem_kwargs
 
 def init_if_not_saved(
     problem_cls,
