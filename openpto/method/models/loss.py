@@ -1,5 +1,4 @@
 import random
-import pdb
 import os
 import time
 from statistics import mean
@@ -219,7 +218,7 @@ def _learn_loss(
 
     # Use GPU if available
     if torch.cuda.is_available():
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device(f"cuda:{kwargs.gpu}" if torch.cuda.is_available() else "cpu")
         Yhats_train, Yhats_val, Yhats_test = Yhats_train.to(device), Yhats_val.to(device), Yhats_test.to(device)
         objectives_train, objectives_val, objectives_test = objectives_train.to(device), objectives_val.to(device), objectives_test.to(device)
         model = model.to(device)

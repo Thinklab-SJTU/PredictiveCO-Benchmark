@@ -50,7 +50,7 @@ class ExpManager:
         # prediction model
 
         ipdim, opdim = prob_args["ipdim"], prob_args['opdim']
-        from openpto.method.models.models_utils import dense_nn
+        from openpto.method.models.pred_model import dense_nn
         model_dict = {'dense': dense_nn}
         # TODO:automate model dict
         model_builder = model_dict[args.model]
