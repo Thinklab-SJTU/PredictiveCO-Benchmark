@@ -141,7 +141,7 @@ class BudgetAllocation(PTOProblem):
 
         # Initialise weights to default value
         if w is None:
-            w = torch.ones(Y.shape[-1]).requires_grad_(False)
+            w = torch.ones(Y.shape[-1]).requires_grad_(False).to(Z.device)
         else:
             assert Y.shape[-1] == w.shape[0]
             assert len(w.shape) == 1

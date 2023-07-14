@@ -10,7 +10,6 @@ import torch.nn.functional as F
 # from sklearn.metrics import roc_auc_score
 
 
-
 class Method:
     '''
     Base Method class to conduct a single experiment. It defines the abstract training procedures

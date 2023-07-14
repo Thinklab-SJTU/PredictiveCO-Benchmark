@@ -1,63 +1,43 @@
+import os
+import time as time
+from tqdm import tqdm
+import random
+from copy import deepcopy
+
 import torch
+
+from openpto.expmanager.manager_utils import move_to_gpu, print_metrics
 # from openpto.utils.utils import set_seed
 # from openpto.utils.logger import Logger
 # from openpto.config.util import save_conf
-import os
-import time as time
 
 
 class ExpManager:
     '''
-    Experiment management class to enable running multiple experiment,
-    loading learned structures and saving results.
+    Experiment management class to enable running multiple experiment.
 
     Parameters
     ----------
-    solver : openpto.method.Solver
-        Solver of the method to solve the task.
-    n_splits : int
-        Number of data splits to run experiment on.
-    n_runs : int
-        Number of experiment runs each split.
-    save_path : str
-        Path to save the config file.
     debug : bool
         Whether to print statistics during training.
 
-    Examples
-    --------
-    >>> # load dataset
-    >>> import openpto.dataset
-    >>> dataset = openpto.dataset.Dataset('cora', feat_norm=True)
-    >>> # load config file
-    >>> import openpto.config.load_conf
-    >>> conf = openpto.config.load_conf('gcn', 'cora')
-    >>> # create solver
-    >>> import openpto.method.SGCSolver
-    >>> solver = SGCSolver(conf, dataset)
-    >>>
-    >>> import openpto.ExpManager
-    >>> exp = ExpManager(solver)
-    >>> exp.run(n_runs=10, debug=True)
-
     '''
-    def __init__(self, solver=None, save_path=None):
-        self.solver = solver
-        self.conf = solver.conf
-        self.method = solver.method_name
-        self.dataset = solver.dataset
-        self.data = self.dataset.name
-        self.device = torch.device('cuda')
+    def __init__(self, prob_args, save_path=None, args=None):
+        # self.method = method
+        # self.conf = solver.conf
+        # self.method = solver.method_name
+        # self.dataset = solver.dataset
+        self.args = args
+        self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+        print(f"Running on {self.device}")
         # you can change random seed here
-        self.train_seeds = [i for i in range(400)]
-        self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        # self.train_seeds = [i for i in range(400)]
+        # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         self.save_path = None
-        self.save_graph_path = None
-        self.load_graph_path = None
-        if save_path:
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            self.save_path = save_path
+        # if save_path:
+        #     if not os.path.exists(save_path):
+        #         os.makedirs(save_path)
+        #     self.save_path = save_path
         # if 'save_graph' in self.conf.analysis and self.conf.analysis['save_graph']:
         #     assert 'save_graph_path' in self.conf.analysis and self.conf.analysis['save_graph_path'] is not None, 'Specify the path to save graph'
         #     self.save_graph_path = os.path.join(self.conf.analysis['save_graph_path'], self.method)
@@ -65,7 +45,88 @@ class ExpManager:
         #     assert 'load_graph_path' in self.conf.analysis and self.conf.analysis[
         #         'load_graph_path'] is not None, 'Specify the path to load graph'
         #     self.load_graph_path = self.conf.analysis['load_graph_path']
-        assert self.save_graph_path is None or self.load_graph_path is None, 'GNN does not save graph, GSL does not load graph'
+        # assert self.save_graph_path is None or self.load_graph_path is None, 'GNN does not save graph, GSL does not load graph'
+        
+        # prediction model
 
-    def run(self, n_splits=1, n_runs=1, debug=False):
-        retrun
+        ipdim, opdim = prob_args["ipdim"], prob_args['opdim']
+        from openpto.method.models.models_utils import dense_nn
+        model_dict = {'dense': dense_nn}
+        # TODO:automate model dict
+        model_builder = model_dict[args.model]
+        self.pred_model = model_builder(
+            num_features=ipdim,
+            num_targets=opdim,
+            num_layers=args.layers,
+            intermediate_size=500,
+            output_activation=prob_args["out_act"])
+        print(f"Built [{args.model}] Model")
+        # optimizer:
+        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
+
+
+    def run(self, problem, loss_fn, n_epochs=1, debug=False):
+        #   Move everything to GPU, if available
+        if torch.cuda.is_available():
+            move_to_gpu(problem, self.device)
+            self.pred_model = self.pred_model.to(self.device)
+        
+        # Get data
+        X_train, Y_train, Y_train_aux = problem.get_train_data()
+        X_val, Y_val, Y_val_aux = problem.get_val_data()
+        X_test, Y_test, Y_test_aux = problem.get_test_data()
+
+        best = (float("inf"), None)
+        time_since_best = 0
+        for iter_idx in range(n_epochs):
+            # Check metrics on val set
+            if iter_idx % self.args.valfreq == 0:
+                # Compute metrics
+                datasets = [(X_train, Y_train, Y_train_aux, 'train'), (X_val, Y_val, Y_val_aux, 'val')]
+                metrics = print_metrics(datasets, self.pred_model, problem, self.args.loss, loss_fn, f"Iter {iter_idx},")
+
+                # Save model if it's the best one
+                if best[1] is None or metrics['val']['loss'] < best[0]:
+                    best = (metrics['val']['loss'], deepcopy(self.pred_model))
+                    time_since_best = 0
+
+                # Stop if model hasn't improved for patience steps
+                if self.args.earlystopping and time_since_best > self.args.patience:
+                    break
+
+            # Learn
+            losses = []
+            for i in (random.sample(range(len(X_train)), min(self.args.batchsize, len(X_train)))):
+                pred = self.pred_model(X_train[i]).squeeze()
+                losses.append(loss_fn(pred, Y_train[i], aux_data=Y_train_aux[i], partition='train', index=i))
+            loss = torch.stack(losses).mean()   
+            self.optimizer.zero_grad()
+            # loss.retain_grad()
+            loss.backward()
+            self.optimizer.step()
+            time_since_best += 1
+
+        if self.args.earlystopping:
+            self.pred_model = best[1]
+
+        # Document how well this trained model does
+        print("\nBenchmarking Model...")
+        # Print final metrics
+        datasets = [(X_train, Y_train, Y_train_aux, 'train'), (X_val, Y_val, Y_val_aux, 'val'), (X_test, Y_test, Y_test_aux, 'test')]
+        print_metrics(datasets, self.pred_model, problem, self.args.loss, loss_fn, "Final")
+
+        #   Document the value of a random guess
+        objs_rand = []
+        for _ in range(10):
+            Z_test_rand = problem.get_decision(torch.rand_like(Y_test), aux_data=Y_test_aux, isTrain=False)
+            objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
+            objs_rand.append(objectives)
+        print(f"\nRandom Decision Quality: {torch.stack(objs_rand).mean().item():.3f}")
+
+        #   Document the optimal value
+        Z_test_opt = problem.get_decision(Y_test, aux_data=Y_test_aux, isTrain=False)
+        objectives = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
+        print(f"Optimal Decision Quality: {objectives.mean().item():.3f}")
+        print()
+
+        return True

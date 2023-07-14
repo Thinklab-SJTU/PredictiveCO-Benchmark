@@ -18,17 +18,12 @@ import torch
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
-# from models import model_dict
-# from losses import MSE, get_loss_fn
-# from utils import print_metrics, init_if_not_saved, move_to_gpu
-from openpto.utils.utils import get_args,print_metrics, init_if_not_saved, move_to_gpu
 
-
-
-
-# from openpto.config import load_conf
 from openpto import ExpManager
-from openpto.problems.prob_utils import str2prob
+from openpto.method.loss_utils import get_loss_fn
+from openpto.utils import get_args
+# from openpto.config import load_conf
+from openpto.problems.prob_utils import str2prob, init_if_not_saved
 from openpto.method import *
 
 if __name__ == '__main__':
@@ -56,7 +51,30 @@ if __name__ == '__main__':
     problem = init_problem(ProblemClass, problem_kwargs)
     # dataset = Dataset(args.data, feat_norm=conf.dataset['feat_norm'], path='data')
 
+    
+    # Load an ML model to predict the parameters of the problem
+    ipdim, opdim = problem.get_modelio_shape()
+    prob_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
 
-    method = eval('{}Solver(conf, problem)'.format(args.method.upper()))
-    exp = ExpManager(method, n_runs=1, debug=args.debug, save_path='saved_records')
-    exp.run()
+
+    print(f"Loading {args.loss} Loss Function...")
+    loss_fn = get_loss_fn(
+        args.loss,
+        problem,
+        sampling=args.sampling,
+        num_samples=args.numsamples,
+        rank=args.quadrank,
+        sampling_std=args.samplingstd,
+        quadalpha=args.quadalpha,
+        lr=args.losslr,
+        serial=args.serial,
+        dflalpha=args.dflalpha,
+    )
+
+    # Train neural network with a given loss function
+    print(f"Start training [{args.model}] model on [{args.loss}] loss...")
+    
+    # method = eval('{}Solver(conf, problem)'.format(args.method.upper()))
+    method = None
+    exp = ExpManager(prob_args, save_path='saved_records', args = args)
+    exp.run(problem, loss_fn, n_epochs=args.epochs)

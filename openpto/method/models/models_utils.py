@@ -5,7 +5,7 @@ from functools import reduce
 import operator
 import pdb
 
-from openpto.utils.utils import View
+from openpto.method.Optimizer.opt_utils import View
 
 
 # TODO: Pretty it up

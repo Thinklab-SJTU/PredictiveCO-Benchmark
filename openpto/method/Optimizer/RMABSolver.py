@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from ..opt_utils import gather_incomplete_left, trim_left, solve_lineqn
+from openpto.method.Optimizer.opt_utils import gather_incomplete_left, trim_left, solve_lineqn
 
 
 class RMABSolver(torch.nn.Module):

@@ -8,11 +8,11 @@ import torch
 from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
-from openpto.method.models.models import dense_nn
-from openpto.method.opt_utils import gather_incomplete_left
-
+from openpto.method.models.models_utils import dense_nn
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.RMABSolver import RMABSolver
+from openpto.method.Optimizer.opt_utils import gather_incomplete_left
+
 
 # TODO: Remove default
 class RMAB(PTOProblem):

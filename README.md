@@ -1,2 +1,7 @@
-# PTO
-predict-then-optimize
+# Rethinking Predict+Optimize
+
+## Install
+
+```
+pip install -e .
+```
