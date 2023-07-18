@@ -32,7 +32,7 @@ class ExpManager:
         # TODO: seed?
         # prediction model
         ipdim, opdim = prob_args["ipdim"], prob_args['opdim']
-        from openpto.method.models.pred_model import dense_nn
+        from openpto.method.prediction_model import dense_nn
         model_dict = {'dense': dense_nn}
         # TODO:more pred model
         model_builder = model_dict[args.model]
@@ -79,7 +79,7 @@ class ExpManager:
             for i in (random.sample(range(len(X_train)), min(self.args.batchsize, len(X_train)))):
                 pred = self.pred_model(X_train[i]).squeeze()
                 losses.append(loss_fn(pred, Y_train[i], aux_data=Y_train_aux[i], partition='train', index=i))
-            loss = torch.stack(losses).mean()   
+            loss = torch.stack(losses).mean()
             self.optimizer.zero_grad()
             # loss.retain_grad()
             loss.backward()

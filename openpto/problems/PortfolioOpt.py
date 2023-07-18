@@ -339,7 +339,7 @@ class PortfolioOpt(PTOProblem):
     def get_test_data(self, **kwargs):
         return self.Xs[self.test_idxs], self.Ys[self.test_idxs], self.covar_mat[self.test_idxs]
 
-    def get_modelio_shape(self):
+    def get_model_shape(self):
         return self.Xs.shape[-1], 1
 
     def get_twostageloss(self):

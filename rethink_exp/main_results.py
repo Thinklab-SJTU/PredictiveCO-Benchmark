@@ -1,13 +1,12 @@
 import os
 import sys
-from functools import partial
+
 
 # Makes sure hashes are consistent
 hashseed = os.getenv('PYTHONHASHSEED')
 if not hashseed:
     os.environ['PYTHONHASHSEED'] = '0'
     os.execv(sys.executable, [sys.executable] + sys.argv)
-
 
 import torch
 torch.set_num_threads(1)
@@ -18,7 +17,8 @@ from openpto import ExpManager
 from openpto.method.models.loss import get_loss_fn
 from openpto.utils import get_args
 # from openpto.config import load_conf
-from openpto.problems.prob_utils import str2prob, init_if_not_saved, prob2args
+from openpto.metrics import *
+from openpto.problems.prob_utils import problem_wrapper
 from openpto.method import *
 
 if __name__ == '__main__':
@@ -32,14 +32,8 @@ if __name__ == '__main__':
     
     # Load problem
     print(f"Loading {args.problem} Problem...")
-    init_problem = partial(init_if_not_saved, load_new=args.loadnew)
-    ProblemClass = str2prob(args.problem)
-    problemKwargs = prob2args(args)
-    problem = init_problem(ProblemClass, problemKwargs)
+    problem = problem_wrapper(args)
     
-    # Load an ML model to predict the parameters of the problem
-    ipdim, opdim = problem.get_modelio_shape()
-    model_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
 
     # Load loss function
     print(f"Loading {args.loss} Loss Function...")
@@ -56,8 +50,11 @@ if __name__ == '__main__':
         dflalpha=args.dflalpha,
     )
     
-    # method = eval('{}Solver(conf, problem)'.format(args.method.upper()))
+
+    ipdim, opdim = problem.get_model_shape()
+    model_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
     exp = ExpManager(model_args, save_path='saved_records', args = args)
+
     # Train neural network with a given loss function
     print(f"Start training [{args.model}] model on [{args.loss}] loss...")
     exp.run(problem, loss_fn, n_epochs=args.epochs)

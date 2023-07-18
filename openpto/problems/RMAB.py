@@ -162,7 +162,7 @@ class RMAB(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
-    def get_modelio_shape(self):
+    def get_model_shape(self):
         return self.num_features, (self.num_states, self.num_actions, self.num_states)
     
     def get_output_activation(self):

@@ -81,7 +81,7 @@ class CubicTopK(PTOProblem):
     def get_decision(self, Y, isTrain=False, **kwargs):
         return self.opt_train(Y) if isTrain else self.opt_test(Y)
     
-    def get_modelio_shape(self):
+    def get_model_shape(self):
         return 1, 1
 
     def get_output_activation(self):

@@ -32,8 +32,10 @@ def get_loss_fn(
         return CE
     elif name == 'dfl':
         return _get_decision_focused(problem, **kwargs)
-    else:
+    elif name == 'learned':
         return _get_learned_loss(problem, name, **kwargs)
+    else:
+        raise LookupError()
 
 
 def MSE(Yhats, Ys, **kwargs):

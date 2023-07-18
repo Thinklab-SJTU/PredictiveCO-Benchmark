@@ -1,5 +1,6 @@
 import os
 from typing import Dict
+from functools import partial
 
 import pickle
 import pandas as pd
@@ -9,6 +10,13 @@ from .BipartiteMatching import BipartiteMatching
 from .PortfolioOpt import PortfolioOpt
 from .RMAB import RMAB
 from .CubicTopK import CubicTopK
+
+def problem_wrapper(args):
+    init_problem = partial(init_if_not_saved, load_new=args.loadnew)
+    ProblemClass = str2prob(args.problem)
+    problemKwargs = prob2args(args)
+    problem = init_problem(ProblemClass, problemKwargs)
+    return problem
 
 def str2prob(prob_str):
     prob_dict = {"budgetalloc": BudgetAllocation,
@@ -64,6 +72,8 @@ def prob2args(args):
                             'alpha': args.stockalpha,
                             'val_frac': args.valfrac,
                             'rand_seed': args.seed,}
+    else:
+        raise NotImplementedError
     return problem_kwargs
 
 def init_if_not_saved(

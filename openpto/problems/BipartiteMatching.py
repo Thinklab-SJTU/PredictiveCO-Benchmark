@@ -163,7 +163,7 @@ class BipartiteMatching(PTOProblem):
     def get_test_data(self):
         return self.Xs[self.test_idxs], self.Ys[self.test_idxs], [None for _ in range(len(self.test_idxs))]
     
-    def get_modelio_shape(self):
+    def get_model_shape(self):
         return self.Xs.shape[-1], 1
     
     def get_output_activation(self):

@@ -26,7 +26,7 @@ class PTOProblem:#(ABC):
         raise NotImplementedError()
 
     # @abstractmethod
-    def get_modelio_shape(self):
+    def get_model_shape(self):
         raise NotImplementedError()
 
     # @abstractmethod
