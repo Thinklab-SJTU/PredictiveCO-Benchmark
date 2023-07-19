@@ -12,13 +12,12 @@ import torch
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
-
 from openpto import ExpManager
 from openpto.method.func.loss import get_loss_fn
 from openpto.utils import get_args
 # from openpto.config import load_conf
 from openpto.metrics import *
-from openpto.problems.prob_utils import problem_wrapper
+from openpto.problems.utils_prob import problem_wrapper
 from openpto.method import *
 
 if __name__ == '__main__':
@@ -56,5 +55,5 @@ if __name__ == '__main__':
     exp = ExpManager(model_args, save_path='saved_records', args = args)
 
     # Train neural network with a given loss function
-    print(f"Start training [{args.model}] model on [{args.loss}] loss...")
+    print(f"Start training [{args.pred_model}] model on [{args.loss}] loss...")
     exp.run(problem, loss_fn, n_epochs=args.epochs)

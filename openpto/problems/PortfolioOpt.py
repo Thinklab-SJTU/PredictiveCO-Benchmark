@@ -30,7 +30,7 @@ class PortfolioOpt(PTOProblem):
         val_frac=0.2,  # fraction of training data reserved for test
         rand_seed=0,  # for reproducibility
         alpha=1,  # risk aversion constant
-        data_dir="data",  # directory to store data
+        data_dir="openpto/data",  # directory to store data
     ):
         super(PortfolioOpt, self).__init__()
         # Do some random seed fu
@@ -135,7 +135,7 @@ class PortfolioOpt(PTOProblem):
             else:
                 symbol_df = self._load_raw_symbols()
                 raw_price_df = self._download_prices(symbol_df)
-                print("saving the data...")
+                print("saving the data to ...", self.raw_historical_price_file)
                 raw_price_df.to_csv(self.raw_historical_price_file)
 
             # filter out symbols without right number of timesteps
@@ -300,9 +300,8 @@ class PortfolioOpt(PTOProblem):
         self.torch_file = os.path.join(data_dir, "price_data_{}_{}_{}.pt".format(start_date.date(), end_date.date(), collapse))
 
         # Load data if it exists
-        print(self.torch_file)
         if not overwrite and os.path.exists(self.torch_file):
-            print("Loading pytorch data...")
+            print("Portfolio:Loading pytorch data...", self.torch_file)
             feature_mat, target_mat, feature_cols, future_mat, target_names, dates, symbols = torch.load(self.torch_file)
         else:
             price_feature_df = self._get_price_feature_df()

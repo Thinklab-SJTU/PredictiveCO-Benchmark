@@ -32,16 +32,16 @@ class ExpManager:
         # TODO: seed?
         # prediction model
         ipdim, opdim = prob_args["ipdim"], prob_args['opdim']
-        from openpto.method.prediction_model import dense_nn
+        from openpto.method.pred_model import dense_nn
         model_dict = {'dense': dense_nn}
         # TODO:more pred model
-        model_builder = model_dict[args.model]
+        model_builder = model_dict[args.pred_model]
         self.pred_model = model_builder(num_features=ipdim,
                                         num_targets=opdim,
                                         num_layers=args.layers,
                                         intermediate_size=500,
                                         output_activation=prob_args["out_act"])
-        print(f"Built [{args.model}] Prediction Model")
+        print(f"Built [{args.pred_model}] Prediction Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 

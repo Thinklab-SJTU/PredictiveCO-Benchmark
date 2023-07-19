@@ -8,7 +8,7 @@ import torch
 from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
-from openpto.method.prediction_model import dense_nn
+from openpto.method.pred_model import dense_nn
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.RMABSolver import RMABSolver
 from openpto.method.Optimizer.opt_utils import gather_incomplete_left
@@ -202,9 +202,9 @@ class RMAB(PTOProblem):
         # Create a matrix of the joint tranisition probability (T_joint) across all arms
         # TODO: Speedup. This is the main bottleneck for DFL. (Vectorisation doesn't seem to work...)
         if T.ndim > 4:
-            T_joint = torch.zeros((*T.shape[:-4], S_joint.shape[0], A_joint.shape[0], S_joint.shape[0]))
+            T_joint = torch.zeros((*T.shape[:-4], S_joint.shape[0], A_joint.shape[0], S_joint.shape[0])).to(T.device)
         elif T.ndim == 4:
-            T_joint = torch.zeros((S_joint.shape[0], A_joint.shape[0], S_joint.shape[0]))
+            T_joint = torch.zeros((S_joint.shape[0], A_joint.shape[0], S_joint.shape[0])).to(T.device)
         else:
             raise AssertionError()
         for idx, state_cur in enumerate(S_joint):
@@ -213,7 +213,8 @@ class RMAB(PTOProblem):
                     T_joint[..., idx, idy, idz] = torch.stack([(T[..., n, state_cur[n], act[n], state_next[n]]) for n in range(self.num_arms)]).prod(0)
 
         # Solve for the value function
-        A = (torch.eye(S_joint.shape[0]) - self.gamma * (Pi_joint.unsqueeze(-1) * T_joint).sum(-2)).to(T.device)
+        print("-- device:", S_joint.device, Pi_joint.device, T_joint.device, R_joint.device)
+        A = (torch.eye(S_joint.shape[0]).to(T.device) - self.gamma * (Pi_joint.unsqueeze(-1) * T_joint).sum(-2))
         b = R_joint
         Vs = torch.linalg.solve(A, b)
 
