@@ -14,7 +14,7 @@ torch.set_num_interop_threads(1)
 
 
 from openpto import ExpManager
-from openpto.method.models.loss import get_loss_fn
+from openpto.method.func.loss import get_loss_fn
 from openpto.utils import get_args
 # from openpto.config import load_conf
 from openpto.metrics import *
@@ -31,12 +31,12 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
     
     # Load problem
-    print(f"Loading {args.problem} Problem...")
+    print(f"Loading [{args.problem}] Problem...")
     problem = problem_wrapper(args)
     
 
     # Load loss function
-    print(f"Loading {args.loss} Loss Function...")
+    print(f"Loading [{args.loss}] Loss Function...")
     loss_fn = get_loss_fn(
         args.loss,
         problem,

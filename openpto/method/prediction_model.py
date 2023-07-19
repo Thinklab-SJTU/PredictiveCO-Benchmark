@@ -52,27 +52,3 @@ def dense_nn(
 
     return torch.nn.Sequential(*net_layers)
 
-
-class DenseLoss(torch.nn.Module):
-    """
-    A Neural Network-based loss function
-    """
-
-    def __init__(
-        self,
-        Y,
-        num_layers=4,
-        hidden_dim=100,
-        activation='relu'
-    ):
-        super(DenseLoss, self).__init__()
-        # Save true labels
-        self.Y = Y.detach().view((-1))
-        # Initialise model
-        self.model = torch.nn.Parameter(dense_nn(Y.numel(), 1, num_layers, intermediate_size=hidden_dim, output_activation=activation))
-
-    def forward(self, Yhats):
-        # Flatten inputs
-        Yhats = Yhats.view((-1, self.Y.numel()))
-
-        return self.model(Yhats)

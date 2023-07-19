@@ -19,7 +19,7 @@ def get_args():
     parser.add_argument('--gpu', type=str, default='0', help="Visible GPU")
 
     # training
-    # parser.add_argument('--loadnew', type=ast.literal_eval, default=False)
+    parser.add_argument('--loadnew', type=ast.literal_eval, default=False)
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--earlystopping', type=ast.literal_eval, default=True)
     parser.add_argument('--patience', type=int, default=100)

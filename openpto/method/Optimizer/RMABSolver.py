@@ -33,24 +33,24 @@ class RMABSolver(torch.nn.Module):
             index: ... X 2 Tensor of Whittle index for states (0,1)
         '''
         # Matrix equations for state 0
-        row1_s0  =   torch.stack([torch.ones_like(T[...,0,0,0]) , gamma * T[...,0,0,0] - 1, gamma * T[...,0,0,1]    ], -1)
-        row2_s0  =   torch.stack([torch.zeros_like(T[...,0,1,0]), gamma * T[...,0,1,0] - 1, gamma * T[...,0,1,1]    ], -1)
-        row3a_s0 =   torch.stack([torch.ones_like(T[...,1,0,0]) , gamma * T[...,1,0,0]    , gamma * T[...,1,0,1] - 1], -1)
-        row3b_s0 =   torch.stack([torch.zeros_like(T[...,1,1,0]), gamma * T[...,1,1,0]    , gamma * T[...,1,1,1] - 1], -1)
+        row1_s0  =   torch.stack([torch.ones_like(T[...,0,0,0]).to(T.device) , gamma * T[...,0,0,0] - 1, gamma * T[...,0,0,1]    ], -1)
+        row2_s0  =   torch.stack([torch.zeros_like(T[...,0,1,0]).to(T.device), gamma * T[...,0,1,0] - 1, gamma * T[...,0,1,1]    ], -1)
+        row3a_s0 =   torch.stack([torch.ones_like(T[...,1,0,0]).to(T.device) , gamma * T[...,1,0,0]    , gamma * T[...,1,0,1] - 1], -1)
+        row3b_s0 =   torch.stack([torch.zeros_like(T[...,1,1,0]).to(T.device), gamma * T[...,1,1,0]    , gamma * T[...,1,1,1] - 1], -1)
 
         A1_s0 = torch.stack([row1_s0, row2_s0, row3a_s0], -2)
         A2_s0 = torch.stack([row1_s0, row2_s0, row3b_s0], -2)
-        b_s0 = torch.tensor([0,0,-1], dtype=torch.float32)
+        b_s0 = torch.tensor([0,0,-1], dtype=torch.float32).to(T.device)
 
         # Matrix equations for state 1
-        row1_s1  =   torch.stack([torch.ones_like(T[...,1,0,0]) , gamma * T[...,1,0,0]    , gamma * T[...,1,0,1] - 1], -1)
-        row2_s1  =   torch.stack([torch.zeros_like(T[...,1,1,0]), gamma * T[...,1,1,0]    , gamma * T[...,1,1,1] - 1], -1)
-        row3a_s1 =   torch.stack([torch.ones_like(T[...,0,0,0]) , gamma * T[...,0,0,0] - 1, gamma * T[...,0,0,1]    ], -1)
-        row3b_s1 =   torch.stack([torch.zeros_like(T[...,0,1,0]), gamma * T[...,0,1,0] - 1, gamma * T[...,0,1,1]    ], -1)
+        row1_s1  =   torch.stack([torch.ones_like(T[...,1,0,0]).to(T.device) , gamma * T[...,1,0,0]    , gamma * T[...,1,0,1] - 1], -1)
+        row2_s1  =   torch.stack([torch.zeros_like(T[...,1,1,0].to(T.device)), gamma * T[...,1,1,0]    , gamma * T[...,1,1,1] - 1], -1)
+        row3a_s1 =   torch.stack([torch.ones_like(T[...,0,0,0]).to(T.device) , gamma * T[...,0,0,0] - 1, gamma * T[...,0,0,1]    ], -1)
+        row3b_s1 =   torch.stack([torch.zeros_like(T[...,0,1,0]).to(T.device), gamma * T[...,0,1,0] - 1, gamma * T[...,0,1,1]    ], -1)
 
         A1_s1 = torch.stack([row1_s1, row2_s1, row3a_s1], -2)
         A2_s1 = torch.stack([row1_s1, row2_s1, row3b_s1], -2)
-        b_s1 = torch.tensor([-1,-1,0], dtype=torch.float32)
+        b_s1 = torch.tensor([-1,-1,0], dtype=torch.float32).to(T.device)
 
         # Compute candidate whittle indices
         cnd1_s0 = solve_lineqn(A1_s0, b_s0)
@@ -86,11 +86,10 @@ class RMABSolver(torch.nn.Module):
 
         # Get whittle indices
         W = self._get_whittle_indices(T, gamma)
-
         # Define policy function
         def pi(
             state,  # a vector denoting the current state
-        ):
+            ):
             # Preprocessing
             state = trim_left(state)
             W_temp = trim_left(W)

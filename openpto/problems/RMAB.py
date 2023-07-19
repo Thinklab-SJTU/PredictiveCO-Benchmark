@@ -8,7 +8,7 @@ import torch
 from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
-from openpto.method.models.models_utils import dense_nn
+from openpto.method.prediction_model import dense_nn
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.RMABSolver import RMABSolver
 from openpto.method.Optimizer.opt_utils import gather_incomplete_left
@@ -179,10 +179,10 @@ class RMAB(PTOProblem):
         Not recommended for a large number of arms (>10)
         """
         # Create a vector of the joint state space across all arms (S_joint)
-        S_joint = torch.tensor([state for state in product(range(self.num_states), repeat=self.num_arms)])
+        S_joint = torch.tensor([state for state in product(range(self.num_states), repeat=self.num_arms)]).to(T.device)
 
         # Create a vector of the joint action space across all arms (A_joint)
-        A_joint = torch.tensor([state for state in product(range(self.num_actions), repeat=self.num_arms)])
+        A_joint = torch.tensor([state for state in product(range(self.num_actions), repeat=self.num_arms)]).to(T.device)
 
         # Create a matrix of the joint rewards (R_joint) across all arms
         R_joint = S_joint.sum(dim=-1).float()
@@ -190,9 +190,9 @@ class RMAB(PTOProblem):
         # Create a matrix of the joint policy (Pi_joint) across all arms
         Pi_per_arm = Pi(S_joint)
         if T.ndim > 4:
-            Pi_joint = torch.zeros((*Pi_per_arm.shape[:-2], S_joint.shape[0], A_joint.shape[0]))
+            Pi_joint = torch.zeros((*Pi_per_arm.shape[:-2], S_joint.shape[0], A_joint.shape[0])).to(T.device)
         elif T.ndim == 4:
-            Pi_joint = torch.zeros((S_joint.shape[0], A_joint.shape[0]))
+            Pi_joint = torch.zeros((S_joint.shape[0], A_joint.shape[0])).to(T.device)
         else:
             raise AssertionError()
         for idx, state_cur in enumerate(S_joint):
@@ -213,7 +213,7 @@ class RMAB(PTOProblem):
                     T_joint[..., idx, idy, idz] = torch.stack([(T[..., n, state_cur[n], act[n], state_next[n]]) for n in range(self.num_arms)]).prod(0)
 
         # Solve for the value function
-        A = (torch.eye(S_joint.shape[0]) - self.gamma * (Pi_joint.unsqueeze(-1) * T_joint).sum(-2))
+        A = (torch.eye(S_joint.shape[0]) - self.gamma * (Pi_joint.unsqueeze(-1) * T_joint).sum(-2)).to(T.device)
         b = R_joint
         Vs = torch.linalg.solve(A, b)
 
@@ -236,7 +236,7 @@ class RMAB(PTOProblem):
         all_probs = []
         #   Generate start state
         #   We assume that everyone starts by adhering
-        state = torch.ones(num_traj, *T.shape[:-4], self.num_arms).long()
+        state = torch.ones(num_traj, *T.shape[:-4], self.num_arms).long().to(T.device)
         T_traj = T.unsqueeze(0).expand(num_traj, *T.shape)
         for _ in range(num_timesteps):
             # calculate probabilities of taking each action
@@ -303,7 +303,6 @@ class RMAB(PTOProblem):
             obj = self._get_objective_ope
         else:
             raise AssertionError('Invalid eval_method')
-
         return obj(T, Pi, **kwargs)
 
     def get_decision(

@@ -21,11 +21,13 @@ with open("README.md", encoding="utf-8") as f:
 
 def do_setup():
     setup(
+        # includes all other files
+        include_package_data=True,
+        # package name
         name="openpto",
+        # version
         version="0.1",
         description="",
-        url="",
-        author='',
         long_description=readme,
         long_description_content_type="text/markdown",
         install_requires=get_install_requires(),
@@ -33,6 +35,21 @@ def do_setup():
         packages=find_packages(),
         include_package_data=True,
         keywords=["AI", "CO"],
+        # Github repo
+        url = "",
+        # author name
+        author = "Haoyu Geng",
+        # mail address
+        author_email = "genghaoyu98@sjtu.edu.cn",
+        # dependencies
+        install_requires = [
+            "numpy",
+            "scipy",
+            "pathos",
+            "tqdm",
+            "lxml",
+            "scikit_learn",
+            "torch>=1.13.1"],
         classifiers=[
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
