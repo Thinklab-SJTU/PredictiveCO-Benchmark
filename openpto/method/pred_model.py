@@ -5,7 +5,7 @@ import operator
 
 import torch
 
-from openpto.method.Optimizer.opt_utils import View
+from openpto.method.Optimizer.utils_opt import View
 
 #################################### Dense NN #################################
 # TODO: Pretty it up    

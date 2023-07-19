@@ -27,12 +27,12 @@ def load_conf(path:str = None, method_name:str = None, prob_name:str = None):
     if path == None and prob_name == None:
         raise KeyError
     if path == None:
-        method_names = ['spo']
-        prob_names = []
+        # method_names = ['spo','ltr','intopt','nce','blackbox']
+        # prob_names = ['knapsack', '']
 
         # assert method in method_name
-        assert prob_name in prob_names
-        dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
+        # assert prob_name in prob_names
+        dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config/probs/")
         path = os.path.join(dir,  prob_name + ".yaml")
 
         if os.path.exists(path) == False:
@@ -40,7 +40,7 @@ def load_conf(path:str = None, method_name:str = None, prob_name:str = None):
     
     conf = open(path, "r").read()
     conf = yaml.safe_load(conf)
-    conf = argparse.Namespace(**conf)
+    # conf = argparse.Namespace(**conf)
 
     return conf
 

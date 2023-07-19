@@ -2,16 +2,12 @@ import random
 import os
 import time
 
-
 import torch
-
 
 import pickle
 import matplotlib.pyplot as plt
 
-
-from openpto.method.func.LODL import _get_learned_loss
-
+from openpto.method.models import _get_learned_loss
 
 NUM_CPUS = os.cpu_count()
 
@@ -30,6 +26,16 @@ def get_loss_fn(
         return _get_decision_focused(problem, **kwargs)
     elif name == 'learned':
         return _get_learned_loss(problem, name, **kwargs)
+    elif name == 'SPO':
+        return None
+    elif name == 'LTR':
+        return None
+    elif name == 'Intopt':
+        return None
+    elif name == 'NCE':
+        return None
+    elif name == 'Blackbox':
+        return None
     else:
         raise LookupError()
 
@@ -53,6 +59,7 @@ def MAE(Yhats, Ys, **kwargs):
 def CE(Yhats, Ys, **kwargs):
     return torch.nn.BCELoss()(Yhats, Ys)
 
+
 def MSE_Sum(
     Yhats,
     Ys,
@@ -71,7 +78,6 @@ def MSE_Sum(
     sum_loss = (Yhats - Ys).sum(dim=-1).square().mean()
     loss_regularised = (1 - alpha) * sum_loss + alpha * MSE(Yhats, Ys)
     return loss_regularised
-
 
 
 def _get_decision_focused(

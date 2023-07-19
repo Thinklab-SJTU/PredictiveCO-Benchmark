@@ -9,3 +9,5 @@ python rethink_exp/main_results.py --problem=bipartitematching --loss mse --epoc
 python rethink_exp/main_results.py --problem=rmab --loss mse --epochs 1 --gpu 0 
 # portfolio
 python rethink_exp/main_results.py --problem=portfolio --loss mse --epochs 1 --gpu 0 
+# Knapsack
+python rethink_exp/main_results.py --problem=knapsack

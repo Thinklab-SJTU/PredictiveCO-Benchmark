@@ -6,7 +6,7 @@ import torch
 from torch.multiprocessing import Pool
 
 from openpto.problems.utils_prob import BudgetAllocation, BipartiteMatching,RMAB
-from openpto.method.Optimizer.opt_utils import  starmap_with_kwargs
+from openpto.method.Optimizer.utils_opt import  starmap_with_kwargs
 from openpto.problems.utils_prob import find_saved_problem
 
 # from openpto.method.models.models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus

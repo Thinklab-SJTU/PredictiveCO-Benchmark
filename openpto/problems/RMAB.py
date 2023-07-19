@@ -11,7 +11,7 @@ from torch.nn.functional import one_hot
 from openpto.method.pred_model import dense_nn
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Optimizer.RMABSolver import RMABSolver
-from openpto.method.Optimizer.opt_utils import gather_incomplete_left
+from openpto.method.Optimizer.utils_opt import gather_incomplete_left
 
 
 # TODO: Remove default
@@ -213,7 +213,6 @@ class RMAB(PTOProblem):
                     T_joint[..., idx, idy, idz] = torch.stack([(T[..., n, state_cur[n], act[n], state_next[n]]) for n in range(self.num_arms)]).prod(0)
 
         # Solve for the value function
-        print("-- device:", S_joint.device, Pi_joint.device, T_joint.device, R_joint.device)
         A = (torch.eye(S_joint.shape[0]).to(T.device) - self.gamma * (Pi_joint.unsqueeze(-1) * T_joint).sum(-2))
         b = R_joint
         Vs = torch.linalg.solve(A, b)

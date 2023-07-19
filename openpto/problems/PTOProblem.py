@@ -7,25 +7,25 @@ import numpy as np
 
 
 
-class PTOProblem:#(ABC):
+class PTOProblem(ABC):
     """A class that defines an arbitrary predict-then-optimise problem."""
 
     def __init__(self):
         super(PTOProblem, self).__init__()
 
-    # @abstractmethod
+    @abstractmethod
     def get_train_data(self, **kwargs):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_val_data(self, **kwargs):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_test_data(self, **kwargs):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_model_shape(self):
         raise NotImplementedError()
 
@@ -37,11 +37,11 @@ class PTOProblem:#(ABC):
     def get_twostageloss(self):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_decision(self, Y, **kwargs):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_objective(self, Y, Z, **kwargs):
         raise NotImplementedError()
 

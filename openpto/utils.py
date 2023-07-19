@@ -14,7 +14,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     # basic
     parser.add_argument('--problem', type=str, choices=['budgetalloc', 'bipartitematching', 
-                                    'cubic', 'rmab', 'portfolio', 'Knapsack','Energy'], default='portfolio')
+                                    'cubic', 'rmab', 'portfolio', 'knapsack','energy'], default='portfolio')
     parser.add_argument('--loss', type=str, choices=['mse', 'msesum', 'dense', 'weightedmse', 'weightedmse++', 
                                     'weightedce', 'weightedmsesum', 'dfl', 'quad', 'quad++', 'ce', 
                                     "SPO", "LTR"], default='mse')
@@ -40,27 +40,6 @@ def get_args():
 
     # model
     parser.add_argument('--layers', type=int, default=2)
-    #   Domain-specific: BudgetAllocation or CubicTopK
-    parser.add_argument('--budget', type=int, default=1)
-    parser.add_argument('--numitems', type=int, default=50)
-    #   Domain-specific: BudgetAllocation
-    parser.add_argument('--numtargets', type=int, default=10)
-    parser.add_argument('--fakefeatures', type=int, default=0)
-    #   Domain-specific: RMAB
-    parser.add_argument('--rmabbudget', type=int, default=1)
-    parser.add_argument('--numarms', type=int, default=5)
-    parser.add_argument('--gamma', type=float, default=0.9)
-    parser.add_argument('--minlift', type=float, default=0.2)
-    parser.add_argument('--scramblinglayers', type=int, default=3)
-    parser.add_argument('--scramblingsize', type=int, default=64)
-    parser.add_argument('--numfeatures', type=int, default=16)
-    parser.add_argument('--noisestd', type=float, default=0.5)
-    parser.add_argument('--eval', type=str, choices=['exact', 'sim'], default='exact')
-    #   Domain-specific: BipartiteMatching
-    parser.add_argument('--nodes', type=int, default=10)
-    #   Domain-specific: PortfolioOptimization
-    parser.add_argument('--stocks', type=int, default=50)
-    parser.add_argument('--stockalpha', type=float, default=0.1)
     #   Decision-Focused Learning
     parser.add_argument('--dflalpha', type=float, default=1.)
     #   Learned-Loss

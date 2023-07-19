@@ -1,0 +1,5 @@
+dataset:
+  generate_weight: True
+  unit_weight: False
+  kfold: [0,1,2,3,4]
+  noise_level: 0
