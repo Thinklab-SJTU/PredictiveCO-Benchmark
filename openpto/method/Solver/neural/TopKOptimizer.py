@@ -4,7 +4,7 @@ import numpy as np
 
 import torch
 
-from method.Solver.SubmodularOptimizer import OptimiseSubmodular
+from openpto.method.Solver.neural.SubmodularOptimizer import OptimiseSubmodular
 
 
 class TopKOptimizer(torch.nn.Module):

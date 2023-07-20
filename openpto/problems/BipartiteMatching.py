@@ -182,13 +182,7 @@ class BipartiteMatching(PTOProblem):
 
         return torch.sum(Y * Z, dim=(-2, -1))
 
-    def get_decision(
-        self,
-        Y,
-        isTrain=False,
-        max_instances_per_batch=5000,
-        **kwargs
-    ):
+    def get_decision(self,Y,isTrain=False,max_instances_per_batch=5000, **kwargs):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
         assert Y.ndim in [2,3]

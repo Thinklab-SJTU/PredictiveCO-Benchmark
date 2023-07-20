@@ -45,22 +45,27 @@ def solve_lineqn(A, b, eps=1e-5):
     return result
 
 ############################### Solve ##################################
+def GrbSolve(cp, optmodel):
+    ins_num = len(cp)
+    sol = []
+    obj = []
+    for i in range(ins_num):
+        # solve
+        optmodel.setObj(cp[i])
+        solp, objp = optmodel.solve()
+        sol.append(solp)
+        obj.append(objp)
+    return sol, obj
+
 def _solve_in_pass(cp, optmodel, processes, pool):
     """
     A function to solve optimization in the forward/backward pass
     """
     # number of instance
-    ins_num = len(cp)
+
     # single-core
     if processes == 1:
-        sol = []
-        obj = []
-        for i in range(ins_num):
-            # solve
-            optmodel.setObj(cp[i])
-            solp, objp = optmodel.solve()
-            sol.append(solp)
-            obj.append(objp)
+        sol, obj = GrbSolve(cp, optmodel)
     # multi-core
     else:
         raise NotImplementedError

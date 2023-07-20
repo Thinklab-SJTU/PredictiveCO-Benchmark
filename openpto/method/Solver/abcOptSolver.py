@@ -17,10 +17,9 @@ class optSolver: #(ABC):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self):
+    def __init__(self, modelSense=None):
         # default sense
-        if not hasattr(self, "modelSense"):
-            self.modelSense = GRB.MINIMIZE
+        self.modelSense = modelSense if modelSense is not None else GRB.MINIMIZE
         self._model, self.x = self._getModel()
 
     def __repr__(self):

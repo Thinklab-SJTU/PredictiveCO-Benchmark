@@ -8,20 +8,32 @@ from openpto.method.Solver.grb.grbSolver import optGrbSolver
 
 # optimization model
 class KPGrbSolver(optGrbSolver):
-    def __init__(self, weights):
-        self.weights = np.array(weights)
-        self.num_item = len(weights[0])
-        super().__init__()
+    def __init__(self, weights, capacity):
+        # super().__init__()
+        self._model, self.x = self._getModel(weights, capacity)
 
-    def _getModel(self):
+    def _getModel(self, weights, capacity):
+        num_items = len(weights[0])
         # ceate a model
         m = gp.Model()
+        # turn off output
+        m.Params.outputFlag = 0
         # varibles
-        x = m.addVars(self.num_item, name="x", vtype=GRB.BINARY)
+        x = m.addVars(num_items, name="x", vtype=GRB.BINARY)
         # sense (must be minimize)
         m.modelSense = GRB.MAXIMIZE
         # constraints
-        m.addConstr(gp.quicksum([self.weights[0,i] * x[i] for i in range(self.num_item)]) <= 7)
-        m.addConstr(gp.quicksum([self.weights[1,i] * x[i] for i in range(self.num_item)]) <= 8)
-        m.addConstr(gp.quicksum([self.weights[2,i] * x[i] for i in range(self.num_item)]) <= 9)
+        m.addConstr(gp.quicksum([weights[0,i] * x[i] for i in range(num_items)]) <= capacity)
         return m, x
+
+    def setObj(self, c):
+        """
+        A method to set objective function
+
+        Args:
+            c (np.ndarray / list): cost of objective function
+        """
+        if len(c) != self.num_cost:
+            raise ValueError("Size of cost vector cannot match vars.")
+        obj = gp.quicksum(c[i] * self.x[k] for i, k in enumerate(self.x))
+        self._model.setObjective(obj)

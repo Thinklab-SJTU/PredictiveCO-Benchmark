@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from openpto.problems.PTOProblem import PTOProblem
-from openpto.method.Solver.SubmodularOptimizer import SubmodularOptimizer
+from openpto.method.Solver.wrapper_solver import SubmodularOptimizer
 
 class BudgetAllocation(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""

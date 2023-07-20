@@ -9,7 +9,8 @@ import torch
 
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import read_file, generate_uniform_weights_from_seed
-
+from openpto.method.Solver.grb.grb_knapsack import KPGrbSolver
+from openpto.method.Solver.utils_solver import _solve_in_pass, GrbSolve
 BENCHMARK_SIZE = 48
 
 class Knapsack(PTOProblem):
@@ -31,31 +32,36 @@ class Knapsack(PTOProblem):
         num_features= 5,
         poly_deg = 1,
         noise_width = 0,
+        capacity=1,
     ):
         super(Knapsack, self).__init__()
+        self.capacity = capacity
+        self.num_items = num_items
+        self.prob_version = prob_version
         self._set_seed(rand_seed)
+        # Obtain data
         if prob_version=="energy":
             dataset = get_energy_data('energy_data.txt', generate_weight=generate_weight, unit_weight=unit_weight,
                                   kfold=kfold, noise_level=noise_level, seed = rand_seed)
         elif prob_version=="gen":
             train_weights, train_feats, train_profits = self.genData(num_train_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_train, self.Xs_train, self.Ys_train = train_weights.expand(num_train_instances,-1), train_feats, train_profits
+            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances,-1,-1)
+            self.Xs_train, self.Ys_train = train_feats, train_profits
 
             test_weights, test_feats, test_profits = self.genData(num_test_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_test, self.Xs_test, self.Ys_test = test_weights.expand(num_test_instances,-1), test_feats, test_profits
+            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances,-1, -1)
+            self.Xs_test, self.Ys_test = test_feats, test_profits
             # Split training data into train/val
             assert 0 < val_frac < 1
             self.val_idxs = range(0, int(val_frac * num_train_instances))
             self.train_idxs = range(int(val_frac * num_train_instances), num_train_instances)
-
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
-    
+        # default sovler
+
     def get_train_data(self):
-        print("self.params_train: ", self.params_train.shape)
-        print("self.train_idxs: ", self.train_idxs)
         return self.Xs_train[self.train_idxs], self.Ys_train[self.train_idxs], self.params_train[self.train_idxs]
 
     def get_val_data(self):
@@ -66,14 +72,34 @@ class Knapsack(PTOProblem):
 
     @staticmethod
     def get_objective(Y, Z, **kwargs):
-        return (Z * Y).sum(dim=-1)
-        # TODO:compleete
+        # return (Z * Y).sum(dim=-1)
+        objectives = []
+        num_instances = Y.shape[0]
+        for ins in range(num_instances):
+            objectives.append(sum(Y[ins].cpu()*torch.Tensor(Z[ins])))
+        return torch.Tensor(objectives)
     
-    def get_decision(self, optSolver, Y, params, **kwargs):
-        return optSolver(Y, params)
+    def get_decision(self, Y, params, isTrain = True, optSolver=None, **kwargs):
+        if optSolver is None:
+            optSolver = KPGrbSolver(weights=params[0], capacity=kwargs['capacity'])
+        
+        decisions, obj = GrbSolve(Y, optSolver)
+        return decisions
+    
+    def get_decision_and_objective(self, Y, params, isTrain = True, optSolver=None, **kwargs):
+        if optSolver is None:
+            optSolver = KPGrbSolver(weights=params[0], capacity=kwargs['capacity'])
+        
+        decisions, objs = GrbSolve(Y, optSolver)
+        return decisions, objs
+    def params_API(self):
+        return {"capacity": self.capacity}
     
     def get_model_shape(self):
-        return self.Xs_train.shape[-1], 1
+        if self.prob_version=="gen":
+            return self.Xs_train.shape[-1], self.num_items
+        else:
+            return self.Xs_train.shape[-1], 1
 
     def get_output_activation(self):
         return None
@@ -135,9 +161,9 @@ class Knapsack(PTOProblem):
     
 def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=0, noise_level = 0, is_spo_tree=False,seed=0):
     """
-    Reads the energy dataset with the filename, splits it into feature and output sets.
-    :param filename:
-    :return:dataset: contains X and Y(nparray), dataset_params: contains feature_size and sample_size (int)
+        Reads the energy dataset with the filename, splits it into feature and output sets.
+        :param filename:
+        :return:dataset: contains X and Y(nparray), dataset_params: contains feature_size and sample_size (int)
     """
     HEADER_LENGTH = 4
     dir_path = os.getcwd()
@@ -150,11 +176,12 @@ def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=
 def transform_energy_data(data, header_length, generate_weight=True, unit_weight = True, 
                           kfold=0,noise_level=0, is_spo_tree=False, seed=0):
     """
-    transform method for energy data. Takes raw file and splits it into features and labels.
-    For the energy data, first feature is actually the benchmark No
-    :param data (list): List contains the data set:
-    :param header_length (int): Length of header in the file. Used to decide where the itemset starts
-    :return: Dataset(dictionary) holds two nparry, X: features , Y: labels. dataset_params(dictionary) contains feature_size and sample_size
+        transform method for energy data. Takes raw file and splits it into features and labels.
+        For the energy data, first feature is actually the benchmark No
+        :param data (list): List contains the data set:
+        :param header_length (int): Length of header in the file. Used to decide where the itemset starts
+        :return: Dataset(dictionary) holds two nparry, X: features , 
+                Y: labels. dataset_params(dictionary) contains feature_size and sample_size
     """
     weight_seed = np.array([3,5,7])
     # weights = np.random.choice(weight_seed, Y.size)

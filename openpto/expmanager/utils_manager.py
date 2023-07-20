@@ -24,9 +24,8 @@ def print_metrics(
         isTrain = (partition=='train') and (prefix != "Final")
 
         # Decision Quality
-        print(Xs.dtype)
         pred = model(Xs).squeeze()
-        Zs_pred = problem.get_decision(pred, params=Ys_aux, isTrain=isTrain)
+        Zs_pred = problem.get_decision(pred, params=Ys_aux, isTrain=isTrain, **problem.params_API())
         objectives = problem.get_objective(Ys, Zs_pred, aux_data=Ys_aux)
 
         # Loss and Error
@@ -42,8 +41,9 @@ def print_metrics(
             losses = torch.zeros_like(objectives)
 
         # Print
-        objective = objectives.mean().item()
+        objective = objectives.item()
         loss = losses.mean().item()
+        print("objectives", objectives, "loss: ", loss)
         mae = torch.nn.L1Loss()(losses, -objectives).item()
         print(f"{prefix} {partition} DQ: {objective:.3f}, Loss: {loss:.3f}, MAE: {mae:.3f}")
         metrics[partition] = {'objective': objective, 'loss': loss, 'mae': mae}
