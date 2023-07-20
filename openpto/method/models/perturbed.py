@@ -6,9 +6,9 @@ Perturbed optimization function
 
 import numpy as np
 import torch
-from torch.autograd import Function
 
-# from pyepo import EPO
+
+from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.utlis import getArgs
 
@@ -59,7 +59,7 @@ class perturbedOpt(optModule):
         return sols
 
 
-class perturbedOptFunc(Function):
+class perturbedOptFunc(torch.autograd.Function):
     """
     A autograd function for perturbed optimizer
     """
@@ -190,7 +190,7 @@ class perturbedFenchelYoung(optModule):
         return loss
 
 
-class perturbedFenchelYoungFunc(Function):
+class perturbedFenchelYoungFunc(torch.autograd.Function):
     """
     A autograd function for Fenchel-Young loss using perturbation techniques.
     """
@@ -239,9 +239,9 @@ class perturbedFenchelYoungFunc(Function):
         # solution expectation
         e_sol = ptb_sols.mean(axis=1)
         # difference
-        if optSolver.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == GRB.MINIMIZE:
             diff = w - e_sol
-        if optSolver.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == GRB.MAXIMIZE:
             diff = e_sol - w
         # loss
         loss = np.sum(diff**2, axis=1)
@@ -303,9 +303,9 @@ def _cache_in_pass(ptb_c, optSolver, solpool):
     for j in range(n_samples):
         # best solution in pool
         solpool_obj = ptb_c[j] @ solpool.T
-        if optSolver.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == GRB.MINIMIZE:
             ind = np.argmin(solpool_obj, axis=1)
-        if optSolver.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == GRB.MAXIMIZE:
             ind = np.argmax(solpool_obj, axis=1)
         ptb_sols.append(solpool[ind])
     return np.array(ptb_sols).transpose(1,0,2)

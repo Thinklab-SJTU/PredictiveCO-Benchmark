@@ -1,10 +1,13 @@
 import random
 import pdb
-import torch
-import torch.nn.functional as F
+
 import numpy as np
 
-from openpto.method.Solver.utils_opt import gather_incomplete_left, trim_left, solve_lineqn
+import torch
+import torch.nn.functional as F
+
+
+from openpto.method.Solver.utils_solver import gather_incomplete_left, trim_left, solve_lineqn
 
 
 class RMABSolver(torch.nn.Module):

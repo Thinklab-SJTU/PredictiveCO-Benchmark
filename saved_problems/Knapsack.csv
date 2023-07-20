@@ -1,0 +1,13 @@
+filename,prob_version,generate_weight,unit_weight,noise_level,noise_width,poly_deg,knapsack_dim,num_train_instances,num_test_instances,val_frac,rand_seed,num_items
+saved_models/Knapsack_0.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_models/Knapsack_1.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_models/Knapsack_2.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_models/Knapsack_3.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_problems/Knapsack_4.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_problems/Knapsack_5.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_problems/Knapsack_6.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_problems/Knapsack_7.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,
+saved_problems/Knapsack_8.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,20.0
+saved_problems/Knapsack_9.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,20.0
+saved_problems/Knapsack_10.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,20.0
+saved_problems/Knapsack_11.pkl,gen,True,False,0,0.5,4,1,400,200,0.5,0,20.0

@@ -1,7 +1,9 @@
+import numpy as np
+
 import gurobipy as gp
 from gurobipy import GRB
 
-from openpto.method.Solver.grb.grbSolver import optGrbModel
+from openpto.method.Solver.grb.grbSolver import optGrbSolver
 
 
 # optimization model

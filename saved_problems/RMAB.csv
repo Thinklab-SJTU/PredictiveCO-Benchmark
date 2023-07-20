@@ -1,0 +1,2 @@
+filename,num_train_instances,num_test_instances,num_arms,eval_method,min_lift,budget,gamma,num_features,num_intermediate,num_layers,noise_std,val_frac,rand_seed
+saved_models/RMAB_0.pkl,400,200,5,exact,0.2,1,0.9,16,64,3,0.5,0.5,0

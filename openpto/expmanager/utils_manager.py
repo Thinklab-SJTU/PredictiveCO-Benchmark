@@ -24,8 +24,9 @@ def print_metrics(
         isTrain = (partition=='train') and (prefix != "Final")
 
         # Decision Quality
+        print(Xs.dtype)
         pred = model(Xs).squeeze()
-        Zs_pred = problem.get_decision(pred, aux_data=Ys_aux, isTrain=isTrain)
+        Zs_pred = problem.get_decision(pred, params=Ys_aux, isTrain=isTrain)
         objectives = problem.get_objective(Ys, Zs_pred, aux_data=Ys_aux)
 
         # Loss and Error
@@ -34,7 +35,8 @@ def print_metrics(
             for i in range(len(Xs)):
                 # Surrogate Loss
                 pred = model(Xs[i]).squeeze()
-                losses.append(loss_fn(pred, Ys[i], aux_data=Ys_aux[i], partition=partition, index=i))
+                # losses.append(loss_fn(pred, Ys[i], aux_data=Ys_aux[i], partition=partition, index=i))
+                losses.append(loss_fn(problem, coeff_hat=pred, coeff_true=Ys[i], params=Ys_aux[i], partition='train', index=i))
             losses = torch.stack(losses).flatten()
         else:
             losses = torch.zeros_like(objectives)

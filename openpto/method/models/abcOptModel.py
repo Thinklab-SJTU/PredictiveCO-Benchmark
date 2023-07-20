@@ -16,7 +16,7 @@ class optModel(nn.Module):
         return
 
     @abstractmethod
-    def forward(self, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None):
+    def forward(self, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None, **hyperparams):
         """
             Input:
                 coeff_hat:

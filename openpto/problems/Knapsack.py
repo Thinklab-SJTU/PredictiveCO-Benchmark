@@ -26,7 +26,7 @@ class Knapsack(PTOProblem):
         kfold = [0],
         noise_level = 0,
         rand_seed=0,  # for reproducibility
-        prob_version="energy", # "energy" or "gen"
+        prob_version="gen", # "energy" or "gen"
         knapsack_dim = 1,
         num_features= 5,
         poly_deg = 1,
@@ -38,14 +38,13 @@ class Knapsack(PTOProblem):
             dataset = get_energy_data('energy_data.txt', generate_weight=generate_weight, unit_weight=unit_weight,
                                   kfold=kfold, noise_level=noise_level, seed = rand_seed)
         elif prob_version=="gen":
-            num_instances = num_train_instances + num_test_instances
             train_weights, train_feats, train_profits = self.genData(num_train_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_train, self.Xs_train, self.Ys_train = train_weights, train_feats, train_profits
+            self.params_train, self.Xs_train, self.Ys_train = train_weights.expand(num_train_instances,-1), train_feats, train_profits
 
             test_weights, test_feats, test_profits = self.genData(num_test_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_test, self.Xs_test, self.Ys_test = test_weights, test_feats, test_profits
+            self.params_test, self.Xs_test, self.Ys_test = test_weights.expand(num_test_instances,-1), test_feats, test_profits
             # Split training data into train/val
             assert 0 < val_frac < 1
             self.val_idxs = range(0, int(val_frac * num_train_instances))
@@ -55,6 +54,8 @@ class Knapsack(PTOProblem):
             raise ValueError("Not a valid problem version: {}".format(prob_version))
     
     def get_train_data(self):
+        print("self.params_train: ", self.params_train.shape)
+        print("self.train_idxs: ", self.train_idxs)
         return self.Xs_train[self.train_idxs], self.Ys_train[self.train_idxs], self.params_train[self.train_idxs]
 
     def get_val_data(self):
@@ -63,18 +64,19 @@ class Knapsack(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, self.params_test
 
-    def get_objective(self, Y, Z, **kwargs):
+    @staticmethod
+    def get_objective(Y, Z, **kwargs):
         return (Z * Y).sum(dim=-1)
         # TODO:compleete
     
-    def get_decision(self, Y, Z, **kwargs):
-        return True
+    def get_decision(self, optSolver, Y, params, **kwargs):
+        return optSolver(Y, params)
     
     def get_model_shape(self):
-        return self.Xs_train[-1], 1
+        return self.Xs_train.shape[-1], 1
 
     def get_output_activation(self):
-        raise NotImplementedError()
+        return None
 
     @staticmethod
     def genData(num_instances, num_features, num_items, dim=1, poly_deg=1, noise_width=0, seed=135):
@@ -128,7 +130,7 @@ class Knapsack(PTOProblem):
             profits[i, :] = values
             # float
             profits = profits.astype(np.float64)
-        return weights, feats, profits
+        return torch.Tensor(weights), torch.Tensor(feats), torch.Tensor(profits)
 
     
 def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=0, noise_level = 0, is_spo_tree=False,seed=0):

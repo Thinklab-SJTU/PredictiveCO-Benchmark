@@ -3,8 +3,9 @@ dataset:
   # generate knapsack data
   generate_weight: True
   unit_weight: False
-  kfold: 5
+  # kfold: 5
   noise_level: 0
   noise_width: 0.5
   poly_deg: 4
   knapsack_dim: 1
+  num_items: 20

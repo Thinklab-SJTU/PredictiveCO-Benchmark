@@ -5,3 +5,4 @@ scikit-learn
 pyro-api
 pyro-ppl
 numba
+pathos

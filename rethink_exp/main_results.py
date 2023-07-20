@@ -27,10 +27,9 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
     
     # Load problem
-    conf = load_conf(method_name=args.loss, prob_name=args.problem)
+    conf = load_conf(method_name=args.opt_model, prob_name=args.problem)
     print(f"Loading [{args.problem}] Problem... Config: {conf}")
     problem = problem_wrapper(args, conf)
-    
 
     # Load loss function
     print(f"Loading [{args.opt_model}] Loss Function...")

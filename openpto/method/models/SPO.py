@@ -6,12 +6,13 @@ SPO+ Loss function
 
 import numpy as np
 import torch
-from torch.autograd import Function
 
-# from pyepo import EPO
+
+from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from openpto.method.models.abcOptModel import optModel
+from openpto.method.Solver.utils_solver import _solve_in_pass#, _cache_in_pass
 
 class SPOPlus(optModel):
     """
@@ -28,7 +29,7 @@ class SPOPlus(optModel):
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
+    def __init__(self, optSolver, problem, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
             optSolver (optSolver): an PyEPO optimization model
@@ -39,27 +40,30 @@ class SPOPlus(optModel):
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # build carterion
         self.spop = SPOPlusFunc()
-
-    def forward(self, coeff_hat, coeff_true, sol_true, true_obj, reduction="mean"):
+        self.problem = problem
+    
+    def forward(self, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None, **hyperparams):
+    # def forward(self, coeff_hat, coeff_true, sol_true, true_obj, reduction="mean"):
         """
         Forward pass
         """
+        true_obj = self.problem.get_objective(coeff_true, sol_true)
         loss = self.spop.apply(coeff_hat, coeff_true, sol_true, true_obj,
                                self.optSolver, self.processes, self.pool,
                                self.solve_ratio, self)
         # reduction
-        if reduction == "mean":
+        if hyperparams['reduction'] == "mean":
             loss = torch.mean(loss)
-        elif reduction == "sum":
+        elif hyperparams['reduction'] == "sum":
             loss = torch.sum(loss)
-        elif reduction == "none":
+        elif hyperparams['reduction'] == "none":
             loss = loss
         else:
-            raise ValueError("No reduction '{}'.".format(reduction))
+            raise ValueError("No reduction '{}'.".format(hyperparams['reduction']))
         return loss
 
 
-class SPOPlusFunc(Function):
+class SPOPlusFunc(torch.autograd.Function):
     """
     A autograd function for SPO+ Loss
     """
@@ -102,15 +106,16 @@ class SPOPlusFunc(Function):
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
         else:
-            sol, obj = _cache_in_pass(2*cp-c, optSolver, module.solpool)
+            raise NotImplementedError
+            # sol, obj = _cache_in_pass(2*cp-c, optSolver, module.solpool)
         # calculate loss
         loss = []
         for i in range(len(cp)):
             loss.append(- obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
         # sense
-        if optSolver.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == GRB.MINIMIZE:
             loss = np.array(loss)
-        if optSolver.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == GRB.MAXIMIZE:
             loss = - np.array(loss)
         # convert to tensor
         loss = torch.FloatTensor(loss).to(device)
@@ -129,8 +134,8 @@ class SPOPlusFunc(Function):
         """
         w, wq = ctx.saved_tensors
         optSolver = ctx.optSolver
-        if optSolver.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == GRB.MINIMIZE:
             grad = 2 * (w - wq)
-        if optSolver.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == GRB.MAXIMIZE:
             grad = 2 * (wq - w)
         return grad_output * grad, None, None, None, None, None, None, None, None

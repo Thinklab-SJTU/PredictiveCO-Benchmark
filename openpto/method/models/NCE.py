@@ -7,10 +7,10 @@ Noise contrastive estimation loss function
 import numpy as np
 import torch
 
-from pyepo import EPO
-from pyepo.func.abcmodule import optModule
-from pyepo.data.dataset import optDataset
-from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+from gurobipy import GRB
+# from pyepo.func.abcmodule import optModule
+# from pyepo.data.dataset import optDataset
+# from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 
 
 class NCE(optModule):
@@ -61,9 +61,9 @@ class NCE(optModule):
         # get obj for solpool
         objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool)
         # get loss
-        if self.optSolver.modelSense == EPO.MINIMIZE:
+        if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = (obj_cp - objpool_cp).mean(axis=1)
-        if self.optSolver.modelSense == EPO.MAXIMIZE:
+        if self.optSolver.modelSense == GRB.MAXIMIZE:
             loss = (objpool_cp - obj_cp).mean(axis=1)
         # reduction
         if reduction == "mean":
@@ -125,9 +125,9 @@ class contrastiveMAP(optModule):
         # get obj for solpool
         objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool)
         # get loss
-        if self.optSolver.modelSense == EPO.MINIMIZE:
+        if self.optSolver.modelSense == GRB.MINIMIZE:
             loss, _ = (obj_cp - objpool_cp).max(axis=1)
-        if self.optSolver.modelSense == EPO.MAXIMIZE:
+        if self.optSolver.modelSense == GRB.MAXIMIZE:
             loss, _ = (objpool_cp - obj_cp).max(axis=1)
         # reduction
         if reduction == "mean":

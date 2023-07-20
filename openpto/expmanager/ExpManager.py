@@ -63,7 +63,7 @@ class ExpManager:
             if iter_idx % self.args.valfreq == 0:
                 # Compute metrics
                 datasets = [(X_train, Y_train, Y_train_aux, 'train'), (X_val, Y_val, Y_val_aux, 'val')]
-                metrics = print_metrics(datasets, self.pred_model, problem, self.args.loss, loss_fn, f"Iter {iter_idx},")
+                metrics = print_metrics(datasets, self.pred_model, problem, self.args.opt_model, loss_fn, f"Iter {iter_idx},")
 
                 # Save model if it's the best one
                 if best[1] is None or metrics['val']['loss'] < best[0]:
@@ -78,7 +78,9 @@ class ExpManager:
             losses = []
             for i in (random.sample(range(len(X_train)), min(self.args.batchsize, len(X_train)))):
                 pred = self.pred_model(X_train[i]).squeeze()
-                losses.append(loss_fn(pred, Y_train[i], aux_data=Y_train_aux[i], partition='train', index=i))
+                # losses.append(loss_fn(pred, Y_train[i], aux_data=Y_train_aux[i], partition='train', index=i))
+                losses.append(loss_fn(problem, coeff_hat=pred, coeff_true=Y_train[i], params=Y_train_aux[i], partition='train', index=i))
+
             loss = torch.stack(losses).mean()
             self.optimizer.zero_grad()
             # loss.retain_grad()
@@ -93,7 +95,7 @@ class ExpManager:
         print("\nBenchmarking Model...")
         # Print final metrics
         datasets = [(X_train, Y_train, Y_train_aux, 'train'), (X_val, Y_val, Y_val_aux, 'val'), (X_test, Y_test, Y_test_aux, 'test')]
-        print_metrics(datasets, self.pred_model, problem, self.args.loss, loss_fn, "Final")
+        print_metrics(datasets, self.pred_model, problem, self.args.opt_model, loss_fn, "Final")
 
         #   Document the value of a random guess
         objs_rand = []

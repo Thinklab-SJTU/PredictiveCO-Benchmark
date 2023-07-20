@@ -42,7 +42,7 @@ class PTOProblem(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(Y, Z, **kwargs):
         raise NotImplementedError()
 
     def _set_seed(self, rand_seed=int(time.time())):

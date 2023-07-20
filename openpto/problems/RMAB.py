@@ -11,7 +11,7 @@ from torch.nn.functional import one_hot
 from openpto.method.pred_model import dense_nn
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solver.RMABSolver import RMABSolver
-from openpto.method.Solver.utils_opt import gather_incomplete_left
+from openpto.method.Solver.utils_solver import gather_incomplete_left
 
 
 # TODO: Remove default

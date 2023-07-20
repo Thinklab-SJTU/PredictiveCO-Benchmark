@@ -61,7 +61,7 @@ def prob2args(args, conf):
 def init_if_not_saved(
     problem_cls,
     kwargs,
-    folder='saved_models',
+    folder='saved_problems',
     load_new=True,
 ):
     # Find the filename if a saved version of the problem with the same kwargs exists
@@ -95,15 +95,13 @@ def find_saved_problem(
     master_filename: str,
     kwargs: Dict,
 ):
-    print("master_filename: ", master_filename)
     # Open the master file with details about saved models
     if os.path.exists(master_filename):
         with open(master_filename, 'r') as file:
             saved_probs = pd.read_csv(file)
     else:
         saved_probs = pd.DataFrame(columns=('filename', *kwargs.keys(),))
-    # print("saved_probs:", saved_probs)
-    print(kwargs.keys())
+
     # Check if the problem has been saved before
     relevant_models = saved_probs
     for col, val in kwargs.items():

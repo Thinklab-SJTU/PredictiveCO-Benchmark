@@ -6,6 +6,7 @@ Abstract optimization model
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
+
 from gurobipy import GRB
 
 class optSolver: #(ABC):

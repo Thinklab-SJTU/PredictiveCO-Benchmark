@@ -6,10 +6,10 @@ Differentiable Black-box optimization function
 
 import numpy as np
 import torch
-from torch.autograd import Function
+
 
 # from pyepo.func.abcmodule import optModule
-# from pyepo import EPO
+from gurobipy import GRB
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from .abcOptModel import optModel
 
@@ -55,7 +55,7 @@ class blackboxOpt(optModel):
         return sols
 
 
-class blackboxOptFunc(Function):
+class blackboxOptFunc(torch.autograd.Function):
     """
     A autograd function for differentiable black-box optimizer
     """
@@ -150,7 +150,7 @@ class blackboxOptFunc(Function):
         return grad, None, None, None, None, None, None
 
 
-class negativeIdentity(optModule):
+class negativeIdentity(optModel):
     """
     An autograd module for differentiable optimizer, which yield optimal a
     solution and use negative identity as gradient on the backward pass.
@@ -188,7 +188,7 @@ class negativeIdentity(optModule):
         return sols
 
 
-class negativeIdentityFunc(Function):
+class negativeIdentityFunc(torch.autograd.Function):
     """
     A autograd function for differentiable black-box optimizer
     """
@@ -240,8 +240,8 @@ class negativeIdentityFunc(Function):
         device = grad_output.device
         # identity matrix
         I = torch.eye(grad_output.shape[1]).to(device)
-        if optSolver.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == GRB.MINIMIZE:
             grad = - I
-        if optSolver.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == GRB.MAXIMIZE:
             grad = I
         return grad_output @ grad, None, None, None, None, None

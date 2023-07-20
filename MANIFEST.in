@@ -1,1 +1,1 @@
-include opengsl/config/*/*.yaml
+include openpto/config/*/*.yaml

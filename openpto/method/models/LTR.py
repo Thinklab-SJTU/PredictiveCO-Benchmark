@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-# from pyepo import EPO
+from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
@@ -63,10 +63,10 @@ class listwiseLTR(optModule):
         objpool_c = true_cost @ solpool.T # true cost
         objpool_cp = pred_cost @ solpool.T # pred cost
         # cross entropy loss
-        if self.optSolver.modelSense == EPO.MINIMIZE:
+        if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = - (F.log_softmax(objpool_cp, dim=1) *
                       F.softmax(objpool_c, dim=1))
-        if self.optSolver.modelSense == EPO.MAXIMIZE:
+        if self.optSolver.modelSense == GRB.MAXIMIZE:
             loss = - (F.log_softmax(- objpool_cp, dim=1) *
                       F.softmax(- objpool_c, dim=1))
         # reduction
@@ -134,18 +134,18 @@ class pairwiseLTR(optModule):
         loss = []
         for i in range(len(pred_cost)):
             # best sol
-            if self.optSolver.modelSense == EPO.MINIMIZE:
+            if self.optSolver.modelSense == GRB.MINIMIZE:
                 best_ind = torch.argmin(objpool_c[i])
-            if self.optSolver.modelSense == EPO.MAXIMIZE:
+            if self.optSolver.modelSense == GRB.MAXIMIZE:
                 best_ind = torch.argmax(objpool_c[i])
             objpool_cp_best = objpool_cp[i, best_ind]
             # rest sol
             rest_ind = [j for j in range(len(objpool_cp[i])) if j != best_ind]
             objpool_cp_rest = objpool_cp[i, rest_ind]
             # best vs rest loss
-            if self.optSolver.modelSense == EPO.MINIMIZE:
+            if self.optSolver.modelSense == GRB.MINIMIZE:
                 loss.append(relu(objpool_cp_best - objpool_cp_rest).mean())
-            if self.optSolver.modelSense == EPO.MAXIMIZE:
+            if self.optSolver.modelSense == GRB.MAXIMIZE:
                 loss.append(relu(objpool_cp_rest - objpool_cp_best).mean())
         loss = torch.stack(loss)
         # reduction

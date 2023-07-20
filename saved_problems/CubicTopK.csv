@@ -1,0 +1,2 @@
+filename,num_train_instances,num_test_instances,num_items,budget,rand_seed,val_frac
+saved_models/CubicTopK_0.pkl,400,200,50,1,0,0.5

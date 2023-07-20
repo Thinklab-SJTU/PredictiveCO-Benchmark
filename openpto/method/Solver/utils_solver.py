@@ -44,3 +44,34 @@ def solve_lineqn(A, b, eps=1e-5):
         result = torch.linalg.solve(A + eps * torch.eye(A.shape[-1]), b)
     return result
 
+############################### Solve ##################################
+def _solve_in_pass(cp, optmodel, processes, pool):
+    """
+    A function to solve optimization in the forward/backward pass
+    """
+    # number of instance
+    ins_num = len(cp)
+    # single-core
+    if processes == 1:
+        sol = []
+        obj = []
+        for i in range(ins_num):
+            # solve
+            optmodel.setObj(cp[i])
+            solp, objp = optmodel.solve()
+            sol.append(solp)
+            obj.append(objp)
+    # multi-core
+    else:
+        raise NotImplementedError
+    #     # get class
+    #     model_type = type(optmodel)
+    #     # get args
+    #     args = getArgs(optmodel)
+    #     # parallel computing
+    #     res = pool.amap(_solveWithObj4Par, cp, [args] * ins_num,
+    #                     [model_type] * ins_num).get()
+    #     # get res
+    #     sol = np.array(list(map(lambda x: x[0], res)))
+    #     obj = np.array(list(map(lambda x: x[1], res)))
+    return sol, obj
