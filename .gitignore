@@ -129,6 +129,5 @@ dmypy.json
 .pyre/
 
 
-saved_models/
-saved_records/
+saved_*/
 openpto/data/

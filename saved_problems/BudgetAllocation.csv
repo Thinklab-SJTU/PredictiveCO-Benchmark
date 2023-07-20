@@ -1,2 +1,0 @@
-filename,num_train_instances,num_test_instances,num_targets,num_items,budget,num_fake_targets,rand_seed,val_frac
-saved_models/BudgetAllocation_0.pkl,400,200,10,50,1,0,0,0.5

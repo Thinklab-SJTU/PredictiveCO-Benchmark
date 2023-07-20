@@ -1,2 +1,0 @@
-filename,num_train_instances,num_test_instances,num_stocks,alpha,val_frac,rand_seed
-saved_models/PortfolioOpt_0.pkl,400,200,50,0.1,0.5,0
