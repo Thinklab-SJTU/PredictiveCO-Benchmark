@@ -32,8 +32,8 @@ def do_setup():
         long_description_content_type="text/markdown",
         install_requires=get_install_requires(),
         python_requires=">=3.7.0",
+        # dependencies
         packages=find_packages(),
-        include_package_data=True,
         keywords=["AI", "CO"],
         # Github repo
         url = "",
@@ -41,15 +41,6 @@ def do_setup():
         author = "Haoyu Geng",
         # mail address
         author_email = "genghaoyu98@sjtu.edu.cn",
-        # dependencies
-        install_requires = [
-            "numpy",
-            "scipy",
-            "pathos",
-            "tqdm",
-            "lxml",
-            "scikit_learn",
-            "torch>=1.13.1"],
         classifiers=[
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

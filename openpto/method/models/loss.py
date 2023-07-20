@@ -7,7 +7,7 @@ import torch
 import pickle
 import matplotlib.pyplot as plt
 
-from openpto.method.models import _get_learned_loss
+from openpto.method.models import _get_learned_loss, SPOPlus
 
 NUM_CPUS = os.cpu_count()
 
@@ -27,7 +27,7 @@ def get_loss_fn(
     elif name == 'learned':
         return _get_learned_loss(problem, name, **kwargs)
     elif name == 'SPO':
-        return None
+        return SPOPlus
     elif name == 'LTR':
         return None
     elif name == 'Intopt':

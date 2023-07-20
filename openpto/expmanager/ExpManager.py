@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import torch
 
-from openpto.expmanager.manager_utils import move_to_gpu, print_metrics
+from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
 # from openpto.utils.utils import set_seed
 # from openpto.utils.logger import Logger
 # from openpto.config.util import save_conf

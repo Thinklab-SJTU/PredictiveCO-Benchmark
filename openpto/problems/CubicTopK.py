@@ -8,7 +8,7 @@ import random
 import pdb
 
 from openpto.problems.PTOProblem import PTOProblem
-from openpto.method.Optimizer.RMABSolver import TopK_custom
+from openpto.method.Solver.RMABSolver import TopK_custom
 
 class CubicTopK(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""

@@ -20,59 +20,86 @@ class Knapsack(PTOProblem):
         num_train_instances=100,  # number of instances to use from the dataset to train
         num_test_instances=500,  # number of instances to use from the dataset to test
         num_items=100,  # number of targets to consider
-        num_fake_targets=5000,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
+        generate_weight = True,
+        unit_weight = False,
+        kfold = [0],
+        noise_level = 0,
         rand_seed=0,  # for reproducibility
+        prob_version="energy", # "energy" or "gen"
+        knapsack_dim = 1,
+        num_features= 5,
+        poly_deg = 1,
+        noise_width = 0,
     ):
         super(Knapsack, self).__init__()
         self._set_seed(rand_seed)
-        generate_weight = True
-        unit_weight = False
-        kfold = [0,1,2,3,4]
-        noise_level = 0
-        # TODO:automate
-        dataset = get_energy_data('energy_data.txt', generate_weight=generate_weight, unit_weight=unit_weight,
-                                  kfold=kfold, noise_level=noise_level)
+        if prob_version=="energy":
+            dataset = get_energy_data('energy_data.txt', generate_weight=generate_weight, unit_weight=unit_weight,
+                                  kfold=kfold, noise_level=noise_level, seed = rand_seed)
+        elif prob_version=="gen":
+            num_instances = num_train_instances + num_test_instances
+            train_weights, train_feats, train_profits = self.genData(num_train_instances, num_features, num_items, dim=knapsack_dim,
+                                    poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
+            self.params_train, self.Xs_train, self.Ys_train = train_weights, train_feats, train_profits
+
+            test_weights, test_feats, test_profits = self.genData(num_test_instances, num_features, num_items, dim=knapsack_dim,
+                                    poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
+            self.params_test, self.Xs_test, self.Ys_test = test_weights, test_feats, test_profits
+            # Split training data into train/val
+            assert 0 < val_frac < 1
+            self.val_idxs = range(0, int(val_frac * num_train_instances))
+            self.train_idxs = range(int(val_frac * num_train_instances), num_train_instances)
+
+        else:
+            raise ValueError("Not a valid problem version: {}".format(prob_version))
     
-    def get_train_data(self, **kwargs):
-        raise NotImplementedError()
+    def get_train_data(self):
+        return self.Xs_train[self.train_idxs], self.Ys_train[self.train_idxs], self.params_train[self.train_idxs]
 
-    def get_val_data(self, **kwargs):
-        raise NotImplementedError()
+    def get_val_data(self):
+        return self.Xs_train[self.val_idxs], self.Ys_train[self.val_idxs], self.params_train[self.val_idxs]
 
-    def get_test_data(self, **kwargs):
-        raise NotImplementedError()
+    def get_test_data(self):
+        return self.Xs_test, self.Ys_test, self.params_test
+
+    def get_objective(self, Y, Z, **kwargs):
+        return (Z * Y).sum(dim=-1)
+        # TODO:compleete
+    
+    def get_decision(self, Y, Z, **kwargs):
+        return True
     
     def get_model_shape(self):
-        raise NotImplementedError()
+        return self.Xs_train[-1], 1
 
     def get_output_activation(self):
         raise NotImplementedError()
 
     @staticmethod
-    def genData(num_data, num_features, num_items, dim=1, deg=1, noise_width=0, seed=135):
+    def genData(num_instances, num_features, num_items, dim=1, poly_deg=1, noise_width=0, seed=135):
     #     A function to generate synthetic data and features for knapsack
 
     #     Args:
-    #         num_data (int): number of data points
+    #         num_instances (int): number of data points
     #         num_features (int): dimension of features
     #         num_items (int): number of items
     #         dim (int): dimension of multi-dimensional knapsack
-    #         deg (int): data polynomial degree
+    #         poly_deg (int): data polynomial degree
     #         noise_width (float): half witdth of data random noise
     #         seed (int): random state seed
 
     #     Returns:
     #     tuple: weights of items (np.ndarray), data features (np.ndarray), costs (np.ndarray)
         # positive integer parameter
-        if type(deg) is not int:
-            raise ValueError("deg = {} should be int.".format(deg))
-        if deg <= 0:
-            raise ValueError("deg = {} should be positive.".format(deg))
+        if type(poly_deg) is not int:
+            raise ValueError("poly_deg = {} should be int.".format(poly_deg))
+        if poly_deg <= 0:
+            raise ValueError("poly_deg = {} should be positive.".format(poly_deg))
         # set seed
         rnd = np.random.RandomState(seed)
         # number of data points
-        n = num_data
+        n = num_instances
         # dimension of features
         p = num_features
         # dimension of problem
@@ -84,27 +111,27 @@ class Knapsack(PTOProblem):
         # random matrix parameter B
         B = rnd.binomial(1, 0.5, (m, p))
         # feature vectors
-        x = rnd.normal(0, 1, (n, p))
+        feats = rnd.normal(0, 1, (n, p))
         # value of items
-        c = np.zeros((n, m), dtype=int)
+        profits = np.zeros((n, m), dtype=int)
         for i in range(n):
             # cost without noise
-            values = (np.dot(B, x[i].reshape(p, 1)).T / np.sqrt(p) + 3) ** deg + 1
+            values = (np.dot(B, feats[i].reshape(p, 1)).T / np.sqrt(p) + 3) ** poly_deg + 1
             # rescale
             values *= 5
-            values /= 3.5 ** deg
+            values /= 3.5 ** poly_deg
             # noise
             epislon = rnd.uniform(1 - noise_width, 1 + noise_width, m)
             values *= epislon
             # convert into int
             values = np.ceil(values)
-            c[i, :] = values
+            profits[i, :] = values
             # float
-            c = c.astype(np.float64)
-        return weights, x, c
+            profits = profits.astype(np.float64)
+        return weights, feats, profits
 
     
-def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=0, noise_level = 0, is_spo_tree=False):
+def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=0, noise_level = 0, is_spo_tree=False,seed=0):
     """
     Reads the energy dataset with the filename, splits it into feature and output sets.
     :param filename:
@@ -115,10 +142,11 @@ def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=
     # dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     file_path = os.path.join(dir_path, 'data', filename)
     data = read_file(file_path)
-    dataset = transform_energy_data(data, HEADER_LENGTH, generate_weight, unit_weight, kfold,noise_level=noise_level, is_spo_tree=is_spo_tree)
+    dataset = transform_energy_data(data, HEADER_LENGTH, generate_weight, unit_weight, kfold,noise_level=noise_level, is_spo_tree=is_spo_tree,seed=seed)
     return dataset
 
-def transform_energy_data(data, header_length, generate_weight=True, unit_weight = True, kfold=0,noise_level=0,is_spo_tree=False):
+def transform_energy_data(data, header_length, generate_weight=True, unit_weight = True, 
+                          kfold=0,noise_level=0, is_spo_tree=False, seed=0):
     """
     transform method for energy data. Takes raw file and splits it into features and labels.
     For the energy data, first feature is actually the benchmark No
@@ -149,9 +177,9 @@ def transform_energy_data(data, header_length, generate_weight=True, unit_weight
     Y = np.roll(Y, kfold*k_fold_rotation, axis=1)
     # X = X[[0,7],:].reshape(2,-1)
     if is_spo_tree:
-        dataset = get_benchmarks_spotree(X,Y, BENCHMARK_SIZE, generate_weight, unit_weight, weight_seed,noise_level=noise_level)
+        dataset = get_benchmarks_spotree(X,Y, BENCHMARK_SIZE, generate_weight, unit_weight, weight_seed,noise_level=noise_level, seed=seed)
     else:
-        dataset = get_benchmarks(X,Y, BENCHMARK_SIZE, generate_weight, unit_weight, weight_seed,noise_level=noise_level)
+        dataset = get_benchmarks(X,Y, BENCHMARK_SIZE, generate_weight, unit_weight, weight_seed,noise_level=noise_level, seed=seed)
 
     # dataset = {'X': X,
     #            'Y': Y}
@@ -161,7 +189,8 @@ def transform_energy_data(data, header_length, generate_weight=True, unit_weight
     dataset['benchmark_size'] = BENCHMARK_SIZE
     return dataset
 
-def get_benchmarks(X, Y, benchmark_size, generate_weight=True, unit_weight=True, weight_seed=None, add_weights=False,noise_level=0):
+def get_benchmarks(X, Y, benchmark_size, generate_weight=True, unit_weight=True,
+                    weight_seed=None, add_weights=False,noise_level=0, seed=0):
     """
     Splits the dataset into benchmarks of a certain size for the optimization problem. Used in the second stage.
     Might not be used in the feature if we choose to use predetermined benchmarks.
@@ -186,7 +215,7 @@ def get_benchmarks(X, Y, benchmark_size, generate_weight=True, unit_weight=True,
         else:
             weight_seed = [3, 5, 7]
             # IMPLEMENT ADDING NOISE
-            np.random.seed(RANDOM_SEED)
+            np.random.seed(seed)
             # if noise_level > 0:
             #     print('noise generate')
             #     noise = (1-np.random.random(sample_size)*noise_level/100)
@@ -217,8 +246,7 @@ def get_benchmarks(X, Y, benchmark_size, generate_weight=True, unit_weight=True,
                 #set same weight array for SPO implementation
                 benchmark_weights = np.array(
                     [5, 3, 3, 5, 5, 7, 7, 3, 7, 7, 3, 3, 5, 3, 7, 3, 7, 7, 5, 5, 3, 5, 5, 3, 7, 7, 3, 7, 5, 5, 7, 3, 7,
-                     3,
-                     3, 5, 7, 5, 3, 5, 3, 7, 5, 7, 5, 5, 3, 7]).reshape(1, 48)
+                     3, 3, 5, 7, 5, 3, 5, 3, 7, 5, 7, 5, 5, 3, 7]).reshape(1, 48)
                 benchmark_noisy_weights = benchmark_weights+(np.ones(benchmark_weights.shape)*noise_level)
             # benchmark_weights = np.hstack([seed_array for i in range(int(sample_size/len(seed_array)))])
             Y[:, start_index:end_index] = Y[:, start_index:end_index] * benchmark_noisy_weights
@@ -248,7 +276,8 @@ def get_benchmarks(X, Y, benchmark_size, generate_weight=True, unit_weight=True,
                'benchmarks_weights': benchmarks_weights}
     return dataset
 
-def get_benchmarks_spotree(X, Y, benchmark_size, generate_weight=True, unit_weight=True, weight_seed=None, add_weights=True,noise_level=0):
+def get_benchmarks_spotree(X, Y, benchmark_size, generate_weight=True, unit_weight=True,
+                            weight_seed=None, add_weights=True,noise_level=0, seed=0):
     """
     Splits the dataset into benchmarks of a certain size for the optimization problem. Used in the second stage.
     Might not be used in the feature if we choose to use predetermined benchmarks.
@@ -266,7 +295,7 @@ def get_benchmarks_spotree(X, Y, benchmark_size, generate_weight=True, unit_weig
         else:
             weight_seed = [3, 5, 7]
             # IMPLEMENT ADDING NOISE
-            np.random.seed(RANDOM_SEED)
+            np.random.seed(seed)
             # if noise_level > 0:
             #     print('noise generate')
             #     noise = (1-np.random.random(sample_size)*noise_level/100)
@@ -296,8 +325,7 @@ def get_benchmarks_spotree(X, Y, benchmark_size, generate_weight=True, unit_weig
                 #set same weight array for SPO implementation
                 benchmark_weights = np.array(
                     [5, 3, 3, 5, 5, 7, 7, 3, 7, 7, 3, 3, 5, 3, 7, 3, 7, 7, 5, 5, 3, 5, 5, 3, 7, 7, 3, 7, 5, 5, 7, 3, 7,
-                     3,
-                     3, 5, 7, 5, 3, 5, 3, 7, 5, 7, 5, 5, 3, 7]).reshape(1, 48)
+                     3,3, 5, 7, 5, 3, 5, 3, 7, 5, 7, 5, 5, 3, 7]).reshape(1, 48)
                 benchmark_noisy_weights = benchmark_weights+(np.ones(benchmark_weights.shape)*noise_level)
             # benchmark_weights = np.hstack([seed_array for i in range(int(sample_size/len(seed_array)))])
             Y[:, start_index:end_index] = Y[:, start_index:end_index] * benchmark_noisy_weights

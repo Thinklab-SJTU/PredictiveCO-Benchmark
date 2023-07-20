@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from openpto.problems.PTOProblem import PTOProblem
 # from SubmodularOptimizer import SubmodularOptimizer
-from openpto.method.Optimizer.TopKOptimizer import TopKOptimizer
+from openpto.method.Solver.TopKOptimizer import TopKOptimizer
 
 class RandomTopK(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""

@@ -17,7 +17,6 @@ class Shortestpath(PTOProblem):
         num_train_instances=100,  # number of instances to use from the dataset to train
         num_test_instances=500,  # number of instances to use from the dataset to test
         num_items=100,  # number of targets to consider
-        num_fake_targets=5000,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
     ):

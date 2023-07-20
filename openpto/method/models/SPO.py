@@ -8,11 +8,12 @@ import numpy as np
 import torch
 from torch.autograd import Function
 
-from pyepo import EPO
-from pyepo.func.abcmodule import optModule
-from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+# from pyepo import EPO
+# from pyepo.func.abcmodule import optModule
+# from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+from openpto.method.models.abcOptModel import optModel
 
-class SPOPlus(optModule):
+class SPOPlus(optModel):
     """
     An autograd module for SPO+ Loss, as a surrogate loss function of SPO Loss,
     which measures the decision error of optimization problem.
@@ -27,24 +28,24 @@ class SPOPlus(optModule):
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, opt_model, processes=1, solve_ratio=1, dataset=None):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            opt_model (opt_model): an PyEPO optimization model
+            optSolver (optSolver): an PyEPO optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
         """
-        super().__init__(opt_model, processes, solve_ratio, dataset)
+        super().__init__(optSolver, processes, solve_ratio, dataset)
         # build carterion
         self.spop = SPOPlusFunc()
 
-    def forward(self, pred_cost, true_cost, true_sol, true_obj, reduction="mean"):
+    def forward(self, coeff_hat, coeff_true, sol_true, true_obj, reduction="mean"):
         """
         Forward pass
         """
-        loss = self.spop.apply(pred_cost, true_cost, true_sol, true_obj,
-                               self.opt_model, self.processes, self.pool,
+        loss = self.spop.apply(coeff_hat, coeff_true, sol_true, true_obj,
+                               self.optSolver, self.processes, self.pool,
                                self.solve_ratio, self)
         # reduction
         if reduction == "mean":
@@ -64,17 +65,17 @@ class SPOPlusFunc(Function):
     """
 
     @staticmethod
-    def forward(ctx, pred_cost, true_cost, true_sol, true_obj,
-                opt_model, processes, pool, solve_ratio, module):
+    def forward(ctx, coeff_hat, coeff_true, sol_true, true_obj,
+                optSolver, processes, pool, solve_ratio, module):
         """
         Forward pass for SPO+
 
         Args:
-            pred_cost (torch.tensor): a batch of predicted values of the cost
-            true_cost (torch.tensor): a batch of true values of the cost
-            true_sol (torch.tensor): a batch of true optimal solutions
+            coeff_hat (torch.tensor): a batch of predicted values of the cost
+            coeff_true (torch.tensor): a batch of true values of the cost
+            sol_true (torch.tensor): a batch of true optimal solutions
             true_obj (torch.tensor): a batch of true optimal objective values
-            opt_model (opt_model): an PyEPO optimization model
+            optSolver (optSolver): an PyEPO optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             solve_ratio (float): the ratio of new solutions computed during training
@@ -84,41 +85,41 @@ class SPOPlusFunc(Function):
             torch.tensor: SPO+ loss
         """
         # get device
-        device = pred_cost.device
+        device = coeff_hat.device
         # convert tenstor
-        cp = pred_cost.detach().to("cpu").numpy()
-        c = true_cost.detach().to("cpu").numpy()
-        w = true_sol.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().to("cpu").numpy()
+        c = coeff_true.detach().to("cpu").numpy()
+        w = sol_true.detach().to("cpu").numpy()
         z = true_obj.detach().to("cpu").numpy()
         # check sol
         #_check_sol(c, w, z)
         # solve
         if np.random.uniform() <= solve_ratio:
-            sol, obj = _solve_in_pass(2*cp-c, opt_model, processes, pool)
+            sol, obj = _solve_in_pass(2*cp-c, optSolver, processes, pool)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
         else:
-            sol, obj = _cache_in_pass(2*cp-c, opt_model, module.solpool)
+            sol, obj = _cache_in_pass(2*cp-c, optSolver, module.solpool)
         # calculate loss
         loss = []
         for i in range(len(cp)):
             loss.append(- obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
         # sense
-        if opt_model.modelSense == EPO.MINIMIZE:
+        if optSolver.modelSense == EPO.MINIMIZE:
             loss = np.array(loss)
-        if opt_model.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == EPO.MAXIMIZE:
             loss = - np.array(loss)
         # convert to tensor
         loss = torch.FloatTensor(loss).to(device)
         sol = np.array(sol)
         sol = torch.FloatTensor(sol).to(device)
         # save solutions
-        ctx.save_for_backward(true_sol, sol)
+        ctx.save_for_backward(sol_true, sol)
         # add other objects to ctx
-        ctx.opt_model = opt_model
+        ctx.optSolver = optSolver
         return loss
 
     @staticmethod
@@ -127,9 +128,9 @@ class SPOPlusFunc(Function):
         Backward pass for SPO+
         """
         w, wq = ctx.saved_tensors
-        opt_model = ctx.opt_model
-        if opt_model.modelSense == EPO.MINIMIZE:
+        optSolver = ctx.optSolver
+        if optSolver.modelSense == EPO.MINIMIZE:
             grad = 2 * (w - wq)
-        if opt_model.modelSense == EPO.MAXIMIZE:
+        if optSolver.modelSense == EPO.MAXIMIZE:
             grad = 2 * (wq - w)
         return grad_output * grad, None, None, None, None, None, None, None, None

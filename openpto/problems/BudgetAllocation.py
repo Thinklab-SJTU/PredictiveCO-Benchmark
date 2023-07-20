@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from openpto.problems.PTOProblem import PTOProblem
-from openpto.method.Optimizer.SubmodularOptimizer import SubmodularOptimizer
+from openpto.method.Solver.SubmodularOptimizer import SubmodularOptimizer
 
 class BudgetAllocation(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
@@ -21,6 +21,7 @@ class BudgetAllocation(PTOProblem):
         num_fake_targets=500,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        opt="submodular",
     ):
         super(BudgetAllocation, self).__init__()
         # Do some random seed fu

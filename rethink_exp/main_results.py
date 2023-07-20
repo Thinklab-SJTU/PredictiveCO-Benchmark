@@ -17,7 +17,7 @@ from openpto.method.models.loss import get_loss_fn
 from openpto.utils import get_args
 from openpto.config import load_conf
 from openpto.metrics import *
-from openpto.problems.utils_prob import problem_wrapper
+from openpto.problems.wrapper_prob import problem_wrapper
 from openpto.method import *
 
 if __name__ == '__main__':
@@ -33,16 +33,16 @@ if __name__ == '__main__':
     
 
     # Load loss function
-    print(f"Loading [{args.loss}] Loss Function...")
+    print(f"Loading [{args.opt_model}] Loss Function...")
     loss_fn = get_loss_fn(
-        args.loss,
+        args.opt_model,
         problem,
         sampling=args.sampling,
         num_samples=args.numsamples,
         rank=args.quadrank,
         sampling_std=args.samplingstd,
         quadalpha=args.quadalpha,
-        lr=args.losslr,
+        lr=args.lr,
         serial=args.serial,
         dflalpha=args.dflalpha,
     )
@@ -52,5 +52,5 @@ if __name__ == '__main__':
     exp = ExpManager(model_args, save_path='saved_records', args = args)
 
     # Train neural network with a given loss function
-    print(f"Start training [{args.pred_model}] model on [{args.loss}] loss...")
+    print(f"Start training [{args.pred_model}] model on [{args.opt_model}] loss...")
     exp.run(problem, loss_fn, n_epochs=args.epochs)

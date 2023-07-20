@@ -15,11 +15,12 @@ def get_args():
     # basic
     parser.add_argument('--problem', type=str, choices=['budgetalloc', 'bipartitematching', 
                                     'cubic', 'rmab', 'portfolio', 'knapsack','energy'], default='portfolio')
-    parser.add_argument('--loss', type=str, choices=['mse', 'msesum', 'dense', 'weightedmse', 'weightedmse++', 
+    parser.add_argument('--prob_version', type=str, default=None)
+    parser.add_argument('--opt_model', type=str, choices=['mse', 'msesum', 'dense', 'weightedmse', 'weightedmse++', 
                                     'weightedce', 'weightedmsesum', 'dfl', 'quad', 'quad++', 'ce', 
                                     "SPO", "LTR"], default='mse')
     parser.add_argument('--pred_model', type=str, choices=['LR','dense'], default='dense')
-    parser.add_argument('--opt_model', type=str, choices=['gurobi'], default='gurobi')
+    parser.add_argument('--solver', type=str, choices=['gurobi'], default='gurobi')
     parser.add_argument('--gpu', type=str, default='0', help="Visible GPU")
 
     # training

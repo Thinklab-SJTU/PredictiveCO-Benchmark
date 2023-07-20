@@ -4,7 +4,6 @@ import pandas as pd
 
 import torch
 
-
 def starmap_with_kwargs(pool, fn, args_iter, kwargs):
     args_for_starmap = zip(repeat(fn), args_iter, repeat(kwargs))
     return pool.starmap(apply_args_and_kwargs, args_for_starmap)
