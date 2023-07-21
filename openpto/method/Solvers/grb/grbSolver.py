@@ -86,7 +86,9 @@ class optGrbSolver(optSolver):
         # copy
         new_model = self.copy()
         # add constraint
-        expr = gp.quicksum(coefs[i] * new_model.x[k]
-                           for i, k in enumerate(new_model.x)) <= rhs
+        expr = (
+            gp.quicksum(coefs[i] * new_model.x[k] for i, k in enumerate(new_model.x))
+            <= rhs
+        )
         new_model._model.addConstr(expr)
         return new_model

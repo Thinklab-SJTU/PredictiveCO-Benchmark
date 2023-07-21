@@ -24,7 +24,9 @@ class KPGrbSolver(optGrbSolver):
         # sense (must be minimize)
         m.modelSense = GRB.MAXIMIZE
         # constraints
-        m.addConstr(gp.quicksum([weights[i] * x[i] for i in range(num_items)]) <= capacity)
+        m.addConstr(
+            gp.quicksum([weights[i] * x[i] for i in range(num_items)]) <= capacity
+        )
         return m, x
 
     def setObj(self, c):

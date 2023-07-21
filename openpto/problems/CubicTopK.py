@@ -10,6 +10,7 @@ import pdb
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 
+
 class CubicTopK(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
 
@@ -46,7 +47,9 @@ class CubicTopK(PTOProblem):
         assert 0 < val_frac < 1
         self.val_frac = val_frac
         self.val_idxs = range(0, int(self.val_frac * num_train_instances))
-        self.train_idxs = range(int(self.val_frac * num_train_instances), num_train_instances)
+        self.train_idxs = range(
+            int(self.val_frac * num_train_instances), num_train_instances
+        )
         assert all(x is not None for x in [self.train_idxs, self.val_idxs])
 
         # Save variables for optimisation
@@ -57,10 +60,18 @@ class CubicTopK(PTOProblem):
         self._set_seed()
 
     def get_train_data(self):
-        return self.Xs_train[self.train_idxs], self.Ys_train[self.train_idxs], [None for _ in range(len(self.train_idxs))]
+        return (
+            self.Xs_train[self.train_idxs],
+            self.Ys_train[self.train_idxs],
+            [None for _ in range(len(self.train_idxs))],
+        )
 
     def get_val_data(self):
-        return self.Xs_train[self.val_idxs], self.Ys_train[self.val_idxs], [None for _ in range(len(self.val_idxs))]
+        return (
+            self.Xs_train[self.val_idxs],
+            self.Ys_train[self.val_idxs],
+            [None for _ in range(len(self.val_idxs))],
+        )
 
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
@@ -70,9 +81,9 @@ class CubicTopK(PTOProblem):
 
     def opt_train(self, Y):
         gamma = TopK_custom(self.budget)(-Y).squeeze()
-        Z = gamma[...,0] * Y.shape[-1]
+        Z = gamma[..., 0] * Y.shape[-1]
         return Z
-    
+
     def opt_test(self, Y):
         _, idxs = torch.topk(Y, self.budget)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
@@ -80,19 +91,19 @@ class CubicTopK(PTOProblem):
 
     def get_decision(self, Y, isTrain=False, **kwargs):
         return self.opt_train(Y) if isTrain else self.opt_test(Y)
-    
+
     def get_model_shape(self):
         return 1, 1
 
     def get_output_activation(self):
         return None
-    
+
     def get_twostageloss(self):
-        return 'mse'
+        return "mse"
 
 
 # Unit test for RandomTopK
-if __name__ == '__main__':
+if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pdb
 

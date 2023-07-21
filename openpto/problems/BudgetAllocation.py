@@ -1,4 +1,3 @@
-
 import pickle
 import random
 import numpy as np
@@ -7,6 +6,7 @@ import torch
 
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.wrapper_solver import SubmodularOptimizer
+
 
 class BudgetAllocation(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
@@ -33,7 +33,9 @@ class BudgetAllocation(PTOProblem):
         self.num_train_instances = num_train_instances
         self.num_test_instances = num_test_instances
         Ys_train_test = []
-        for seed, num_instances in zip([train_seed, test_seed], [num_train_instances, num_test_instances]):
+        for seed, num_instances in zip(
+            [train_seed, test_seed], [num_train_instances, num_test_instances]
+        ):
             # Set seed for reproducibility
             self._set_seed(seed)
 
@@ -49,14 +51,18 @@ class BudgetAllocation(PTOProblem):
         self.num_targets = num_targets
         self.num_fake_targets = num_fake_targets
         self.num_features = self.num_targets + self.num_fake_targets
-        self.Xs_train, self.Xs_test = self._generate_features([self.Ys_train, self.Ys_test], self.num_fake_targets)  # features
+        self.Xs_train, self.Xs_test = self._generate_features(
+            [self.Ys_train, self.Ys_test], self.num_fake_targets
+        )  # features
         assert not (torch.isnan(self.Xs_train).any() or torch.isnan(self.Xs_test).any())
 
         # Split training data into train/val
         assert 0 < val_frac < 1
         self.val_frac = val_frac
         self.val_idxs = range(0, int(self.val_frac * num_train_instances))
-        self.train_idxs = range(int(self.val_frac * num_train_instances), num_train_instances)
+        self.train_idxs = range(
+            int(self.val_frac * num_train_instances), num_train_instances
+        )
         assert all(x is not None for x in [self.train_idxs, self.val_idxs])
 
         # Create functions for optimisation
@@ -72,8 +78,8 @@ class BudgetAllocation(PTOProblem):
         Loads the labels (Ys) of the prediction from a file, and returns a subset of it parameterised by instances.
         """
         # Load the dataset
-        with open('openpto/data/budget_allocation_data.pkl', 'rb') as f:
-            Yfull, _ = pickle.load(f, encoding='bytes')
+        with open("openpto/data/budget_allocation_data.pkl", "rb") as f:
+            Yfull, _ = pickle.load(f, encoding="bytes")
         Yfull = np.array(Yfull)
 
         # Whittle the dataset down to the right size
@@ -81,6 +87,7 @@ class BudgetAllocation(PTOProblem):
             assert size <= matrix.shape[dim]
             elements = np.random.choice(matrix.shape[dim], size)
             return np.take(matrix, elements, axis=dim)
+
         Ys = whittle(Yfull, num_instances, 0)
         Ys = whittle(Ys, num_items, 1)
         Ys = whittle(Ys, num_targets, 2)
@@ -92,7 +99,9 @@ class BudgetAllocation(PTOProblem):
         Converts labels (Ys) + random noise, to features (Xs)
         """
         # Generate random matrix common to all Ysets (train + test)
-        transform_nn = torch.nn.Sequential(torch.nn.Linear(self.num_features, self.num_targets))
+        transform_nn = torch.nn.Sequential(
+            torch.nn.Linear(self.num_features, self.num_targets)
+        )
 
         # Generate training data by scrambling the Ys based on this matrix
         Xsets = []
@@ -104,7 +113,9 @@ class BudgetAllocation(PTOProblem):
             assert not torch.isnan(Ys_standardised).any()
 
             # Add noise to the data to complicate prediction
-            fake_features = torch.normal(mean=torch.zeros(Ys.shape[0], Ys.shape[1], num_fake_targets))
+            fake_features = torch.normal(
+                mean=torch.zeros(Ys.shape[0], Ys.shape[1], num_fake_targets)
+            )
             Ys_augmented = torch.cat((Ys_standardised, fake_features), dim=2)
 
             # Encode Ys as features by multiplying them with a random matrix
@@ -114,22 +125,30 @@ class BudgetAllocation(PTOProblem):
         return (*Xsets,)
 
     def get_train_data(self):
-        return self.Xs_train[self.train_idxs], self.Ys_train[self.train_idxs],  [None for _ in range(len(self.train_idxs))]
+        return (
+            self.Xs_train[self.train_idxs],
+            self.Ys_train[self.train_idxs],
+            [None for _ in range(len(self.train_idxs))],
+        )
 
     def get_val_data(self):
-        return self.Xs_train[self.val_idxs], self.Ys_train[self.val_idxs],  [None for _ in range(len(self.val_idxs))]
+        return (
+            self.Xs_train[self.val_idxs],
+            self.Ys_train[self.val_idxs],
+            [None for _ in range(len(self.val_idxs))],
+        )
 
     def get_test_data(self):
-        return self.Xs_test, self.Ys_test,  [None for _ in range(len(self.Ys_test))]
+        return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
     def get_model_shape(self):
         return self.num_features, self.num_targets
-    
+
     def get_output_activation(self):
-        return 'relu'
+        return "relu"
 
     def get_twostageloss(self):
-        return 'mse'
+        return "mse"
 
     def get_objective(self, Y, Z, w=None, **kwargs):
         """
@@ -168,7 +187,8 @@ class BudgetAllocation(PTOProblem):
         Z = Z.view((*Y_shape[:-2], -1))
         return Z
 
+
 # Unit test for RandomTopK
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load An Example Instance
     problem = BudgetAllocation()

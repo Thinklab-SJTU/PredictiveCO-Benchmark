@@ -10,10 +10,12 @@ import torch.nn.functional as F
 from torch import nn
 
 from gurobipy import GRB
+
 # from pyepo.func.abcmodule import OptModule
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from openpto.method.Models.abcoptModel import optModel
+
 
 class listwiseLTR(optModel):
     """
@@ -38,9 +40,9 @@ class listwiseLTR(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # solution pool
-        if not isinstance(dataset, optDataset): # type checking
+        if not isinstance(dataset, optDataset):  # type checking
             raise TypeError("dataset is not an optDataset")
-        self.solpool = np.unique(dataset.sols.copy(), axis=0) # remove duplicate
+        self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
     def forward(self, pred_cost, true_cost, reduction="mean"):
         """
@@ -60,15 +62,13 @@ class listwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        objpool_c = true_cost @ solpool.T # true cost
-        objpool_cp = pred_cost @ solpool.T # pred cost
+        objpool_c = true_cost @ solpool.T  # true cost
+        objpool_cp = pred_cost @ solpool.T  # pred cost
         # cross entropy loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
-            loss = - (F.log_softmax(objpool_cp, dim=1) *
-                      F.softmax(objpool_c, dim=1))
+            loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
         if self.optSolver.modelSense == GRB.MAXIMIZE:
-            loss = - (F.log_softmax(- objpool_cp, dim=1) *
-                      F.softmax(- objpool_c, dim=1))
+            loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
         # reduction
         if reduction == "mean":
             loss = torch.mean(loss)
@@ -104,9 +104,9 @@ class pairwiseLTR(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # solution pool
-        if not isinstance(dataset, optDataset): # type checking
+        if not isinstance(dataset, optDataset):  # type checking
             raise TypeError("dataset is not an optDataset")
-        self.solpool = np.unique(dataset.sols.copy(), axis=0) # remove duplicate
+        self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
     def forward(self, pred_cost, true_cost, reduction="mean"):
         """
@@ -126,8 +126,8 @@ class pairwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        objpool_c = torch.einsum("bd,nd->bn", true_cost, solpool) # true cost
-        objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool) # pred cost
+        objpool_c = torch.einsum("bd,nd->bn", true_cost, solpool)  # true cost
+        objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool)  # pred cost
         # init relu as max(0,x)
         relu = nn.ReLU()
         # init loss
@@ -184,9 +184,9 @@ class pointwiseLTR(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # solution pool
-        if not isinstance(dataset, optDataset): # type checking
+        if not isinstance(dataset, optDataset):  # type checking
             raise TypeError("dataset is not an optDataset")
-        self.solpool = np.unique(dataset.sols.copy(), axis=0) # remove duplicate
+        self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
     def forward(self, pred_cost, true_cost, reduction="mean"):
         """
@@ -206,8 +206,8 @@ class pointwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
-        objpool_c = true_cost @ solpool.T # true cost
-        objpool_cp = pred_cost @ solpool.T # pred cost
+        objpool_c = true_cost @ solpool.T  # true cost
+        objpool_cp = pred_cost @ solpool.T  # pred cost
         # squared loss
         loss = (objpool_c - objpool_cp).square().mean(axis=1)
         # reduction

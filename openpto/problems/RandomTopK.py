@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.wrapper_solver import TopKOptimizer
+
+
 class RandomTopK(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
 
@@ -24,7 +26,9 @@ class RandomTopK(PTOProblem):
         self._set_seed(rand_seed)
 
         # Generate Labels
-        self.Ys_train, self.Ys_test = self._generate_labels(num_instances, num_items)  # labels
+        self.Ys_train, self.Ys_test = self._generate_labels(
+            num_instances, num_items
+        )  # labels
 
         # Generate features based on the data
         self.NUM_TARGETS = num_items
@@ -35,9 +39,13 @@ class RandomTopK(PTOProblem):
 
         # Split into train/testq
         assert 0 < test_frac < 1
-        train_pct = (1 - test_frac) * 0.8   # Using 80% of non-test data for train, and 20% for validation
+        train_pct = (
+            1 - test_frac
+        ) * 0.8  # Using 80% of non-test data for train, and 20% for validation
         self.test = range(0, int(test_frac * num_instances))
-        self.train = range(int(test_frac * num_instances), int((train_pct + test_frac) * num_instances))
+        self.train = range(
+            int(test_frac * num_instances), int((train_pct + test_frac) * num_instances)
+        )
         self.val = range(int((train_pct + test_frac) * num_instances), num_instances)
         assert all(x is not None for x in [self.test, self.train, self.val])
 
@@ -51,12 +59,12 @@ class RandomTopK(PTOProblem):
 
     def _generate_labels(
         self,
-        num_instances, 
+        num_instances,
         num_items,
         prob_high=0.1,
-        val_low=1.,
-        val_high=10.,
-        std=5.,
+        val_low=1.0,
+        val_high=10.0,
+        std=5.0,
     ):
         """
         Loads the labels (Ys) of the prediction from the following distribution:
@@ -72,7 +80,9 @@ class RandomTopK(PTOProblem):
         # choice = Bernoulli(torch.tensor(prob_high)).sample((num_instances, num_items))
         # Ys = choice * vals_high + (1 - choice) * vals_low
 
-        Ys = Normal(torch.tensor(val_high), torch.tensor(std)).sample((num_instances, num_items))
+        Ys = Normal(torch.tensor(val_high), torch.tensor(std)).sample(
+            (num_instances, num_items)
+        )
 
         return Ys.float().detach()
 
@@ -89,18 +99,28 @@ class RandomTopK(PTOProblem):
         Ys_augmented = torch.cat((Ys_standardised, fake_features), dim=-1)
 
         # Encode Ys as features by multiplying them with a random matrix
-        transform_nn = torch.nn.Sequential(torch.nn.Linear(Ys_augmented.shape[-1], Ys_augmented.shape[-1]))
+        transform_nn = torch.nn.Sequential(
+            torch.nn.Linear(Ys_augmented.shape[-1], Ys_augmented.shape[-1])
+        )
         Xs = transform_nn(Ys_augmented).detach().clone()
         return Xs
 
     def get_train_data(self):
-        return self.Xs[self.train], self.Ys[self.train], [None for _ in range(len(self.train))]
+        return (
+            self.Xs[self.train],
+            self.Ys[self.train],
+            [None for _ in range(len(self.train))],
+        )
 
     def get_val_data(self):
         return self.Xs[self.val], self.Ys[self.val], [None for _ in range(len(self.val))]
 
     def get_test_data(self):
-        return self.Xs[self.test], self.Ys[self.test], [None for _ in range(len(self.test))]
+        return (
+            self.Xs[self.test],
+            self.Ys[self.test],
+            [None for _ in range(len(self.test))],
+        )
 
     def get_objective(
         self,
@@ -126,7 +146,7 @@ class RandomTopK(PTOProblem):
 
 
 # Unit test for RandomTopK
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load An Example Instance
     problem = RandomTopK()
 

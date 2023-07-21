@@ -9,6 +9,7 @@ import torch
 
 from openpto.problems.PTOProblem import PTOProblem
 
+
 class Shortestpath(PTOProblem):
     """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
 
@@ -22,11 +23,11 @@ class Shortestpath(PTOProblem):
     ):
         super(Shortestpath, self).__init__()
         self._set_seed(rand_seed)
-    
+
     @staticmethod
     def gendata():
         return
-    
+
     def get_train_data(self, **kwargs):
         raise NotImplementedError()
 
@@ -35,7 +36,7 @@ class Shortestpath(PTOProblem):
 
     def get_test_data(self, **kwargs):
         raise NotImplementedError()
-    
+
     def get_model_shape(self):
         raise NotImplementedError()
 

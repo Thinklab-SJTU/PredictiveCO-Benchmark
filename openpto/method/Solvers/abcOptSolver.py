@@ -11,7 +11,8 @@ import torch.nn as nn
 
 from gurobipy import GRB
 
-class optSolver: #(ABC):
+
+class optSolver:  # (ABC):
     """
     This is an abstract class for optimization model
 
@@ -26,7 +27,7 @@ class optSolver: #(ABC):
         self._model, self.x = self._getModel()
 
     def __repr__(self):
-        return 'optSolver ' + self.__class__.__name__
+        return "optSolver " + self.__class__.__name__
 
     @property
     def num_cost(self):

@@ -1,0 +1,114 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ['openpto*']
+
+# Automatically determine version from package
+[tool.setuptools.dynamic]
+version = {attr = "openpto.__version__"}
+
+[project]
+name = "openpto"
+readme = "README.md"
+
+description = "OpenPTO"
+authors = [
+    {name = "Haoyu Geng", email = "genghaoyu98@sjtu.edu.cn"},
+  ]
+dynamic = ["version"]
+
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python"
+]
+
+dependencies = [
+    "torch>=2.0.0",
+    "numpy",
+    "pre-commit>=3.3.3",
+]
+
+[project.optional-dependencies]
+graph = ["torch_geometric"]
+testing = ["pytest"]
+linting = ["black", "ruff"]
+
+[project.urls]
+"Homepage" = "https://github.com/hygeng/PTO"
+"Bug Tracker" = "https://github.com/hygeng/PTO/issues"
+
+# Ruff + Black + isort combo for code formatting
+# Adapted from https://github.com/AntonOsika/gpt-engineer (kudos!)
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+select = ["F", "E", "W", "I001"]
+line-length = 90
+show-fixes = false
+target-version = "py311"
+task-tags = ["TODO", "FIXME"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+ignore = ["E501"] # never enforce `E501` (line length violations), done in Black
+
+# Ignore `E402` (import violations) and "F401" (unused imports) in all `__init__.py` files
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+
+[tool.ruff.isort]
+known-first-party = []
+known-third-party = []
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+combine-as-imports = true
+split-on-trailing-comma = false
+lines-between-types = 1
+
+# https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
+[tool.black]
+line-length = 90
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.direnv
+    | \.eggs
+    | \.git
+    | \.tox
+    | \.venv
+    | _build
+    | build
+    | dist
+    | venv
+  )/
+)
+'''

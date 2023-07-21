@@ -10,6 +10,7 @@ pyro-ppl==1.8.0
 numba
 """
 
+
 def get_install_requires():
     reqs = [req for req in REQUIRES.split("\n") if len(req) > 0]
     return reqs
@@ -36,11 +37,11 @@ def do_setup():
         packages=find_packages(),
         keywords=["AI", "CO"],
         # Github repo
-        url = "",
+        url="",
         # author name
-        author = "Haoyu Geng",
+        author="Haoyu Geng",
         # mail address
-        author_email = "genghaoyu98@sjtu.edu.cn",
+        author_email="genghaoyu98@sjtu.edu.cn",
         classifiers=[
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
@@ -48,7 +49,7 @@ def do_setup():
             "Programming Language :: Python :: 3.10",
             "Intended Audience :: Developers",
             "Intended Audience :: Science/Research",
-        ]
+        ],
     )
 
 

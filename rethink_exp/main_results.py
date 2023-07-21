@@ -3,12 +3,13 @@ import sys
 
 
 # Makes sure hashes are consistent
-hashseed = os.getenv('PYTHONHASHSEED')
+hashseed = os.getenv("PYTHONHASHSEED")
 if not hashseed:
-    os.environ['PYTHONHASHSEED'] = '0'
+    os.environ["PYTHONHASHSEED"] = "0"
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 import torch
+
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
@@ -19,12 +20,12 @@ from openpto.metrics import *
 from openpto.problems.wrapper_prob import problem_wrapper
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_args()
     print(f"Hyperparameters: {args}\n")
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-    
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
     # Load problem
     conf = load_conf(method_name=args.opt_model, prob_name=args.problem)
     print(f"--- Loading [{args.problem}] Problem... Config: {conf}")
@@ -50,8 +51,12 @@ if __name__ == '__main__':
     )(optSolver)
 
     ipdim, opdim = problem.get_model_shape()
-    pred_model_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
-    exp = ExpManager(pred_model_args, save_path='saved_records', args = args, conf = conf)
+    pred_model_args = {
+        "ipdim": ipdim,
+        "opdim": opdim,
+        "out_act": problem.get_output_activation(),
+    }
+    exp = ExpManager(pred_model_args, save_path="saved_records", args=args, conf=conf)
 
     # Train neural network with a given loss function
     print(f"--- Start training [{args.pred_model}] model on [{args.opt_model}] loss...")

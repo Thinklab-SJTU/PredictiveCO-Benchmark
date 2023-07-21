@@ -6,7 +6,6 @@ import torch
 import numpy as np
 
 
-
 class PTOProblem(ABC):
     """A class that defines an arbitrary predict-then-optimise problem."""
 

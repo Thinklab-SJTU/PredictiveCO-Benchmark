@@ -10,6 +10,7 @@ import torch
 
 # from pyepo.func.abcmodule import optModule
 from gurobipy import GRB
+
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from .abcOptModel import optModel
 
@@ -50,8 +51,15 @@ class blackboxOpt(optModel):
         """
         Forward pass
         """
-        sols = self.dbb.apply(pred_cost, self.lambd, self.optSolver,
-                              self.processes, self.pool, self.solve_ratio, self)
+        sols = self.dbb.apply(
+            pred_cost,
+            self.lambd,
+            self.optSolver,
+            self.processes,
+            self.pool,
+            self.solve_ratio,
+            self,
+        )
         return sols
 
 
@@ -183,8 +191,9 @@ class negativeIdentity(optModel):
         """
         Forward pass
         """
-        sols = self.nid.apply(pred_cost, self.optSolver, self.processes,
-                              self.pool, self.solve_ratio, self)
+        sols = self.nid.apply(
+            pred_cost, self.optSolver, self.processes, self.pool, self.solve_ratio, self
+        )
         return sols
 
 
@@ -241,7 +250,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         # identity matrix
         I = torch.eye(grad_output.shape[1]).to(device)
         if optSolver.modelSense == GRB.MINIMIZE:
-            grad = - I
+            grad = -I
         if optSolver.modelSense == GRB.MAXIMIZE:
             grad = I
         return grad_output @ grad, None, None, None, None, None

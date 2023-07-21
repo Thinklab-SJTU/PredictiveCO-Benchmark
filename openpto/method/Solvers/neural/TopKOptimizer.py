@@ -11,6 +11,7 @@ class TopKOptimizer(torch.nn.Module):
     """
     Wrapper around OptimiseSubmodular that saves state information.
     """
+
     def __init__(
         self,
         get_obj,  # A function that returns the value of the objective we want to minimise
@@ -18,7 +19,7 @@ class TopKOptimizer(torch.nn.Module):
         lr=0.1,  # learning rate for optimiser
         momentum=0.9,  # momentum for optimiser
         num_iters=100,  # number of optimisation steps
-        verbose=False  # print intermediate solution statistics
+        verbose=False,  # print intermediate solution statistics
     ):
         super(TopKOptimizer, self).__init__()
         self.get_obj = get_obj
@@ -35,7 +36,15 @@ class TopKOptimizer(torch.nn.Module):
         """
         Computes the optimal Z for the predicted Yhat using the supplied optimizer.
         """
-        Z = OptimiseTopK.apply(Yhat, self.get_obj, self.budget, self.lr, self.momentum, self.num_iters, self.verbose)
+        Z = OptimiseTopK.apply(
+            Yhat,
+            self.get_obj,
+            self.budget,
+            self.lr,
+            self.momentum,
+            self.num_iters,
+            self.verbose,
+        )
         return Z
 
 
@@ -45,6 +54,7 @@ class OptimiseTopK(OptimiseSubmodular):
     computes the optimal Z for a given set of predicted labels Yhat. The backward pass differentiates
     that optimal Z wrt Yhat.
     """
+
     @staticmethod
     def forward(
         ctx,
@@ -54,11 +64,11 @@ class OptimiseTopK(OptimiseSubmodular):
         lr,  # learning rate for optimiser
         momentum,  # momentum for optimiser
         num_iters,  # number of optimisation steps
-        verbose  # print intermediate solution statistics
+        verbose,  # print intermediate solution statistics
     ):
-        '''
+        """
         An optimised version of OptimiseSubmodular that works *only for vanilla top-k prediction*
-        '''
+        """
         # Find the top "budget" items in Yhat
         _, Z_indices = Yhat.topk(budget, dim=-1)
         Z = torch.nn.functional.one_hot(Z_indices, Yhat.shape[-1]).sum(dim=-2).float()
@@ -87,15 +97,24 @@ class OptimiseTopK(OptimiseSubmodular):
         # Apply chain rule
         dZdYhat_t = dZdYhat.t()
         out = torch.mm(dZdYhat_t.float(), grad_output.view(len(Z), 1))
-        return out.view_as(Yhat), None, None, None, None, None, None  # Only Yhat gets a gradient
+        return (
+            out.view_as(Yhat),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )  # Only Yhat gets a gradient
 
     @staticmethod
     def _get_elementwise_derivative(first_derivative, variable):
         second_derivative = []
         for element in first_derivative:
-            second_derivative.append(torch.autograd.grad(element, variable, retain_graph=True)[0].unsqueeze(0))
+            second_derivative.append(
+                torch.autograd.grad(element, variable, retain_graph=True)[0].unsqueeze(0)
+            )
         return torch.vstack(second_derivative)
-
 
     @staticmethod
     def _get_dZdYhat(
@@ -106,14 +125,14 @@ class OptimiseTopK(OptimiseSubmodular):
         EPS=1e-6,
         alpha=0.01,  # constant to be added to the diagonal of the A matrix to improve conditioning
     ):
-        '''
+        """
         Returns the derivative of the optimal solution in the region around Z in
         terms of the predicted labels/rating matrix Yhat.
 
         Z: an optimal solution
 
         Yhat: the current parameter settings
-        '''
+        """
         # Define useful constants
         num_var = len(Z)
         num_constr = 2 * num_var + 1
@@ -162,17 +181,27 @@ class OptimiseTopK(OptimiseSubmodular):
         dgdZ = torch.vstack((dgdZ_sum, dgdZ_upper, dgdZ_lower))
 
         # Putting it together, coefficient matrix for the linear system
-        A = torch.vstack([torch.hstack([dfdZ_dZ, dgdZ.t()]), torch.hstack([diag_lambda @ dgdZ, diag_g])])
+        A = torch.vstack(
+            [
+                torch.hstack([dfdZ_dZ, dgdZ.t()]),
+                torch.hstack([diag_lambda @ dgdZ, diag_g]),
+            ]
+        )
         # add alpha * I to improve conditioning
         A = A + alpha * torch.eye(num_var + num_constr)
 
         # RHS of the linear system, mostly partial derivative of grad f wrt Yhat
-        b = torch.vstack([torch.hstack([dfdZ_dYhat.view((num_var, Yhat.numel()))]), torch.hstack([torch.zeros((num_constr, Yhat.numel()))])])
+        b = torch.vstack(
+            [
+                torch.hstack([dfdZ_dYhat.view((num_var, Yhat.numel()))]),
+                torch.hstack([torch.zeros((num_constr, Yhat.numel()))]),
+            ]
+        )
 
         # solution to the system
         derivatives = torch.linalg.solve(A, b)
         if torch.isnan(derivatives).any():
-            print('report')
+            print("report")
             print(torch.isnan(A).any())
             print(torch.isnan(b).any())
             print(torch.isnan(dgdZ).any())
@@ -187,7 +216,7 @@ class OptimiseTopK(OptimiseSubmodular):
 
 
 # Unit test for submodular optimiser
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Unit Test
     def get_obj(Y, Z):
         # Function to be *maximised*

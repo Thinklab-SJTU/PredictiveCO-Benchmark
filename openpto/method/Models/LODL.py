@@ -5,8 +5,8 @@ from copy import deepcopy
 import torch
 from torch.multiprocessing import Pool
 
-from openpto.problems.wrapper_prob import BudgetAllocation, BipartiteMatching,RMAB
-from openpto.method.Solvers.utils_solver import  starmap_with_kwargs
+from openpto.problems.wrapper_prob import BudgetAllocation, BipartiteMatching, RMAB
+from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.problems.wrapper_prob import find_saved_problem
 
 # from openpto.method.Models.Models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
@@ -24,7 +24,7 @@ def _learn_loss(
     val_freq=1,  # the number of training steps after which to check loss on val set
     print_freq=5,  # the number of val steps after which to print losses
     patience=25,  # number of iterations to wait for the train loss to improve when learning
-    **kwargs
+    **kwargs,
 ):
     """
     Function that learns a model to approximate the behaviour of the
@@ -37,7 +37,9 @@ def _learn_loss(
     # Split train and test
     assert train_frac + val_frac < 1
     train_idxs = range(0, int(train_frac * Yhats.shape[0]))
-    val_idxs = range(int(train_frac * Yhats.shape[0]), int((train_frac + val_frac) * Yhats.shape[0]))
+    val_idxs = range(
+        int(train_frac * Yhats.shape[0]), int((train_frac + val_frac) * Yhats.shape[0])
+    )
     test_idxs = range(int((train_frac + val_frac) * Yhats.shape[0]), Yhats.shape[0])
 
     Yhats_train, objectives_train = Yhats[train_idxs], objectives[train_idxs]
@@ -45,28 +47,38 @@ def _learn_loss(
     Yhats_test, objectives_test = Yhats[test_idxs], objectives[test_idxs]
 
     # Load a model
-    if model_type == 'dense':
+    if model_type == "dense":
         model = DenseLoss(Y)
-    elif model_type == 'quad':
+    elif model_type == "quad":
         model = LowRankQuadratic(Y, **kwargs)
-    elif model_type == 'weightedmse':
+    elif model_type == "weightedmse":
         model = WeightedMSE(Y)
-    elif model_type == 'weightedmse++':
+    elif model_type == "weightedmse++":
         model = WeightedMSEPlusPlus(Y)
-    elif model_type == 'weightedce':
+    elif model_type == "weightedce":
         model = WeightedCE(Y)
-    elif model_type == 'weightedmsesum':
+    elif model_type == "weightedmsesum":
         model = WeightedMSESum(Y)
-    elif model_type == 'quad++':
+    elif model_type == "quad++":
         model = QuadraticPlusPlus(Y, **kwargs)
     else:
         raise LookupError()
 
     # Use GPU if available
     if torch.cuda.is_available():
-        device = torch.device(f"cuda:{kwargs.gpu}" if torch.cuda.is_available() else "cpu")
-        Yhats_train, Yhats_val, Yhats_test = Yhats_train.to(device), Yhats_val.to(device), Yhats_test.to(device)
-        objectives_train, objectives_val, objectives_test = objectives_train.to(device), objectives_val.to(device), objectives_test.to(device)
+        device = torch.device(
+            f"cuda:{kwargs.gpu}" if torch.cuda.is_available() else "cpu"
+        )
+        Yhats_train, Yhats_val, Yhats_test = (
+            Yhats_train.to(device),
+            Yhats_val.to(device),
+            Yhats_test.to(device),
+        )
+        objectives_train, objectives_val, objectives_test = (
+            objectives_train.to(device),
+            objectives_val.to(device),
+            objectives_test.to(device),
+        )
         model = model.to(device)
 
     # Fit a model to the points
@@ -153,13 +165,13 @@ def _learn_loss(
 
 def _get_learned_loss(
     problem,
-    model_type='weightedmse',
-    folder='models',
+    model_type="weightedmse",
+    folder="models",
     num_samples=400,
-    sampling='random',
+    sampling="random",
     sampling_std=None,
     serial=True,
-    **kwargs
+    **kwargs,
 ):
     print("Learning Loss Functions...")
 
@@ -177,50 +189,90 @@ def _get_learned_loss(
     # Check if there are enough stored samples
     num_samples_needed = num_extra_samples = num_samples
     if os.path.exists(samples_filename_read):
-        with open(samples_filename_read, 'rb') as filehandle:
+        with open(samples_filename_read, "rb") as filehandle:
             num_existing_samples, SL_dataset_old = pickle.load(filehandle)
     else:
         num_existing_samples = 0
-        SL_dataset_old = {partition: [(Y, None, None, None) for Y in Ys] for Ys, partition in zip([Y_train, Y_val], ['train', 'val'])}
+        SL_dataset_old = {
+            partition: [(Y, None, None, None) for Y in Ys]
+            for Ys, partition in zip([Y_train, Y_val], ["train", "val"])
+        }
 
     # Sample more points if needed
     num_samples_needed = num_samples
     num_extra_samples = max(num_samples_needed - num_existing_samples, 0)
-    datasets = [entry for entry in zip([Y_train, Y_val], [Y_train_aux, Y_val_aux], ['train', 'val'])]
+    datasets = [
+        entry
+        for entry in zip([Y_train, Y_val], [Y_train_aux, Y_val_aux], ["train", "val"])
+    ]
     if num_extra_samples > 0:
-        SL_dataset = {partition: [(Y, None, None, None) for Y in Ys] for Ys, partition in zip([Y_train, Y_val], ['train', 'val'])}
+        SL_dataset = {
+            partition: [(Y, None, None, None) for Y in Ys]
+            for Ys, partition in zip([Y_train, Y_val], ["train", "val"])
+        }
         for Ys, Ys_aux, partition in datasets:
             # Get new sampled points
             start_time = time.time()
             if serial == True:
-                sampled_points = [_sample_points(Y, problem, sampling, num_extra_samples, Y_aux, sampling_std) for Y, Y_aux in zip(Ys, Ys_aux)]
+                sampled_points = [
+                    _sample_points(
+                        Y, problem, sampling, num_extra_samples, Y_aux, sampling_std
+                    )
+                    for Y, Y_aux in zip(Ys, Ys_aux)
+                ]
             else:
                 with Pool(NUM_CPUS) as pool:
-                    sampled_points = pool.starmap(_sample_points, [(Y, problem, sampling, num_extra_samples, Y_aux, sampling_std) for Y, Y_aux in zip(Ys, Ys_aux)])
-            print(f"({partition}) Time taken to generate {num_extra_samples} samples for {len(Ys)} instances: {time.time() - start_time}")
+                    sampled_points = pool.starmap(
+                        _sample_points,
+                        [
+                            (Y, problem, sampling, num_extra_samples, Y_aux, sampling_std)
+                            for Y, Y_aux in zip(Ys, Ys_aux)
+                        ],
+                    )
+            print(
+                f"({partition}) Time taken to generate {num_extra_samples} samples for {len(Ys)} instances: {time.time() - start_time}"
+            )
 
             # Use them to augment existing sampled points
             for idx, (Y, opt_objective, Yhats, objectives) in enumerate(sampled_points):
                 SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
 
         # Save dataset
-        samples_filename_write = f"{problem_filename[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl"
-        with open(samples_filename_write, 'wb') as filehandle:
+        samples_filename_write = (
+            f"{problem_filename[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl"
+        )
+        with open(samples_filename_write, "wb") as filehandle:
             pickle.dump((num_extra_samples, SL_dataset), filehandle)
 
         #   Augment with new data
         for Ys, Ys_aux, partition in datasets:
             for idx, Y in enumerate(Ys):
                 # Get old samples
-                Y_old, opt_objective_old, Yhats_old, objectives_old = SL_dataset_old[partition][idx]
-                Y_new, opt_objective_new, Yhats_new, objectives_new = SL_dataset[partition][idx]
+                Y_old, opt_objective_old, Yhats_old, objectives_old = SL_dataset_old[
+                    partition
+                ][idx]
+                Y_new, opt_objective_new, Yhats_new, objectives_new = SL_dataset[
+                    partition
+                ][idx]
                 assert torch.isclose(Y_old, Y).all()
                 assert torch.isclose(Y_new, Y).all()
 
                 # Combine entries
-                opt_objective = opt_objective_new if opt_objective_old is None else max(opt_objective_new, opt_objective_old)
-                Yhats = Yhats_new if Yhats_old is None else torch.cat((Yhats_old, Yhats_new), dim=0)
-                objectives = objectives_new if objectives_old is None else torch.cat((objectives_old, objectives_new), dim=0)
+                opt_objective = (
+                    opt_objective_new
+                    if opt_objective_old is None
+                    else max(opt_objective_new, opt_objective_old)
+                )
+                Yhats = (
+                    Yhats_new
+                    if Yhats_old is None
+                    else torch.cat((Yhats_old, Yhats_new), dim=0)
+                )
+                objectives = (
+                    objectives_new
+                    if objectives_old is None
+                    else torch.cat((objectives_old, objectives_new), dim=0)
+                )
 
                 # Update
                 SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
@@ -248,11 +300,40 @@ def _get_learned_loss(
         # Learn a loss
         start_time = time.time()
         if serial == True:
-            losses_and_stats = [_learn_loss(problem, (Y_dataset, opt_objective, Yhats[idxs], objectives[idxs]), model_type, **kwargs) for Y_dataset, opt_objective, Yhats, objectives in SL_dataset[partition]]
+            losses_and_stats = [
+                _learn_loss(
+                    problem,
+                    (Y_dataset, opt_objective, Yhats[idxs], objectives[idxs]),
+                    model_type,
+                    **kwargs,
+                )
+                for Y_dataset, opt_objective, Yhats, objectives in SL_dataset[partition]
+            ]
         else:
             with Pool(NUM_CPUS) as pool:
-                losses_and_stats = starmap_with_kwargs(pool, _learn_loss, [(problem, (Y_dataset, opt_objective.detach().clone(), Yhats[idxs].detach().clone(), objectives[idxs].detach().clone()), deepcopy(model_type)) for Y_dataset, opt_objective, Yhats, objectives in SL_dataset[partition]], kwargs=kwargs)
-        print(f"({partition}) Time taken to learn loss for {len(Ys)} instances: {time.time() - start_time}")
+                losses_and_stats = starmap_with_kwargs(
+                    pool,
+                    _learn_loss,
+                    [
+                        (
+                            problem,
+                            (
+                                Y_dataset,
+                                opt_objective.detach().clone(),
+                                Yhats[idxs].detach().clone(),
+                                objectives[idxs].detach().clone(),
+                            ),
+                            deepcopy(model_type),
+                        )
+                        for Y_dataset, opt_objective, Yhats, objectives in SL_dataset[
+                            partition
+                        ]
+                    ],
+                    kwargs=kwargs,
+                )
+        print(
+            f"({partition}) Time taken to learn loss for {len(Ys)} instances: {time.time() - start_time}"
+        )
 
         # Parse and log results
         losses[partition] = []
@@ -269,7 +350,9 @@ def _get_learned_loss(
     # Return the loss function in the expected form
     def surrogate_decision_quality(Yhats, Ys, partition, index, **kwargs):
         return losses[partition][index](Yhats).flatten() - SL_dataset[partition][index][1]
+
     return surrogate_decision_quality
+
 
 def _sample_points(
     Y,  # The set of true labels
@@ -287,50 +370,60 @@ def _sample_points(
     except TypeError:
         Y_std = torch.std(Y) + 1e-5
     #   Generate points
-    if sampling == 'random':
+    if sampling == "random":
         #   Create some noise
         Y_noise = torch.distributions.Normal(0, Y_std).sample((num_samples, *Y.shape))
         #   Add this noise to Y to get sampled points
-        Yhats = (Y + Y_noise)
-    elif sampling == 'random_uniform':
+        Yhats = Y + Y_noise
+    elif sampling == "random_uniform":
         #   Create some noise
         Y_noise = torch.distributions.Uniform(0, Y_std).sample((num_samples, *Y.shape))
         #   Add this noise to Y to get sampled points
-        Yhats = (Y + Y_noise)
-    elif sampling == 'random_dropout':
+        Yhats = Y + Y_noise
+    elif sampling == "random_dropout":
         #   Create some noise
         Y_noise = torch.distributions.Normal(0, Y_std).sample((num_samples, *Y.shape))
         #   Drop some of the entries randomly
-        drop_idxs = torch.distributions.Bernoulli(probs=0.1).sample((num_samples, *Y.shape))
+        drop_idxs = torch.distributions.Bernoulli(probs=0.1).sample(
+            (num_samples, *Y.shape)
+        )
         Y_noise = Y_noise * drop_idxs
         #   Add this noise to Y to get sampled points
-        Yhats = (Y + Y_noise)
-    elif sampling == 'random_flip':
+        Yhats = Y + Y_noise
+    elif sampling == "random_flip":
         assert 0 < Y_std < 1
         #   Randomly choose some indices to flip
-        flip_idxs = torch.distributions.Bernoulli(probs=Y_std).sample((num_samples, *Y.shape))
+        flip_idxs = torch.distributions.Bernoulli(probs=Y_std).sample(
+            (num_samples, *Y.shape)
+        )
         #   Flip chosen indices to get sampled points
         Yhats = torch.logical_xor(Y, flip_idxs).float()
-    elif sampling == 'numerical_jacobian':
+    elif sampling == "numerical_jacobian":
         #   Find some points using this
         Yhats_plus = Y + (Y_std * torch.eye(Y.numel())).view((-1, *Y.shape))
         Yhats_minus = Y - (Y_std * torch.eye(Y.numel())).view((-1, *Y.shape))
         Yhats = torch.cat((Yhats_plus, Yhats_minus), dim=0)
-    elif sampling == 'random_jacobian':
+    elif sampling == "random_jacobian":
         #   Find dimensions to perturb and how much to perturb them by
         idxs = torch.randint(Y.numel(), size=(num_samples,))
         idxs = torch.nn.functional.one_hot(idxs, num_classes=Y.numel())
-        noise_scale = torch.distributions.Normal(0, Y_std).sample((num_samples,)).unsqueeze(dim=-1)
+        noise_scale = (
+            torch.distributions.Normal(0, Y_std).sample((num_samples,)).unsqueeze(dim=-1)
+        )
         noise = (idxs * noise_scale).view((num_samples, *Y.shape))
         #   Find some points using this
         Yhats = Y + noise
-    elif sampling == 'random_hessian':
+    elif sampling == "random_hessian":
         #   Find dimensions to perturb and how much to perturb them by
         noise = torch.zeros((num_samples, *Y.shape))
         for _ in range(2):
             idxs = torch.randint(Y.numel(), size=(num_samples,))
             idxs = torch.nn.functional.one_hot(idxs, num_classes=Y.numel())
-            noise_scale = torch.distributions.Normal(0, Y_std).sample((num_samples,)).unsqueeze(dim=-1)
+            noise_scale = (
+                torch.distributions.Normal(0, Y_std)
+                .sample((num_samples,))
+                .unsqueeze(dim=-1)
+            )
             noise += (idxs * noise_scale).view((num_samples, *Y.shape))
         #   Find some points using this
         Yhats = Y + noise
@@ -364,8 +457,6 @@ def _sample_points(
     return (Y, opt_objective, Yhats, objectives)
 
 
-
-
 ##############
 
 
@@ -374,24 +465,27 @@ class DenseLoss(torch.nn.Module):
     A Neural Network-based loss function
     """
 
-    def __init__(
-        self,
-        Y,
-        num_layers=4,
-        hidden_dim=100,
-        activation='relu'
-    ):
+    def __init__(self, Y, num_layers=4, hidden_dim=100, activation="relu"):
         super(DenseLoss, self).__init__()
         # Save true labels
         self.Y = Y.detach().view((-1))
         # Initialise model
-        self.model = torch.nn.Parameter(dense_nn(Y.numel(), 1, num_layers, intermediate_size=hidden_dim, output_activation=activation))
+        self.model = torch.nn.Parameter(
+            dense_nn(
+                Y.numel(),
+                1,
+                num_layers,
+                intermediate_size=hidden_dim,
+                output_activation=activation,
+            )
+        )
 
     def forward(self, Yhats):
         # Flatten inputs
         Yhats = Yhats.view((-1, self.Y.numel()))
 
         return self.model(Yhats)
+
 
 class WeightedMSE(torch.nn.Module):
     """
@@ -438,8 +532,12 @@ class WeightedMSEPlusPlus(torch.nn.Module):
         Yhat = Yhats.view((-1, self.Y.shape[0]))
 
         # Get weights for positive and negative components separately
-        pos_weights = (Yhat > self.Y.unsqueeze(0)).float() * self.weights_pos.clamp(min=self.min_val)
-        neg_weights = (Yhat < self.Y.unsqueeze(0)).float() * self.weights_neg.clamp(min=self.min_val)
+        pos_weights = (Yhat > self.Y.unsqueeze(0)).float() * self.weights_pos.clamp(
+            min=self.min_val
+        )
+        neg_weights = (Yhat < self.Y.unsqueeze(0)).float() * self.weights_neg.clamp(
+            min=self.min_val
+        )
         weights = pos_weights + neg_weights
 
         # Compute MSE
@@ -469,15 +567,19 @@ class WeightedCE(torch.nn.Module):
     def forward(self, Yhat):
         # Flatten inputs
         if len(self.Y_raw.shape) >= 2:
-            Yhat = Yhat.view((*Yhat.shape[:-len(self.Y_raw.shape)], self.num_dims))
+            Yhat = Yhat.view((*Yhat.shape[: -len(self.Y_raw.shape)], self.num_dims))
 
         # Get weights for positive and negative components separately
-        pos_weights = (Yhat > self.Y.unsqueeze(0)).float() * self.weights_pos.clamp(min=self.min_val)
-        neg_weights = (Yhat < self.Y.unsqueeze(0)).float() * self.weights_neg.clamp(min=self.min_val)
+        pos_weights = (Yhat > self.Y.unsqueeze(0)).float() * self.weights_pos.clamp(
+            min=self.min_val
+        )
+        neg_weights = (Yhat < self.Y.unsqueeze(0)).float() * self.weights_neg.clamp(
+            min=self.min_val
+        )
         weights = pos_weights + neg_weights
 
         # Compute MSE
-        error = torch.nn.BCELoss(reduction='none')(Yhat, self.Y.expand(*Yhat.shape))
+        error = torch.nn.BCELoss(reduction="none")(Yhat, self.Y.expand(*Yhat.shape))
         weighted_ce = (error * weights).mean(dim=-1)
 
         return weighted_ce
@@ -521,8 +623,7 @@ class TwoVarQuadratic(torch.nn.Module):
         self.beta = torch.nn.Parameter(torch.tensor(0.5))
 
     def forward(self, Yhat):
-        """
-        """
+        """ """
         # Flatten inputs
         Yhat = Yhat.view((Yhat.shape[0], -1))
 
@@ -543,10 +644,7 @@ class QuadraticPlusPlus(torch.nn.Module):
     """
 
     def __init__(
-        self,
-        Y,  # true labels
-        quadalpha=1e-3,  # regularisation weight
-        **kwargs
+        self, Y, quadalpha=1e-3, **kwargs  # true labels  # regularisation weight
     ):
         super(QuadraticPlusPlus, self).__init__()
         self.alpha = quadalpha
@@ -555,13 +653,15 @@ class QuadraticPlusPlus(torch.nn.Module):
         self.num_dims = self.Y.shape[0]
 
         # Create quadratic matrices
-        bases = torch.rand((self.num_dims, self.num_dims, 4)) / (self.num_dims * self.num_dims)
-        self.bases = torch.nn.Parameter(bases)  
+        bases = torch.rand((self.num_dims, self.num_dims, 4)) / (
+            self.num_dims * self.num_dims
+        )
+        self.bases = torch.nn.Parameter(bases)
 
     def forward(self, Yhat):
         # Flatten inputs
         if len(Yhat.shape) >= 2:
-            Yhat = Yhat.view((*Yhat.shape[:-len(self.Y_raw.shape)], self.num_dims))
+            Yhat = Yhat.view((*Yhat.shape[: -len(self.Y_raw.shape)], self.num_dims))
 
         # Measure distance between predicted and true distributions
         diff = (self.Y - Yhat).unsqueeze(-2)
@@ -589,6 +689,7 @@ class QuadraticPlusPlus(torch.nn.Module):
         basis = bases.gather(-1, index).squeeze()
         return torch.tril(basis)
 
+
 class LowRankQuadratic(torch.nn.Module):
     """
     Model that copies the structure of MSE-Sum
@@ -599,7 +700,7 @@ class LowRankQuadratic(torch.nn.Module):
         Y,  # true labels
         rank=2,  # rank of the learned matrix
         quadalpha=0.1,  # regularisation weight
-        **kwargs
+        **kwargs,
     ):
         super(LowRankQuadratic, self).__init__()
         self.alpha = quadalpha
@@ -607,13 +708,15 @@ class LowRankQuadratic(torch.nn.Module):
         self.Y = torch.nn.Parameter(self.Y_raw.view((-1)))
 
         # Create a quadratic matrix
-        basis = torch.tril(torch.rand((self.Y.shape[0], rank)) / (self.Y.shape[0] * self.Y.shape[0]))
-        self.basis = torch.nn.Parameter(basis)  
+        basis = torch.tril(
+            torch.rand((self.Y.shape[0], rank)) / (self.Y.shape[0] * self.Y.shape[0])
+        )
+        self.basis = torch.nn.Parameter(basis)
 
     def forward(self, Yhat):
         # Flatten inputs
         if len(Yhat.shape) >= 2:
-            Yhat = Yhat.view((*Yhat.shape[:-len(self.Y_raw.shape)], self.Y.shape[0]))
+            Yhat = Yhat.view((*Yhat.shape[: -len(self.Y_raw.shape)], self.Y.shape[0]))
 
         # Measure distance between predicted and true distributions
         diff = self.Y - Yhat

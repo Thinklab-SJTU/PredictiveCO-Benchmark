@@ -8,10 +8,12 @@ import numpy as np
 import torch
 
 from gurobipy import GRB
+
 # from pyepo.func.abcmodule import optModule
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Solvers.utils_solver import _solve_in_pass#, _cache_in_pass
+from openpto.method.Solvers.utils_solver import _solve_in_pass  # , _cache_in_pass
+
 
 class SPOPlus(optModel):
     """
@@ -39,35 +41,62 @@ class SPOPlus(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # build carterion
         self.spop = SPOPlusFunc()
-    
-    def forward(self, problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
+
+    def forward(
+        self,
+        problem,
+        coeff_hat,
+        coeff_true,
+        sol_hat=None,
+        sol_true=None,
+        params=None,
+        **hyperparams,
+    ):
         """
-            Forward pass
+        Forward pass
         """
         if coeff_hat.dim() == 1:
             coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
         if sol_true is None:
-            if hasattr(problem, 'get_decision_and_objective'):
-                sol_true, obj_true = problem.get_decision_and_objective(coeff_true.cpu(), params.cpu(), 
-                                            isTrain = False, optSolver=None, **problem.init_API())
+            if hasattr(problem, "get_decision_and_objective"):
+                sol_true, obj_true = problem.get_decision_and_objective(
+                    coeff_true.cpu(),
+                    params.cpu(),
+                    isTrain=False,
+                    optSolver=None,
+                    **problem.init_API(),
+                )
             else:
-                sol_true = problem.get_decision(coeff_true.cpu(), params.cpu(), 
-                                                isTrain = False, optSolver=None, **problem.init_API())
+                sol_true = problem.get_decision(
+                    coeff_true.cpu(),
+                    params.cpu(),
+                    isTrain=False,
+                    optSolver=None,
+                    **problem.init_API(),
+                )
                 obj_true = problem.get_objective(coeff_true, sol_true)
             # sol_true = torch.Tensor(sol_true).to(coeff_true.device)
-        # 
-        loss = self.spop.apply(coeff_hat, coeff_true, sol_true, obj_true,
-                               self.optSolver, self.processes, self.pool,
-                               self.solve_ratio, self)
+        #
+        loss = self.spop.apply(
+            coeff_hat,
+            coeff_true,
+            sol_true,
+            obj_true,
+            self.optSolver,
+            self.processes,
+            self.pool,
+            self.solve_ratio,
+            self,
+        )
         # reduction
-        if hyperparams['reduction'] == "mean":
+        if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
-        elif hyperparams['reduction'] == "sum":
+        elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
-        elif hyperparams['reduction'] == "none":
+        elif hyperparams["reduction"] == "none":
             loss = loss
         else:
-            raise ValueError("No reduction '{}'.".format(hyperparams['reduction']))
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss
 
 
@@ -77,8 +106,18 @@ class SPOPlusFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, coeff_hat, coeff_true, sol_true, obj_true,
-                optSolver, processes, pool, solve_ratio, module):
+    def forward(
+        ctx,
+        coeff_hat,
+        coeff_true,
+        sol_true,
+        obj_true,
+        optSolver,
+        processes,
+        pool,
+        solve_ratio,
+        module,
+    ):
         """
         Forward pass for SPO+
 
@@ -101,13 +140,13 @@ class SPOPlusFunc(torch.autograd.Function):
         # convert tenstor
         cp = coeff_hat.detach().to("cpu").numpy()
         c = coeff_true.detach().to("cpu").numpy()
-        w = sol_true#.detach().to("cpu").numpy()
-        z = obj_true#.detach().to("cpu").numpy()
+        w = sol_true  # .detach().to("cpu").numpy()
+        z = obj_true  # .detach().to("cpu").numpy()
         # check sol
-        #_check_sol(c, w, z)
+        # _check_sol(c, w, z)
         # solve
         if np.random.uniform() <= solve_ratio:
-            sol, obj = _solve_in_pass(2*cp-c, optSolver, processes, pool)
+            sol, obj = _solve_in_pass(2 * cp - c, optSolver, processes, pool)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
@@ -119,12 +158,12 @@ class SPOPlusFunc(torch.autograd.Function):
         # calculate loss
         loss = []
         for i in range(len(cp)):
-            loss.append(- obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
+            loss.append(-obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
             loss = np.array(loss)
         if optSolver.modelSense == GRB.MAXIMIZE:
-            loss = - np.array(loss)
+            loss = -np.array(loss)
         # convert to tensor
         loss = torch.FloatTensor(loss).to(device)
         sol = np.array(sol)

@@ -8,10 +8,12 @@ import numpy as np
 import torch
 
 from gurobipy import GRB
+
 # from pyepo.func.abcmodule import optModel
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from openpto.method.Models.abcoptModel import optModel
+
 
 class NCE(optModel):
     """
@@ -23,7 +25,7 @@ class NCE(optModel):
 
     Thus, allows us to design an algorithm based on stochastic gradient descent.
 
-    Reference: <https://www.ijcai.org/proceedings/2021/390> 
+    Reference: <https://www.ijcai.org/proceedings/2021/390>
     """
 
     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
@@ -36,9 +38,9 @@ class NCE(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # solution pool
-        if not isinstance(dataset, optDataset): # type checking
+        if not isinstance(dataset, optDataset):  # type checking
             raise TypeError("dataset is not an optDataset")
-        self.solpool = np.unique(dataset.sols.copy(), axis=0) # remove duplicate
+        self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
     def forward(self, pred_cost, true_sol, reduction="mean"):
         """
@@ -100,9 +102,9 @@ class contrastiveMAP(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio, dataset)
         # solution pool
-        if not isinstance(dataset, optDataset): # type checking
+        if not isinstance(dataset, optDataset):  # type checking
             raise TypeError("dataset is not an optDataset")
-        self.solpool = np.unique(dataset.sols.copy(), axis=0) # remove duplicate
+        self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
     def forward(self, pred_cost, true_sol, reduction="mean"):
         """

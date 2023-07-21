@@ -9,9 +9,11 @@ import torch
 
 
 from gurobipy import GRB
+
 # from pyepo.func.abcmodule import optModule
 # from pyepo.utlis import getArgs
 from openpto.method.Models.abcOptModel import optModel
+
 
 class perturbedOpt(optModel):
     """
@@ -27,8 +29,16 @@ class perturbedOpt(optModel):
     Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
     """
 
-    def __init__(self, optSolver, n_samples=10, sigma=1.0, processes=1,
-                 seed=135, solve_ratio=1, dataset=None):
+    def __init__(
+        self,
+        optSolver,
+        n_samples=10,
+        sigma=1.0,
+        processes=1,
+        seed=135,
+        solve_ratio=1,
+        dataset=None,
+    ):
         """
         Args:
             optSolver (optModel): an PyEPO optimization model
@@ -53,9 +63,17 @@ class perturbedOpt(optModel):
         """
         Forward pass
         """
-        sols = self.ptb.apply(pred_cost, self.optSolver, self.n_samples,
-                              self.sigma, self.processes, self.pool, self.rnd,
-                              self.solve_ratio, self)
+        sols = self.ptb.apply(
+            pred_cost,
+            self.optSolver,
+            self.n_samples,
+            self.sigma,
+            self.processes,
+            self.pool,
+            self.rnd,
+            self.solve_ratio,
+            self,
+        )
         return sols
 
 
@@ -65,8 +83,18 @@ class perturbedOptFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, pred_cost, optSolver, n_samples, sigma,
-                processes, pool, rnd, solve_ratio, module):
+    def forward(
+        ctx,
+        pred_cost,
+        optSolver,
+        n_samples,
+        sigma,
+        processes,
+        pool,
+        rnd,
+        solve_ratio,
+        module,
+    ):
         """
         Forward pass for perturbed
 
@@ -126,9 +154,9 @@ class perturbedOptFunc(torch.autograd.Function):
         optSolver = ctx.optSolver
         n_samples = ctx.n_samples
         sigma = ctx.sigma
-        grad = torch.einsum("nbd,bn->bd",
-                            noises,
-                            torch.einsum("bnd,bd->bn", ptb_sols, grad_output))
+        grad = torch.einsum(
+            "nbd,bn->bd", noises, torch.einsum("bnd,bd->bn", ptb_sols, grad_output)
+        )
         grad /= n_samples * sigma
         return grad, None, None, None, None, None, None, None, None
 
@@ -149,8 +177,16 @@ class perturbedFenchelYoung(optModule):
     Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
     """
 
-    def __init__(self, optSolver, n_samples=10, sigma=1.0, processes=1,
-                 seed=135, solve_ratio=1, dataset=None):
+    def __init__(
+        self,
+        optSolver,
+        n_samples=10,
+        sigma=1.0,
+        processes=1,
+        seed=135,
+        solve_ratio=1,
+        dataset=None,
+    ):
         """
         Args:
             optSolver (optModel): an PyEPO optimization model
@@ -175,9 +211,18 @@ class perturbedFenchelYoung(optModule):
         """
         Forward pass
         """
-        loss = self.pfy.apply(pred_cost, true_sol, self.optSolver, self.n_samples,
-                              self.sigma, self.processes, self.pool, self.rnd,
-                              self.solve_ratio, self)
+        loss = self.pfy.apply(
+            pred_cost,
+            true_sol,
+            self.optSolver,
+            self.n_samples,
+            self.sigma,
+            self.processes,
+            self.pool,
+            self.rnd,
+            self.solve_ratio,
+            self,
+        )
         # reduction
         if reduction == "mean":
             loss = torch.mean(loss)
@@ -196,8 +241,19 @@ class perturbedFenchelYoungFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, pred_cost, true_sol, optSolver, n_samples, sigma,
-                processes, pool, rnd, solve_ratio, module):
+    def forward(
+        ctx,
+        pred_cost,
+        true_sol,
+        optSolver,
+        n_samples,
+        sigma,
+        processes,
+        pool,
+        rnd,
+        solve_ratio,
+        module,
+    ):
         """
         Forward pass for perturbed Fenchel-Young loss
 
@@ -257,7 +313,7 @@ class perturbedFenchelYoungFunc(torch.autograd.Function):
         """
         Backward pass for perturbed Fenchel-Young loss
         """
-        grad, = ctx.saved_tensors
+        (grad,) = ctx.saved_tensors
         grad_output = torch.unsqueeze(grad_output, dim=-1)
         return grad * grad_output, None, None, None, None, None, None, None, None, None
 
@@ -276,7 +332,7 @@ def _solve_in_pass(ptb_c, optSolver, processes, pool):
             # per sample
             for j in range(n_samples):
                 # solve
-                optSolver.setObj(ptb_c[j,i])
+                optSolver.setObj(ptb_c[j, i])
                 sol, _ = optSolver.solve()
                 sols.append(sol)
             ptb_sols.append(sols)
@@ -287,8 +343,12 @@ def _solve_in_pass(ptb_c, optSolver, processes, pool):
         # get args
         args = getArgs(optSolver)
         # parallel computing
-        ptb_sols = pool.amap(_solveWithObj4Par, ptb_c.transpose(1,0,2),
-                             [args] * ins_num, [model_type] * ins_num).get()
+        ptb_sols = pool.amap(
+            _solveWithObj4Par,
+            ptb_c.transpose(1, 0, 2),
+            [args] * ins_num,
+            [model_type] * ins_num,
+        ).get()
     return np.array(ptb_sols)
 
 
@@ -308,7 +368,7 @@ def _cache_in_pass(ptb_c, optSolver, solpool):
         if optSolver.modelSense == GRB.MAXIMIZE:
             ind = np.argmax(solpool_obj, axis=1)
         ptb_sols.append(solpool[ind])
-    return np.array(ptb_sols).transpose(1,0,2)
+    return np.array(ptb_sols).transpose(1, 0, 2)
 
 
 def _solveWithObj4Par(perturbed_costs, args, model_type):
