@@ -8,7 +8,7 @@ from copy import copy
 import gurobipy as gp
 
 
-from openpto.method.Solver.abcOptSolver import optSolver
+from openpto.method.Solvers.abcOptSolver import optSolver
 
 
 class optGrbSolver(optSolver):

@@ -7,8 +7,8 @@ import torch
 import pickle
 import matplotlib.pyplot as plt
 
-from openpto.method.models import _get_learned_loss, SPOPlus
-from openpto.method.models.abcOptModel import optModel
+from openpto.method.Models import _get_learned_loss, SPOPlus
+from openpto.method.Models.abcOptModel import optModel
 
 NUM_CPUS = os.cpu_count()
 

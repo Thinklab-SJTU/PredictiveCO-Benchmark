@@ -6,10 +6,10 @@ import torch
 from torch.multiprocessing import Pool
 
 from openpto.problems.wrapper_prob import BudgetAllocation, BipartiteMatching,RMAB
-from openpto.method.Solver.utils_solver import  starmap_with_kwargs
+from openpto.method.Solvers.utils_solver import  starmap_with_kwargs
 from openpto.problems.wrapper_prob import find_saved_problem
 
-# from openpto.method.models.models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
+# from openpto.method.Models.Models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
 
 
 def _learn_loss(

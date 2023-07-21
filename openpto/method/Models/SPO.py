@@ -10,8 +10,8 @@ import torch
 from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
-from openpto.method.models.abcOptModel import optModel
-from openpto.method.Solver.utils_solver import _solve_in_pass#, _cache_in_pass
+from openpto.method.Models.abcOptModel import optModel
+from openpto.method.Solvers.utils_solver import _solve_in_pass#, _cache_in_pass
 
 class SPOPlus(optModel):
     """

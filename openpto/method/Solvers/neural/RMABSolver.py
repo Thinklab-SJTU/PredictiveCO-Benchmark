@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 
 
-from openpto.method.Solver.utils_solver import gather_incomplete_left, trim_left, solve_lineqn
+from openpto.method.Solvers.utils_solver import gather_incomplete_left, trim_left, solve_lineqn
 
 
 class RMABSolver(torch.nn.Module):

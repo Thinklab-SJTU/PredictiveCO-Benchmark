@@ -13,11 +13,11 @@ torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
 from openpto import ExpManager
-from openpto.method.models.loss import get_loss_fn
+from openpto.method.Models.loss import get_loss_fn
 from openpto.config import load_conf, get_args
 from openpto.metrics import *
 from openpto.problems.wrapper_prob import problem_wrapper
-from openpto.method.Solver.wrapper_solver import solver_wrapper
+from openpto.method.Solvers.wrapper_solver import solver_wrapper
 
 if __name__ == '__main__':
     args = get_args()

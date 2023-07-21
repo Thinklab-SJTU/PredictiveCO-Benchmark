@@ -1,8 +1,8 @@
-from openpto.method.Solver.grb.grb_knapsack import KPGrbSolver
+from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 
-from openpto.method.Solver.neural.SubmodularOptimizer import SubmodularOptimizer
-from openpto.method.Solver.neural.TopKOptimizer import TopKOptimizer
-from openpto.method.Solver.neural.RMABSolver import RMABSolver
+from openpto.method.Solvers.neural.SubmodularOptimizer import SubmodularOptimizer
+from openpto.method.Solvers.neural.TopKOptimizer import TopKOptimizer
+from openpto.method.Solvers.neural.RMABSolver import RMABSolver
 
 ################################# Wrappers ################################################
 def solver_wrapper(args, conf, problem):

@@ -11,7 +11,7 @@ import torch
 from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.utlis import getArgs
-from openpto.method.models.abcOptModel import optModel
+from openpto.method.Models.abcOptModel import optModel
 
 class perturbedOpt(optModel):
     """

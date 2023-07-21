@@ -13,7 +13,7 @@ from gurobipy import GRB
 # from pyepo.func.abcmodule import OptModule
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
-from openpto.method.models.abcoptModel import optModel
+from openpto.method.Models.abcoptModel import optModel
 
 class listwiseLTR(optModel):
     """

@@ -9,8 +9,8 @@ from gurobipy import GRB
 
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import read_file, generate_uniform_weights_from_seed
-from openpto.method.Solver.grb.grb_knapsack import KPGrbSolver
-from openpto.method.Solver.utils_solver import _solve_in_pass, GrbSolve
+from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
+from openpto.method.Solvers.utils_solver import _solve_in_pass, GrbSolve
 
 BENCHMARK_SIZE = 48
 
