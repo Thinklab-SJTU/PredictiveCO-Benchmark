@@ -47,7 +47,8 @@ def solve_lineqn(A, b, eps=1e-5):
 
 ############################### Solve ##################################
 def GrbSolve(cp, optmodel):
-    ins_num = len(cp) if cp.ndim == 2 else 1
+    if cp.ndim == 1: cp = cp.reshape(1, -1)
+    ins_num = len(cp) 
     sol = []
     obj = []
     for i in range(ins_num):
@@ -56,7 +57,7 @@ def GrbSolve(cp, optmodel):
         solp, objp = optmodel.solve()
         sol.append(solp)
         obj.append(objp)
-    return sol, obj
+    return np.array(sol), np.array(obj)
 
 def _solve_in_pass(cp, optmodel, processes, pool):
     """

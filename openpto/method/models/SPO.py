@@ -40,22 +40,22 @@ class SPOPlus(optModel):
         # build carterion
         self.spop = SPOPlusFunc()
     
-    def forward(self, problem, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    # def forward(self, coeff_hat, coeff_true, sol_true, obj_true, reduction="mean"):
+    def forward(self, problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
         """
-        Forward pass
+            Forward pass
         """
-        obj_true = None
+        if coeff_hat.dim() == 1:
+            coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
         if sol_true is None:
             if hasattr(problem, 'get_decision_and_objective'):
-                print("line 51: ",coeff_true, params)
                 sol_true, obj_true = problem.get_decision_and_objective(coeff_true.cpu(), params.cpu(), 
-                                            isTrain = False, optSolver=None, **problem.params_API())
+                                            isTrain = False, optSolver=None, **problem.init_API())
             else:
-                sol_true = problem.get_decision(coeff_true.cpu().numpy(), params.cpu().numpy(), 
-                                                isTrain = False, optSolver=None, **problem.params_API())
-        if obj_true is None:
-            obj_true = problem.get_objective(coeff_true, sol_true)
+                sol_true = problem.get_decision(coeff_true.cpu(), params.cpu(), 
+                                                isTrain = False, optSolver=None, **problem.init_API())
+                obj_true = problem.get_objective(coeff_true, sol_true)
+            # sol_true = torch.Tensor(sol_true).to(coeff_true.device)
+        # 
         loss = self.spop.apply(coeff_hat, coeff_true, sol_true, obj_true,
                                self.optSolver, self.processes, self.pool,
                                self.solve_ratio, self)
@@ -129,6 +129,7 @@ class SPOPlusFunc(torch.autograd.Function):
         loss = torch.FloatTensor(loss).to(device)
         sol = np.array(sol)
         sol = torch.FloatTensor(sol).to(device)
+        sol_true = torch.FloatTensor(sol_true).to(device)
         # save solutions
         ctx.save_for_backward(sol_true, sol)
         # add other objects to ctx

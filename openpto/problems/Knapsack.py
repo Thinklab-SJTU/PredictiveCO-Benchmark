@@ -5,6 +5,8 @@ import numpy as np
 
 import torch
 
+from gurobipy import GRB
+
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import read_file, generate_uniform_weights_from_seed
 from openpto.method.Solver.grb.grb_knapsack import KPGrbSolver
@@ -45,14 +47,16 @@ class Knapsack(PTOProblem):
             dataset = get_energy_data('energy_data.txt', generate_weight=generate_weight, unit_weight=unit_weight,
                                   kfold=kfold, noise_level=noise_level, seed = rand_seed)
         elif prob_version=="gen":
-            train_weights, train_feats, train_profits = self.genData(num_train_instances, num_features, num_items, dim=knapsack_dim,
-                                    poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances,-1)
+            weights, feats, profits = self.genData(num_train_instances+num_test_instances, num_features, 
+                                    num_items, dim=knapsack_dim,poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
+            train_feats, test_feats = feats[:num_train_instances], feats[num_train_instances:]
+            train_profits, test_profits = profits[:num_train_instances], profits[num_train_instances:]
+            # train set
+            self.weights = weights
+            self.params_train = weights.unsqueeze(0).expand(num_train_instances,-1)
             self.Xs_train, self.Ys_train = train_feats, train_profits
-
-            test_weights, test_feats, test_profits = self.genData(num_test_instances, num_features, num_items, dim=knapsack_dim,
-                                    poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances,-1)
+            # test set
+            self.params_test = weights.unsqueeze(0).expand(num_test_instances,-1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
             # Split training data into train/val
             assert 0 < val_frac < 1
@@ -86,12 +90,12 @@ class Knapsack(PTOProblem):
                 weights = params[0]
             else:
                 weights = params
-            optSolver = KPGrbSolver(weights=weights, capacity=kwargs['capacity'])
+            optSolver = KPGrbSolver(**kwargs)
         if Y.ndim==1:
             decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
         else:
             decisions, objs = GrbSolve(Y, optSolver)
-        return decisions
+        return np.array(decisions)
     
     def get_decision_and_objective(self, Y, params, isTrain = True, optSolver=None, **kwargs):
         if optSolver is None:
@@ -99,16 +103,19 @@ class Knapsack(PTOProblem):
                 weights = params[0]
             else:
                 weights = params
-            optSolver = KPGrbSolver(weights=weights, capacity=kwargs['capacity'])
+            optSolver = KPGrbSolver(**kwargs)
         
         if Y.ndim==1:
             decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
         else:
             decisions, objs = GrbSolve(Y, optSolver)
-        return decisions, objs
+        return np.array(decisions), np.array(objs)
     
-    def params_API(self):
-        return {"capacity": self.capacity}
+    def init_API(self):
+        return {"weights": self.weights, "capacity": self.capacity, 'modelSense': GRB.MAXIMIZE}
+    
+    # def params_API(self):
+    #     return { "capacity": self.capacity}
     
     def get_model_shape(self):
         if self.prob_version=="gen":

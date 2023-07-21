@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Load solver
     print(f"--- Loading [{args.solver}] solver ...")
-    optSolver = solver_wrapper(args, conf)
+    optSolver = solver_wrapper(args, conf, problem)
 
     # Load loss function
     print(f"--- Loading [{args.opt_model}] Loss Function...")
@@ -50,8 +50,8 @@ if __name__ == '__main__':
     )(optSolver)
 
     ipdim, opdim = problem.get_model_shape()
-    model_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
-    exp = ExpManager(model_args, save_path='saved_records', args = args)
+    pred_model_args = {"ipdim":ipdim, "opdim":opdim, "out_act": problem.get_output_activation()}
+    exp = ExpManager(pred_model_args, save_path='saved_records', args = args, conf = conf)
 
     # Train neural network with a given loss function
     print(f"--- Start training [{args.pred_model}] model on [{args.opt_model}] loss...")

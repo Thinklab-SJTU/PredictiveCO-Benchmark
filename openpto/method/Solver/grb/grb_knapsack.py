@@ -8,9 +8,10 @@ from openpto.method.Solver.grb.grbSolver import optGrbSolver
 
 # optimization model
 class KPGrbSolver(optGrbSolver):
-    def __init__(self, weights, capacity):
+    def __init__(self, weights, capacity, modelSense):
         # super().__init__()
         self._model, self.x = self._getModel(weights, capacity)
+        self.modelSense = modelSense
 
     def _getModel(self, weights, capacity):
         num_items = len(weights)

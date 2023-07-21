@@ -6,6 +6,12 @@ import operator
 import torch
 
 from openpto.method.Solver.utils_solver import View
+######################## prediction model wrapper  ############################
+def pred_model_wrapper_solver(args):
+    model_dict = {'dense': dense_nn}
+    # TODO:more pred models
+    return model_dict[args.pred_model]
+
 
 #################################### Dense NN #################################
 # TODO: Pretty it up
