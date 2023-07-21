@@ -11,9 +11,9 @@ import torch
 from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.utlis import getArgs
+from openpto.method.models.abcOptModel import optModel
 
-
-class perturbedOpt(optModule):
+class perturbedOpt(optModel):
     """
     An autograd module for differentiable perturbed optimizer, in which random
     perturbed costs are sampled to optimize.

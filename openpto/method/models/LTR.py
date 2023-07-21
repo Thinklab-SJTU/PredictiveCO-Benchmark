@@ -10,12 +10,12 @@ import torch.nn.functional as F
 from torch import nn
 
 from gurobipy import GRB
-# from pyepo.func.abcmodule import optModule
+# from pyepo.func.abcmodule import OptModule
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+from openpto.method.models.abcoptModel import optModel
 
-
-class listwiseLTR(optModule):
+class listwiseLTR(optModel):
     """
     An autograd module for listwise learning to rank, where the goal is to learn
     an objective function that ranks a pool of feasible solutions correctly.
@@ -81,7 +81,7 @@ class listwiseLTR(optModule):
         return loss
 
 
-class pairwiseLTR(optModule):
+class pairwiseLTR(optModel):
     """
     An autograd module for pairwise learning to rank, where the goal is to learn
     an objective function that ranks a pool of feasible solutions correctly.
@@ -160,7 +160,7 @@ class pairwiseLTR(optModule):
         return loss
 
 
-class pointwiseLTR(optModule):
+class pointwiseLTR(optModel):
     """
     An autograd module for pointwise learning to rank, where the goal is to
     learn an objective function that ranks a pool of feasible solutions

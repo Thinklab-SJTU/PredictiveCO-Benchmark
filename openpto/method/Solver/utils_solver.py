@@ -1,6 +1,7 @@
 from itertools import repeat
 
 import pandas as pd
+import numpy as np
 
 import torch
 
@@ -46,7 +47,7 @@ def solve_lineqn(A, b, eps=1e-5):
 
 ############################### Solve ##################################
 def GrbSolve(cp, optmodel):
-    ins_num = len(cp)
+    ins_num = len(cp) if cp.ndim == 2 else 1
     sol = []
     obj = []
     for i in range(ins_num):
@@ -68,15 +69,15 @@ def _solve_in_pass(cp, optmodel, processes, pool):
         sol, obj = GrbSolve(cp, optmodel)
     # multi-core
     else:
-        raise NotImplementedError
-    #     # get class
-    #     model_type = type(optmodel)
-    #     # get args
-    #     args = getArgs(optmodel)
-    #     # parallel computing
-    #     res = pool.amap(_solveWithObj4Par, cp, [args] * ins_num,
-    #                     [model_type] * ins_num).get()
-    #     # get res
-    #     sol = np.array(list(map(lambda x: x[0], res)))
-    #     obj = np.array(list(map(lambda x: x[1], res)))
+        raise NotImplementedError("Parallel computing is not supported yet.")
+        # # get class
+        # model_type = type(optmodel)
+        # # get args
+        # args = getArgs(optmodel)
+        # # parallel computing
+        # res = pool.amap(_solveWithObj4Par, cp, [args] * ins_num,
+        #                 [model_type] * ins_num).get()
+        # # get res
+        # sol = np.array(list(map(lambda x: x[0], res)))
+        # obj = np.array(list(map(lambda x: x[1], res)))
     return sol, obj

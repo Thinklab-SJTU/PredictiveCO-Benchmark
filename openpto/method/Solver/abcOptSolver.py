@@ -7,6 +7,8 @@ Abstract optimization model
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
+import torch.nn as nn
+
 from gurobipy import GRB
 
 class optSolver: #(ABC):
@@ -18,6 +20,7 @@ class optSolver: #(ABC):
     """
 
     def __init__(self, modelSense=None):
+        # super(optSolver, self).__init__()
         # default sense
         self.modelSense = modelSense if modelSense is not None else GRB.MINIMIZE
         self._model, self.x = self._getModel()

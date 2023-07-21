@@ -25,7 +25,7 @@ class ExpManager:
     def __init__(self, prob_args, save_path=None, args=None):
         self.args = args
         self.device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-        print(f"Running on {self.device}")
+        print(f"--- Running on {self.device}")
         # you can change random seed here
         # self.train_seeds = [i for i in range(400)]
         # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -41,7 +41,7 @@ class ExpManager:
                                         num_layers=args.layers,
                                         intermediate_size=500,
                                         output_activation=prob_args["out_act"])
-        print(f"Built [{args.pred_model}] Prediction Model")
+        print(f"--- Built [{args.pred_model}] Prediction Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 
@@ -100,13 +100,13 @@ class ExpManager:
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
-            Z_test_rand = problem.get_decision(torch.rand_like(Y_test), aux_data=Y_test_aux, isTrain=False)
+            Z_test_rand = problem.get_decision(torch.rand_like(Y_test), params=Y_test_aux, isTrain=False, **problem.params_API())
             objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
             objs_rand.append(objectives)
         print(f"\nRandom Decision Quality: {torch.stack(objs_rand).mean().item():.3f}")
 
         #   Document the optimal value
-        Z_test_opt = problem.get_decision(Y_test, aux_data=Y_test_aux, isTrain=False)
+        Z_test_opt = problem.get_decision(Y_test, params=Y_test_aux, isTrain=False, **problem.params_API())
         objectives = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
         print(f"Optimal Decision Quality: {objectives.mean().item():.3f}")
         print()

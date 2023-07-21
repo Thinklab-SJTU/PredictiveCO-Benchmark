@@ -8,6 +8,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 from openpto.method.models import _get_learned_loss, SPOPlus
+from openpto.method.models.abcOptModel import optModel
 
 NUM_CPUS = os.cpu_count()
 
@@ -26,57 +27,74 @@ def get_loss_fn(
         return _get_decision_focused(problem, **kwargs)
     elif name == 'learned':
         return _get_learned_loss(problem, name, **kwargs)
-    elif name == 'SPO':
+    elif name == 'spo':
         return SPOPlus
-    elif name == 'LTR':
+    elif name == 'ltr':
         return None
-    elif name == 'Intopt':
+    elif name == 'intopt':
         return None
-    elif name == 'NCE':
+    elif name == 'nce':
         return None
-    elif name == 'Blackbox':
+    elif name == 'blackbox':
         return None
     else:
         raise LookupError()
 
-
-def MSE(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    """
-    Calculates the mean squared error between predictions
-    Yhat and true lables Y.
-    """
-    return (coeff_hat - coeff_true).square().mean()
-
-
-def MAE(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    """
-    Calculates the mean squared error between predictions
-    Yhat and true lables Y.
-    """
-    return (coeff_hat - coeff_true).abs().mean()
-
-
-def CE(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    return torch.nn.BCELoss()(coeff_hat, coeff_true)
-
-
-# def MSE_Sum(Yhats, Ys, alpha=0.1,  **kwargs):
-def MSE_Sum(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    """
-        Custom loss function that the squared error of the _sum_
-        along the last dimension plus some regularisation.
-        Useful for the Submodular Optimisation problems in Wilder et. al.
-    Input:
-        alpha:  #weight of MSE-based regularisation
-    """
-    # Check if prediction is a matrix/tensor
-    assert len(coeff_true.shape) >= 2
-    alpha = hyperparams['alpha']
+class MSE(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
+        super().__init__(optSolver, processes, solve_ratio, dataset)
     
-    # Calculate loss
-    sum_loss = (coeff_hat - coeff_true).sum(dim=-1).square().mean()
-    loss_regularised = (1 - alpha) * sum_loss + alpha * MSE(coeff_hat, coeff_true)
-    return loss_regularised
+    @staticmethod
+    def forward(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
+        """
+        Calculates the mean squared error between predictions
+        Yhat and true lables Y.
+        """
+        return (coeff_hat - coeff_true).square().mean()
+
+class MAE(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
+        super().__init__(optSolver, processes, solve_ratio, dataset)
+    @staticmethod
+    def forward(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
+        """
+        Calculates the mean squared error between predictions
+        Yhat and true lables Y.
+        """
+        return (coeff_hat - coeff_true).abs().mean()
+
+
+
+class CE(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
+        super().__init__(optSolver, processes, solve_ratio, dataset)
+    @staticmethod
+    def forward(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
+        return torch.nn.BCELoss()(coeff_hat, coeff_true)
+
+
+
+
+class MSE_Sum(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
+        super().__init__(optSolver, processes, solve_ratio, dataset)
+    @staticmethod
+    def forward(problem, coeff_hat, coeff_true, sol_hat=None, sol_true=None, params=None, **hyperparams):
+        """
+            Custom loss function that the squared error of the _sum_
+            along the last dimension plus some regularisation.
+            Useful for the Submodular Optimisation problems in Wilder et. al.
+        Input:
+            alpha:  #weight of MSE-based regularisation
+        """
+        # Check if prediction is a matrix/tensor
+        assert len(coeff_true.shape) >= 2
+        alpha = hyperparams['alpha']
+    
+        # Calculate loss
+        sum_loss = (coeff_hat - coeff_true).sum(dim=-1).square().mean()
+        loss_regularised = (1 - alpha) * sum_loss + alpha * MSE(coeff_hat, coeff_true)
+        return loss_regularised
 
 
 # def _get_decision_focused( problem, dflalpha=1., **kwargs,):

@@ -8,7 +8,7 @@ import torch
 from openpto.method.Solver.utils_solver import View
 
 #################################### Dense NN #################################
-# TODO: Pretty it up    
+# TODO: Pretty it up
 def dense_nn(
     num_features,
     num_targets,

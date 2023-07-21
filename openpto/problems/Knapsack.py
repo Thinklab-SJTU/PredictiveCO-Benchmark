@@ -1,8 +1,6 @@
 import os
-import itertools
 import random
 
-# import pandas as pd
 import numpy as np
 
 import torch
@@ -11,10 +9,13 @@ from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import read_file, generate_uniform_weights_from_seed
 from openpto.method.Solver.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solver.utils_solver import _solve_in_pass, GrbSolve
+
 BENCHMARK_SIZE = 48
 
 class Knapsack(PTOProblem):
-    """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
+    """
+        Knapsack problem
+    """
 
     def __init__(
         self,
@@ -46,12 +47,12 @@ class Knapsack(PTOProblem):
         elif prob_version=="gen":
             train_weights, train_feats, train_profits = self.genData(num_train_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances,-1,-1)
+            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances,-1)
             self.Xs_train, self.Ys_train = train_feats, train_profits
 
             test_weights, test_feats, test_profits = self.genData(num_test_instances, num_features, num_items, dim=knapsack_dim,
                                     poly_deg=poly_deg, noise_width=noise_width, seed=rand_seed)
-            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances,-1, -1)
+            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances,-1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
             # Split training data into train/val
             assert 0 < val_frac < 1
@@ -72,26 +73,40 @@ class Knapsack(PTOProblem):
 
     @staticmethod
     def get_objective(Y, Z, **kwargs):
-        # return (Z * Y).sum(dim=-1)
         objectives = []
         num_instances = Y.shape[0]
         for ins in range(num_instances):
             objectives.append(sum(Y[ins].cpu()*torch.Tensor(Z[ins])))
-        return torch.Tensor(objectives)
+        # print("objectives: ", objectives)
+        return np.array(objectives)
     
     def get_decision(self, Y, params, isTrain = True, optSolver=None, **kwargs):
         if optSolver is None:
-            optSolver = KPGrbSolver(weights=params[0], capacity=kwargs['capacity'])
-        
-        decisions, obj = GrbSolve(Y, optSolver)
+            if params.ndim>1:
+                weights = params[0]
+            else:
+                weights = params
+            optSolver = KPGrbSolver(weights=weights, capacity=kwargs['capacity'])
+        if Y.ndim==1:
+            decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
+        else:
+            decisions, objs = GrbSolve(Y, optSolver)
         return decisions
     
     def get_decision_and_objective(self, Y, params, isTrain = True, optSolver=None, **kwargs):
         if optSolver is None:
-            optSolver = KPGrbSolver(weights=params[0], capacity=kwargs['capacity'])
+            if params.ndim>2:
+                weights = params[0]
+            else:
+                weights = params
+            optSolver = KPGrbSolver(weights=weights, capacity=kwargs['capacity'])
         
-        decisions, objs = GrbSolve(Y, optSolver)
+        if Y.ndim==1:
+            decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
+        else:
+            decisions, objs = GrbSolve(Y, optSolver)
         return decisions, objs
+    
     def params_API(self):
         return {"capacity": self.capacity}
     
@@ -156,7 +171,8 @@ class Knapsack(PTOProblem):
             profits[i, :] = values
             # float
             profits = profits.astype(np.float64)
-        return torch.Tensor(weights), torch.Tensor(feats), torch.Tensor(profits)
+        # TODO: currently only support 1-dim knapsack
+        return torch.Tensor(weights).squeeze(0), torch.Tensor(feats), torch.Tensor(profits)
 
     
 def get_energy_data(filename, generate_weight = True, unit_weight = True, kfold=0, noise_level = 0, is_spo_tree=False,seed=0):

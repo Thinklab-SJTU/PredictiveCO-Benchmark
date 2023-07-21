@@ -7,7 +7,6 @@ SPO+ Loss function
 import numpy as np
 import torch
 
-
 from gurobipy import GRB
 # from pyepo.func.abcmodule import optModule
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
@@ -29,7 +28,7 @@ class SPOPlus(optModel):
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, optSolver, problem, processes=1, solve_ratio=1, dataset=None):
+    def __init__(self, optSolver, processes=1, solve_ratio=1):
         """
         Args:
             optSolver (optSolver): an PyEPO optimization model
@@ -37,18 +36,27 @@ class SPOPlus(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
         """
-        super().__init__(optSolver, processes, solve_ratio, dataset)
+        super().__init__(optSolver, processes, solve_ratio)
         # build carterion
         self.spop = SPOPlusFunc()
-        self.problem = problem
     
-    def forward(self, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None, **hyperparams):
-    # def forward(self, coeff_hat, coeff_true, sol_true, true_obj, reduction="mean"):
+    def forward(self, problem, coeff_hat, coeff_true=None, sol_hat=None, sol_true=None, params=None, **hyperparams):
+    # def forward(self, coeff_hat, coeff_true, sol_true, obj_true, reduction="mean"):
         """
         Forward pass
         """
-        true_obj = self.problem.get_objective(coeff_true, sol_true)
-        loss = self.spop.apply(coeff_hat, coeff_true, sol_true, true_obj,
+        obj_true = None
+        if sol_true is None:
+            if hasattr(problem, 'get_decision_and_objective'):
+                print("line 51: ",coeff_true, params)
+                sol_true, obj_true = problem.get_decision_and_objective(coeff_true.cpu(), params.cpu(), 
+                                            isTrain = False, optSolver=None, **problem.params_API())
+            else:
+                sol_true = problem.get_decision(coeff_true.cpu().numpy(), params.cpu().numpy(), 
+                                                isTrain = False, optSolver=None, **problem.params_API())
+        if obj_true is None:
+            obj_true = problem.get_objective(coeff_true, sol_true)
+        loss = self.spop.apply(coeff_hat, coeff_true, sol_true, obj_true,
                                self.optSolver, self.processes, self.pool,
                                self.solve_ratio, self)
         # reduction
@@ -69,7 +77,7 @@ class SPOPlusFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, coeff_hat, coeff_true, sol_true, true_obj,
+    def forward(ctx, coeff_hat, coeff_true, sol_true, obj_true,
                 optSolver, processes, pool, solve_ratio, module):
         """
         Forward pass for SPO+
@@ -78,8 +86,8 @@ class SPOPlusFunc(torch.autograd.Function):
             coeff_hat (torch.tensor): a batch of predicted values of the cost
             coeff_true (torch.tensor): a batch of true values of the cost
             sol_true (torch.tensor): a batch of true optimal solutions
-            true_obj (torch.tensor): a batch of true optimal objective values
-            optSolver (optSolver): an PyEPO optimization model
+            obj_true (torch.tensor): a batch of true optimal objective values
+            optSolver (optSolver): an optimization solver
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             solve_ratio (float): the ratio of new solutions computed during training
@@ -93,8 +101,8 @@ class SPOPlusFunc(torch.autograd.Function):
         # convert tenstor
         cp = coeff_hat.detach().to("cpu").numpy()
         c = coeff_true.detach().to("cpu").numpy()
-        w = sol_true.detach().to("cpu").numpy()
-        z = true_obj.detach().to("cpu").numpy()
+        w = sol_true#.detach().to("cpu").numpy()
+        z = obj_true#.detach().to("cpu").numpy()
         # check sol
         #_check_sol(c, w, z)
         # solve

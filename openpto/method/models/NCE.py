@@ -8,12 +8,12 @@ import numpy as np
 import torch
 
 from gurobipy import GRB
-# from pyepo.func.abcmodule import optModule
+# from pyepo.func.abcmodule import optModel
 # from pyepo.data.dataset import optDataset
 # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+from openpto.method.models.abcoptModel import optModel
 
-
-class NCE(optModule):
+class NCE(optModel):
     """
     An autograd module for noise contrastive estimation as surrogate loss
     functions, based on viewing non-optimal solutions as negative examples.
@@ -77,7 +77,7 @@ class NCE(optModule):
         return loss
 
 
-class contrastiveMAP(optModule):
+class contrastiveMAP(optModel):
     """
     An autograd module for Maximum A Posterior contrastive estimation as
     surrogate loss functions, which is a efficient self-contrastive algorithm.

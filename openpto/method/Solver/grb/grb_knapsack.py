@@ -13,7 +13,7 @@ class KPGrbSolver(optGrbSolver):
         self._model, self.x = self._getModel(weights, capacity)
 
     def _getModel(self, weights, capacity):
-        num_items = len(weights[0])
+        num_items = len(weights)
         # ceate a model
         m = gp.Model()
         # turn off output
@@ -23,7 +23,7 @@ class KPGrbSolver(optGrbSolver):
         # sense (must be minimize)
         m.modelSense = GRB.MAXIMIZE
         # constraints
-        m.addConstr(gp.quicksum([weights[0,i] * x[i] for i in range(num_items)]) <= capacity)
+        m.addConstr(gp.quicksum([weights[i] * x[i] for i in range(num_items)]) <= capacity)
         return m, x
 
     def setObj(self, c):
