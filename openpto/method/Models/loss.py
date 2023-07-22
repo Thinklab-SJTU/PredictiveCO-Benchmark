@@ -29,6 +29,8 @@ def get_loss_fn(name, problem, **kwargs):
         return None
     elif name == "blackbox":
         return None
+    elif name == "identity":
+        return None
     else:
         raise LookupError()
 
