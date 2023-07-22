@@ -1,8 +1,8 @@
-from abc import abstractmethod
 import multiprocessing as mp
-from pathos.multiprocessing import ProcessingPool
 
-import numpy as np
+from abc import abstractmethod
+
+from pathos.multiprocessing import ProcessingPool
 from torch import nn
 
 

@@ -1,8 +1,6 @@
 from itertools import repeat
 
-import pandas as pd
 import numpy as np
-
 import torch
 
 
@@ -15,13 +13,13 @@ def apply_args_and_kwargs(fn, args, kwargs):
     return fn(*args, **kwargs)
 
 
-def gather_incomplete_left(tensor, I):
+def gather_incomplete_left(tensor, Ident):
     return tensor.gather(
-        I.ndim,
-        I[(...,) + (None,) * (tensor.ndim - I.ndim)].expand(
-            (-1,) * (I.ndim + 1) + tensor.shape[I.ndim + 1 :]
+        Ident.ndim,
+        Ident[(...,) + (None,) * (tensor.ndim - Ident.ndim)].expand(
+            (-1,) * (Ident.ndim + 1) + tensor.shape[Ident.ndim + 1 :]
         ),
-    ).squeeze(I.ndim)
+    ).squeeze(Ident.ndim)
 
 
 def trim_left(tensor):
@@ -52,7 +50,7 @@ def solve_lineqn(A, b, eps=1e-5):
     try:
         result = torch.linalg.solve(A, b)
     except RuntimeError:
-        print(f"WARNING: The matrix was singular")
+        print("WARNING: The matrix was singular")
         result = torch.linalg.solve(A + eps * torch.eye(A.shape[-1]), b)
     return result
 

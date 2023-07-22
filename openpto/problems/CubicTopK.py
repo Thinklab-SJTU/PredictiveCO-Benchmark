@@ -1,14 +1,10 @@
-from functools import partial
-from unicodedata import decimal
-
+import pdb
+import random
 
 import torch
-from torch.distributions import Normal, Bernoulli
-import random
-import pdb
 
-from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.neural.RMABSolver import TopK_custom
+from openpto.problems.PTOProblem import PTOProblem
 
 
 class CubicTopK(PTOProblem):
@@ -105,7 +101,6 @@ class CubicTopK(PTOProblem):
 # Unit test for RandomTopK
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    import pdb
 
     # Load An Example Instance
     pdb.set_trace()

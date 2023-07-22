@@ -1,19 +1,18 @@
-import os
-import itertools
-import quandl
 import datetime as dt
-import random
+import os
 import pdb
+import random
 
-import pandas as pd
 import cvxpy as cp
-from cvxpylayers.torch import CvxpyLayer
-
-quandl.ApiConfig.api_key = "3Uxzq4TZV5V9RghuRYsY"
-
+import pandas as pd
+import quandl
 import torch
 
+from cvxpylayers.torch import CvxpyLayer
+
 from openpto.problems.PTOProblem import PTOProblem
+
+quandl.ApiConfig.api_key = "3Uxzq4TZV5V9RghuRYsY"
 
 
 class PortfolioOpt(PTOProblem):
@@ -101,7 +100,7 @@ class PortfolioOpt(PTOProblem):
             # Normalize
             mean = future_mat.mean(dim=-1, keepdim=True)
             fm_norm = future_mat - mean  # normalised future matrix
-            if correl == True:
+            if correl is True:
                 std = (
                     future_mat.square().mean(dim=-1, keepdim=True) - mean.square()
                 ).sqrt()

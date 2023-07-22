@@ -4,10 +4,8 @@
 Abstract optimization model
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from copy import deepcopy
-
-import torch.nn as nn
 
 from gurobipy import GRB
 

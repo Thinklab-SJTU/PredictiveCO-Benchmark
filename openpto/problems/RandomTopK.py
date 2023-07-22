@@ -1,12 +1,10 @@
-import pdb
-
-import torch
-from torch.distributions import Normal, Bernoulli
 import matplotlib.pyplot as plt
+import torch
 
+from torch.distributions import Normal
 
-from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.wrapper_solver import TopKOptimizer
+from openpto.problems.PTOProblem import PTOProblem
 
 
 class RandomTopK(PTOProblem):
@@ -25,6 +23,7 @@ class RandomTopK(PTOProblem):
         super(RandomTopK, self).__init__()
         self._set_seed(rand_seed)
 
+        num_instances = num_train_instances + num_test_instances
         # Generate Labels
         self.Ys_train, self.Ys_test = self._generate_labels(
             num_instances, num_items
@@ -38,15 +37,15 @@ class RandomTopK(PTOProblem):
         assert not torch.isnan(self.Xs).any()
 
         # Split into train/testq
-        assert 0 < test_frac < 1
+        assert 0 < val_frac < 1
         train_pct = (
-            1 - test_frac
+            1 - val_frac
         ) * 0.8  # Using 80% of non-test data for train, and 20% for validation
-        self.test = range(0, int(test_frac * num_instances))
+        self.test = range(0, int(val_frac * num_instances))
         self.train = range(
-            int(test_frac * num_instances), int((train_pct + test_frac) * num_instances)
+            int(val_frac * num_instances), int((train_pct + val_frac) * num_instances)
         )
-        self.val = range(int((train_pct + test_frac) * num_instances), num_instances)
+        self.val = range(int((train_pct + val_frac) * num_instances), num_instances)
         assert all(x is not None for x in [self.test, self.train, self.val])
 
         # Create functions for optimisation

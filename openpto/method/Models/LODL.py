@@ -1,15 +1,31 @@
-from statistics import mean
-from functools import partial
+import os
+import pickle
+import random
+import time
+
 from copy import deepcopy
+from functools import partial
+from statistics import mean
 
 import torch
+
 from torch.multiprocessing import Pool
 
-from openpto.problems.wrapper_prob import BudgetAllocation, BipartiteMatching, RMAB
 from openpto.method.Solvers.utils_solver import starmap_with_kwargs
-from openpto.problems.wrapper_prob import find_saved_problem
+from openpto.problems.wrapper_prob import (
+    RMAB,
+    BipartiteMatching,
+    BudgetAllocation,
+    find_saved_problem,
+)
+
+from ..pred_model import dense_nn
+from .loss import MSE
 
 # from openpto.method.Models.Models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
+
+# TODO: update
+NUM_CPUS = 1
 
 
 def _learn_loss(
@@ -213,7 +229,7 @@ def _get_learned_loss(
         for Ys, Ys_aux, partition in datasets:
             # Get new sampled points
             start_time = time.time()
-            if serial == True:
+            if serial is True:
                 sampled_points = [
                     _sample_points(
                         Y, problem, sampling, num_extra_samples, Y_aux, sampling_std
@@ -299,7 +315,7 @@ def _get_learned_loss(
 
         # Learn a loss
         start_time = time.time()
-        if serial == True:
+        if serial is True:
             losses_and_stats = [
                 _learn_loss(
                     problem,

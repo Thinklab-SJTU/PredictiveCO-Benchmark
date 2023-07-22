@@ -1,11 +1,11 @@
 import pickle
 import random
-import numpy as np
 
+import numpy as np
 import torch
 
-from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.wrapper_solver import SubmodularOptimizer
+from openpto.problems.PTOProblem import PTOProblem
 
 
 class BudgetAllocation(PTOProblem):

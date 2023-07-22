@@ -1,9 +1,10 @@
-from abc import ABC, abstractmethod
 import random
 import time
 
-import torch
+from abc import ABC, abstractmethod
+
 import numpy as np
+import torch
 
 
 class PTOProblem(ABC):

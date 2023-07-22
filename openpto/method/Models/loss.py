@@ -1,13 +1,8 @@
-import random
 import os
-import time
 
 import torch
 
-import pickle
-import matplotlib.pyplot as plt
-
-from openpto.method.Models import _get_learned_loss, SPOPlus
+from openpto.method.Models import SPOPlus, _get_learned_loss
 from openpto.method.Models.abcOptModel import optModel
 
 NUM_CPUS = os.cpu_count()
@@ -156,7 +151,7 @@ def _get_decision_focused(
         params=None,
         **hyperparams,
     ):
-        Zs = problem.get_decision(coeff_hat, isTrain=True, **hyperparams)
+        problem.get_decision(coeff_hat, isTrain=True, **hyperparams)
         obj = problem.get_objective(coeff_true, sol_true, isTrain=True, **hyperparams)
         loss = -obj + dflalpha * twostageloss(coeff_hat, coeff_true)
 

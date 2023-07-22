@@ -1,7 +1,6 @@
-import os
-import pickle
-
 import csv
+import os
+
 import numpy as np
 
 

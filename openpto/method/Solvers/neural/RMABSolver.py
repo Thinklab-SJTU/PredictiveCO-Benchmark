@@ -1,16 +1,14 @@
-import random
 import pdb
+import random
 
 import numpy as np
-
 import torch
 import torch.nn.functional as F
 
-
 from openpto.method.Solvers.utils_solver import (
     gather_incomplete_left,
-    trim_left,
     solve_lineqn,
+    trim_left,
 )
 
 

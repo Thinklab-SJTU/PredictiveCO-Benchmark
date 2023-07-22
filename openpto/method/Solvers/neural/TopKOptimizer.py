@@ -1,7 +1,3 @@
-import pdb
-
-import numpy as np
-
 import torch
 
 from openpto.method.Solvers.neural.SubmodularOptimizer import OptimiseSubmodular

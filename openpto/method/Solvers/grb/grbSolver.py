@@ -5,8 +5,8 @@ Abstract optimization model based on GurobiPy
 """
 
 from copy import copy
-import gurobipy as gp
 
+import gurobipy as gp
 
 from openpto.method.Solvers.abcOptSolver import optSolver
 

@@ -1,14 +1,11 @@
-import pdb
-from pdb import main, set_trace
 import random
 
-import pickle
+import cvxpy as cp
 import networkx as nx
 import numpy as np
-
-import torch
 import pymetis as metis
-import cvxpy as cp
+import torch
+
 from cvxpylayers.torch import CvxpyLayer
 
 from openpto.problems.PTOProblem import PTOProblem
@@ -130,7 +127,7 @@ class BipartiteMatching(PTOProblem):
 
             # Split nodes into LHS and RHS
             #   Create a split
-            if random_split == True:
+            if random_split is True:
                 part_nodes = list(g_part[i].nodes())
                 random.shuffle(part_nodes)
                 lhs_nodes, rhs_nodes = part_nodes[:num_nodes], part_nodes[num_nodes:]
@@ -141,7 +138,7 @@ class BipartiteMatching(PTOProblem):
                 part_nodes = np.array(g_part[i].nodes())
                 _, split = metis.part_graph(nx.complement(g_part[i]))
                 if (np.array(split) == 0).sum() != 50:  # if
-                    num_flips = abs(50 - (np.array(split) == 0).sum())
+                    abs(50 - (np.array(split) == 0).sum())
 
                 lhs_nodes_idx, rhs_nodes_idx = (
                     np.where(np.array(split) == 0)[0],

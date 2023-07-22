@@ -1,6 +1,5 @@
-import numpy as np
-
 import gurobipy as gp
+
 from gurobipy import GRB
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver

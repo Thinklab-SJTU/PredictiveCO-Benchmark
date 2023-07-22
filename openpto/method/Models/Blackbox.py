@@ -7,11 +7,10 @@ Differentiable Black-box optimization function
 import numpy as np
 import torch
 
-
-# from pyepo.func.abcmodule import optModule
 from gurobipy import GRB
 
-# from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+from openpto.method.Solvers.utils_solver import _cache_in_pass, _solve_in_pass
+
 from .abcOptModel import optModel
 
 
@@ -248,9 +247,9 @@ class negativeIdentityFunc(torch.autograd.Function):
         # get device
         device = grad_output.device
         # identity matrix
-        I = torch.eye(grad_output.shape[1]).to(device)
+        Ident = torch.eye(grad_output.shape[1]).to(device)
         if optSolver.modelSense == GRB.MINIMIZE:
-            grad = -I
+            grad = -Ident
         if optSolver.modelSense == GRB.MAXIMIZE:
-            grad = I
+            grad = Ident
         return grad_output @ grad, None, None, None, None, None

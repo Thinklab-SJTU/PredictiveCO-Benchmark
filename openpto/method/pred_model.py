@@ -1,7 +1,6 @@
-from numpy import square
-from math import sqrt
-from functools import reduce
 import operator
+
+from functools import reduce
 
 import torch
 

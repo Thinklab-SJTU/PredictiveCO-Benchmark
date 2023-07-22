@@ -1,9 +1,8 @@
-import ruamel.yaml as yaml
 import argparse
-import os
 import ast
 import os
-from itertools import repeat
+
+import ruamel.yaml as yaml
 
 ###################################### Args ###############################################
 
@@ -121,11 +120,11 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
         The config file converted to Namespace.
 
     """
-    if path == None and method_name == None:
+    if path is None and method_name is None:
         raise KeyError
-    if path == None and prob_name == None:
+    if path is None and prob_name is None:
         raise KeyError
-    if path == None:
+    if path is None:
         # method_names = ['spo','ltr','intopt','nce','blackbox']
         # prob_names = ['knapsack', '']
 
@@ -136,7 +135,7 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
         )
         path = os.path.join(dir, prob_name + ".yaml")
 
-        if os.path.exists(path) == False:
+        if os.path.exists(path) is False:
             raise KeyError("The configuration file is not provided.")
 
     conf = open(path, "r").read()

@@ -1,16 +1,14 @@
 import os
-import random
 
 import numpy as np
-
 import torch
 
 from gurobipy import GRB
 
-from openpto.problems.PTOProblem import PTOProblem
-from openpto.problems.utils_prob import read_file, generate_uniform_weights_from_seed
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
-from openpto.method.Solvers.utils_solver import _solve_in_pass, GrbSolve
+from openpto.method.Solvers.utils_solver import GrbSolve
+from openpto.problems.PTOProblem import PTOProblem
+from openpto.problems.utils_prob import generate_uniform_weights_from_seed, read_file
 
 BENCHMARK_SIZE = 48
 
@@ -45,7 +43,7 @@ class Knapsack(PTOProblem):
         self._set_seed(rand_seed)
         # Obtain data
         if prob_version == "energy":
-            dataset = get_energy_data(
+            get_energy_data(
                 "energy_data.txt",
                 generate_weight=generate_weight,
                 unit_weight=unit_weight,
@@ -117,9 +115,9 @@ class Knapsack(PTOProblem):
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
         if optSolver is None:
             if params.ndim > 1:
-                weights = params[0]
+                params[0]
             else:
-                weights = params
+                pass
             optSolver = KPGrbSolver(**kwargs)
         if Y.ndim == 1:
             decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
@@ -132,9 +130,9 @@ class Knapsack(PTOProblem):
     ):
         if optSolver is None:
             if params.ndim > 2:
-                weights = params[0]
+                params[0]
             else:
-                weights = params
+                pass
             optSolver = KPGrbSolver(**kwargs)
 
         if Y.ndim == 1:
