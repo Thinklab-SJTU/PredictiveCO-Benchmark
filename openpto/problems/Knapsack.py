@@ -35,8 +35,9 @@ class Knapsack(PTOProblem):
         poly_deg=1,
         noise_width=0,
         capacity=1,
+        data_dir="./openpto/data/",
     ):
-        super(Knapsack, self).__init__()
+        super(Knapsack, self).__init__(data_dir)
         self.capacity = capacity
         self.num_items = num_items
         self.prob_version = prob_version
@@ -44,7 +45,7 @@ class Knapsack(PTOProblem):
         # Obtain data
         if prob_version == "energy":
             get_energy_data(
-                "energy_data.txt",
+                os.path.join(self.data_dir, "energy_data.txt"),
                 generate_weight=generate_weight,
                 unit_weight=unit_weight,
                 kfold=kfold,

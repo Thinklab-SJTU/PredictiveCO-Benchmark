@@ -61,6 +61,7 @@ def get_args():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--batchsize", type=int, default=1000)
     # data
+    parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--instances", type=int, default=400)
     parser.add_argument("--testinstances", type=int, default=200)

@@ -18,7 +18,8 @@ class blackboxOpt(optModel):
     optimal a solution and derive a gradient.
 
     For differentiable block-box, the objective function is linear and
-    constraints are known and fixed, but the cost vector need to be predicted
+    constraints are known and fixed, but the cost vector need to be predict
+    ed
     from contextual data.
 
     The block-box approximate gradient of optimizer smoothly. Thus, allows us to

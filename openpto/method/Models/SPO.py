@@ -75,7 +75,7 @@ class SPOPlus(optModel):
                     **problem.init_API(),
                 )
                 obj_true = problem.get_objective(coeff_true, sol_true)
-            # sol_true = torch.Tensor(sol_true).to(coeff_true.device)
+                # sol_true = torch.Tensor(sol_true).to(coeff_true.device)
         #
         loss = self.spop.apply(
             coeff_hat,

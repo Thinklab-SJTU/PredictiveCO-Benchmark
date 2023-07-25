@@ -10,8 +10,9 @@ import torch
 class PTOProblem(ABC):
     """A class that defines an arbitrary predict-then-optimise problem."""
 
-    def __init__(self):
+    def __init__(self, data_dir="./openpto/data/"):
         super(PTOProblem, self).__init__()
+        self.data_dir = data_dir
 
     @abstractmethod
     def get_train_data(self, **kwargs):
