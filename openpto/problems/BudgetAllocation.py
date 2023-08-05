@@ -4,7 +4,7 @@ import random
 import numpy as np
 import torch
 
-from openpto.method.Solvers.wrapper_solver import SubmodularOptimizer
+from openpto.method.Solvers import SubmodularOptimizer
 from openpto.problems.PTOProblem import PTOProblem
 
 

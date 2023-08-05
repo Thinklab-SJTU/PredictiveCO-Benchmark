@@ -20,7 +20,7 @@ from openpto.problems.wrapper_prob import (
 )
 
 from ..pred_model import dense_nn
-from .loss import MSE
+from .MSE import MSE
 
 # from openpto.method.Models.Models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
 

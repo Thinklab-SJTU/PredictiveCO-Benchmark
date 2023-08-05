@@ -1,15 +1,21 @@
 import os
 
-import torch
+# from openpto.method.Models import (
+#     SPOPlus,
+#     _get_learned_loss,
+#     listwiseLTR,
+#     pairwiseLTR,
+#     pointwiseLTR,
+# )
+from openpto.method.Models.LODL import _get_learned_loss
+from openpto.method.Models.LTR import listwiseLTR, pairwiseLTR, pointwiseLTR
+from openpto.method.Models.MSE import CE, MSE, MSE_Sum
+from openpto.method.Models.SPO import SPOPlus
 
-from openpto.method.Models import (
-    SPOPlus,
-    _get_learned_loss,
-    listwiseLTR,
-    pairwiseLTR,
-    pointwiseLTR,
-)
-from openpto.method.Models.abcOptModel import optModel
+# from openpto.method.Models.Intopt import Intopt
+# from openpto.method.Models.NCE import NCE
+# from openpto.method.Models.Blackbox import Blackbox
+
 
 NUM_CPUS = os.cpu_count()
 
@@ -43,96 +49,6 @@ def get_loss_fn(name, problem, **kwargs):
         return None
     else:
         raise LookupError()
-
-
-class MSE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
-        super().__init__(optSolver, processes, solve_ratio, dataset)
-
-    @staticmethod
-    def forward(
-        problem,
-        coeff_hat,
-        coeff_true,
-        sol_hat=None,
-        sol_true=None,
-        params=None,
-        **hyperparams,
-    ):
-        """
-        Calculates the mean squared error between predictions
-        Yhat and true lables Y.
-        """
-        return (coeff_hat - coeff_true).square().mean()
-
-
-class MAE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
-        super().__init__(optSolver, processes, solve_ratio, dataset)
-
-    @staticmethod
-    def forward(
-        problem,
-        coeff_hat,
-        coeff_true,
-        sol_hat=None,
-        sol_true=None,
-        params=None,
-        **hyperparams,
-    ):
-        """
-        Calculates the mean squared error between predictions
-        Yhat and true lables Y.
-        """
-        return (coeff_hat - coeff_true).abs().mean()
-
-
-class CE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
-        super().__init__(optSolver, processes, solve_ratio, dataset)
-
-    @staticmethod
-    def forward(
-        problem,
-        coeff_hat,
-        coeff_true,
-        sol_hat=None,
-        sol_true=None,
-        params=None,
-        **hyperparams,
-    ):
-        return torch.nn.BCELoss()(coeff_hat, coeff_true)
-
-
-class MSE_Sum(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, dataset=None):
-        super().__init__(optSolver, processes, solve_ratio, dataset)
-
-    @staticmethod
-    def forward(
-        problem,
-        coeff_hat,
-        coeff_true,
-        sol_hat=None,
-        sol_true=None,
-        params=None,
-        **hyperparams,
-    ):
-        """
-            Custom loss function that the squared error of the _sum_
-            along the last dimension plus some regularisation.
-            Useful for the Submodular Optimisation problems in Wilder et. al.
-        Input:
-            alpha:  #weight of MSE-based regularisation
-        """
-        # Check if prediction is a matrix/tensor
-        assert len(coeff_true.shape) >= 2
-        alpha = hyperparams["alpha"]
-
-        # Calculate loss
-        sum_loss = (coeff_hat - coeff_true).sum(dim=-1).square().mean()
-        loss_regularised = (1 - alpha) * sum_loss + alpha * MSE(coeff_hat, coeff_true)
-        return loss_regularised
 
 
 # def _get_decision_focused( problem, dflalpha=1., **kwargs,):

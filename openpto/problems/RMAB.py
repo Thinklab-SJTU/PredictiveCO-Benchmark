@@ -9,8 +9,8 @@ from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
 from openpto.method.pred_model import dense_nn
+from openpto.method.Solvers import RMABSolver
 from openpto.method.Solvers.utils_solver import gather_incomplete_left
-from openpto.method.Solvers.wrapper_solver import RMABSolver
 from openpto.problems.PTOProblem import PTOProblem
 
 

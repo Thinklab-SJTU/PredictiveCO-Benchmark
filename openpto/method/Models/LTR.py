@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from gurobipy import GRB
 from torch import nn
 
-from openpto.method.Models.abcoptModel import optModel
+from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
 from openpto.problems.PTOProblem import PTOProblem
 

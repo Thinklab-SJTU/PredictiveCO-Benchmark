@@ -3,8 +3,8 @@ import sys
 
 import torch
 
-from openpto import ExpManager
 from openpto.config import get_args, load_conf
+from openpto.expmanager import ExpManager
 from openpto.method.Models.loss import get_loss_fn
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
 
