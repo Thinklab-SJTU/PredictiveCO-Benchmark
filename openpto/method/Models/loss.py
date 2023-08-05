@@ -2,7 +2,13 @@ import os
 
 import torch
 
-from openpto.method.Models import SPOPlus, _get_learned_loss
+from openpto.method.Models import (
+    SPOPlus,
+    _get_learned_loss,
+    listwiseLTR,
+    pairwiseLTR,
+    pointwiseLTR,
+)
 from openpto.method.Models.abcOptModel import optModel
 
 NUM_CPUS = os.cpu_count()
@@ -21,8 +27,12 @@ def get_loss_fn(name, problem, **kwargs):
         return _get_learned_loss(problem, name, **kwargs)
     elif name == "spo":
         return SPOPlus
-    elif name == "ltr":
-        return None
+    elif name == "listLTR":
+        return listwiseLTR
+    elif name == "pairLTR":
+        return pairwiseLTR
+    elif name == "pointwiseLTR":
+        return pointwiseLTR
     elif name == "intopt":
         return None
     elif name == "nce":

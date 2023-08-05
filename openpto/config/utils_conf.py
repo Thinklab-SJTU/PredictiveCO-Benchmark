@@ -2,7 +2,7 @@ import argparse
 import ast
 import os
 
-import ruamel.yaml as yaml
+import ruamel_yaml as yaml
 
 ###################################### Args ###############################################
 

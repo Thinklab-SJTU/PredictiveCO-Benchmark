@@ -2,12 +2,6 @@ from setuptools import find_packages, setup
 
 REQUIRES = """
 ruamel.yaml
-pandas
-scipy
-scikit-learn
-pyro-api==0.1.2
-pyro-ppl==1.8.0
-numba
 """
 
 
@@ -23,11 +17,11 @@ with open("README.md", encoding="utf-8") as f:
 def do_setup():
     setup(
         # includes all other files
-        include_package_data=True,
+        # include_package_data=True,
         # package name
         name="openpto",
         # version
-        version="0.1",
+        version="0.0.1",
         description="",
         long_description=readme,
         long_description_content_type="text/markdown",
@@ -55,3 +49,4 @@ def do_setup():
 
 if __name__ == "__main__":
     do_setup()
+    # setup()
