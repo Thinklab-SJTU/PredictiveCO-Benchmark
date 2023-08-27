@@ -43,6 +43,7 @@ def get_args():
             "spo",
             "ltr",
             "intopt",
+            "blackbox",
         ],
         default="mse",
     )

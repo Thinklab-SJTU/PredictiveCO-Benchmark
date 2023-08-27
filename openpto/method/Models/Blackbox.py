@@ -7,7 +7,7 @@ Differentiable Black-box optimization function
 import numpy as np
 import torch
 
-from openpto.method.Solvers.utils_solver import _cache_in_pass, _solve_in_pass
+from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 from .abcOptModel import optModel
 
@@ -37,7 +37,7 @@ class blackboxOpt(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
         """
-        super().__init__(optSolver, processes, solve_ratio, dataset)
+        super().__init__(optSolver ,processes, solve_ratio)
         # smoothing parameter
         if lambd <= 0:
             raise ValueError("lambda is not positive.")
@@ -45,20 +45,25 @@ class blackboxOpt(optModel):
         # build blackbox optimizer
         self.dbb = blackboxOptFunc()
 
-    def forward(self, pred_cost):
+    def forward(
+        self, 
+        problem,
+        coeff_hat,
+        **hyperparams,
+    ):
         """
         Forward pass
         """
-        sols = self.dbb.apply(
-            pred_cost,
-            self.lambd,
+        loss = self.dbb.apply(
+            coeff_hat,
             self.optSolver,
             self.processes,
             self.pool,
             self.solve_ratio,
+            self.lambd,
             self,
         )
-        return sols
+        return loss
 
 
 class blackboxOptFunc(torch.autograd.Function):
@@ -67,12 +72,21 @@ class blackboxOptFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, pred_cost, lambd, optSolver, processes, pool, solve_ratio, module):
+    def forward(
+        ctx, 
+        coeff_hat, 
+        optSolver, 
+        processes, 
+        pool, 
+        solve_ratio, 
+        lambd, 
+        module,
+    ):
         """
         Forward pass for DBB
 
         Args:
-            pred_cost (torch.tensor): a batch of predicted values of the cost
+            coeff_hat (torch.tensor): a batch of predicted values of the cost//coeff_hat 
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
             optSolver (optModel): an PyEPO optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
@@ -84,9 +98,9 @@ class blackboxOptFunc(torch.autograd.Function):
             torch.tensor: predicted solutions
         """
         # get device
-        device = pred_cost.device
+        device = coeff_hat.device
         # convert tenstor
-        cp = pred_cost.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         rand_sigma = np.random.uniform()
         if rand_sigma <= solve_ratio:
@@ -96,13 +110,13 @@ class blackboxOptFunc(torch.autograd.Function):
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
-        else:
-            sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
+        #else:
+            #sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
         # convert to tensor
         sol = np.array(sol)
         pred_sol = torch.FloatTensor(sol).to(device)
         # save
-        ctx.save_for_backward(pred_cost, pred_sol)
+        ctx.save_for_backward(coeff_hat, pred_sol)
         # add other objects to ctx
         ctx.lambd = lambd
         ctx.optSolver = optSolver
@@ -119,7 +133,7 @@ class blackboxOptFunc(torch.autograd.Function):
         """
         Backward pass for DBB
         """
-        pred_cost, pred_sol = ctx.saved_tensors
+        coeff_hat, pred_sol = ctx.saved_tensors
         lambd = ctx.lambd
         optSolver = ctx.optSolver
         processes = ctx.processes
@@ -129,9 +143,9 @@ class blackboxOptFunc(torch.autograd.Function):
         if solve_ratio < 1:
             module = ctx.module
         # get device
-        device = pred_cost.device
+        device = coeff_hat.device
         # convert tenstor
-        cp = pred_cost.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().to("cpu").numpy()
         wp = pred_sol.detach().to("cpu").numpy()
         dl = grad_output.detach().to("cpu").numpy()
         # perturbed costs
@@ -144,8 +158,8 @@ class blackboxOptFunc(torch.autograd.Function):
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
-        else:
-            sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
+        #else:
+        #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
         grad = []
         for i in range(len(sol)):
