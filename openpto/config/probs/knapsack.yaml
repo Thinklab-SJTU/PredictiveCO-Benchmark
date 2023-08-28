@@ -16,3 +16,5 @@ models:
     reduction: mean
   blackbox:
     reductuin: mean
+  Identity:
+    reductuin: mean

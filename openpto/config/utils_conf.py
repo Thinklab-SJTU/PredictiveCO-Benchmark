@@ -44,6 +44,7 @@ def get_args():
             "ltr",
             "intopt",
             "blackbox",
+            "Identity",
         ],
         default="mse",
     )
