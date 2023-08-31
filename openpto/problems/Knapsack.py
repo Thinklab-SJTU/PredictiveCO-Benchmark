@@ -73,7 +73,7 @@ class Knapsack(PTOProblem):
             # train set
             self.weights = weights
             self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
-            self.Xs_train, self.Ys_train = train_feats, train_profits
+            self.Xs_train, self.Ys_train = train_feats, train_profits # (bz, feature_dim), (bz, n_items)
             # test set
             self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
@@ -110,7 +110,6 @@ class Knapsack(PTOProblem):
         num_instances = Y.shape[0]
         for ins in range(num_instances):
             objectives.append(sum(Y[ins].cpu() * torch.Tensor(Z[ins])))
-        # print("objectives: ", objectives)
         return np.array(objectives)
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):

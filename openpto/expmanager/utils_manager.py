@@ -48,11 +48,9 @@ def print_metrics(datasets, model, problem, loss_fn, prefix="", **model_args):
                 losses = torch.zeros_like(torch.Tensor(objectives))
 
             # Print
-            objective = objectives
             loss = losses.mean().item()
-            # print("objectives", objectives, "loss: ", loss)
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
-            # print(f"{prefix} {partition} DQ: {objective:.3f}, Loss: {loss:.3f}, MAE: {mae:.3f}")
-            metrics[partition] = {"objective": objective, "loss": loss}  # , 'mae': mae}
+            metrics[partition] = {"objective": objectives, "loss": loss}
+            print(f"{prefix} {partition} Objective: {objectives.mean():.3f}, Loss: {loss:.3f}")
 
     return metrics
