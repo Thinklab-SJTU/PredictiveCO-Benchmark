@@ -21,11 +21,11 @@ def print_metrics(datasets, model, problem, loss_fn, prefix="", **model_args):
             pred = model(Xs).squeeze()
             Zs_pred = problem.get_decision(
                 pred.cpu().numpy(),
-                params=Ys_aux.cpu().numpy(),
+                params=Ys_aux,
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            objectives = problem.get_objective(Ys, Zs_pred, aux_data=Ys_aux)
+            objectives = problem.get_objective(Ys.cpu(), Zs_pred, aux_data=Ys_aux)
 
             # Loss and Error
             if partition != "test":

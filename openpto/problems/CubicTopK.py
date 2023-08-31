@@ -2,13 +2,15 @@ import pdb
 import random
 
 import torch
+import numpy as np
 
 from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 from openpto.problems.PTOProblem import PTOProblem
 
+from gurobipy import GRB
 
 class CubicTopK(PTOProblem):
-    """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
+    """ The budget allocation predict-then-optimise problem from Wilder et. al. (2019) """
 
     def __init__(
         self,
@@ -18,6 +20,7 @@ class CubicTopK(PTOProblem):
         budget=2,  # number of items that can be picked
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        data_dir="./openpto/data/",
     ):
         super(CubicTopK, self).__init__()
         # Do some random seed fu
@@ -38,6 +41,12 @@ class CubicTopK(PTOProblem):
         #   Generate Labels
         self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
         self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
+
+        #try to print 
+        print(self.Xs_train)
+        print(self.Xs_test)
+        print(self.Ys_train)
+        print(self.Ys_test)
 
         # Split training data into train/val
         assert 0 < val_frac < 1
@@ -81,12 +90,14 @@ class CubicTopK(PTOProblem):
         return Z
 
     def opt_test(self, Y):
+        if isinstance(Y, np.ndarray): 
+            Y=torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
         return Z if self.budget == 0 else Z.sum(dim=-2)
 
     def get_decision(self, Y, isTrain=False, **kwargs):
-        return self.opt_train(Y) if isTrain else self.opt_test(Y)
+        return self.opt_test(Y)
 
     def get_model_shape(self):
         return 1, 1
@@ -97,6 +108,9 @@ class CubicTopK(PTOProblem):
     def get_twostageloss(self):
         return "mse"
 
+    def init_API(self):
+        return {
+        }
 
 # Unit test for RandomTopK
 if __name__ == "__main__":

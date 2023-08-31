@@ -1,3 +1,12 @@
 dataset:
   budget: 1
   num_items: 50
+
+
+models:
+  spo:
+    reduction: mean
+  blackbox:
+    reductuin: mean
+  Identity:
+    reductuin: mean
