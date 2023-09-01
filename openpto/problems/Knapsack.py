@@ -6,7 +6,8 @@ import torch
 from gurobipy import GRB
 
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
-#from openpto.method.Solvers.utils_solver import GrbSolve
+
+# from openpto.method.Solvers.utils_solver import GrbSolve
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import generate_uniform_weights_from_seed, read_file
 
@@ -73,7 +74,10 @@ class Knapsack(PTOProblem):
             # train set
             self.weights = weights
             self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
-            self.Xs_train, self.Ys_train = train_feats, train_profits
+            self.Xs_train, self.Ys_train = (
+                train_feats,
+                train_profits,
+            )  # (bz, feature_dim), (bz, n_items)
             # test set
             self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
@@ -109,38 +113,53 @@ class Knapsack(PTOProblem):
         objectives = []
         num_instances = Y.shape[0]
         for ins in range(num_instances):
+            print("Y:", Y[ins].shape, Z[ins].shape)
             objectives.append(sum(Y[ins].cpu() * torch.Tensor(Z[ins])))
-        # print("objectives: ", objectives)
         return np.array(objectives)
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
+        # determine solver
         if optSolver is None:
             if params.ndim > 1:
                 params[0]
             else:
                 pass
             optSolver = KPGrbSolver(**kwargs)
-        if Y.ndim == 1:
-            decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
-        else:
-            decisions, objs = GrbSolve(Y, optSolver)
-        return np.array(decisions)
-
-    def get_decision_and_objective(
-        self, Y, params, isTrain=True, optSolver=None, **kwargs
-    ):
-        if optSolver is None:
-            if params.ndim > 2:
-                params[0]
-            else:
-                pass
-            optSolver = KPGrbSolver(**kwargs)
 
         if Y.ndim == 1:
-            decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
-        else:
-            decisions, objs = GrbSolve(Y, optSolver)
-        return np.array(decisions), np.array(objs)
+            Y = Y.reshape(1, -1)
+        ins_num = len(Y)
+        sol = []
+        obj = []
+        for i in range(ins_num):
+            # solve
+            optSolver.setObj(Y[i])
+            solp, objp = optSolver.solve()
+            sol.append(solp)
+            obj.append(objp)
+        return np.array(sol), np.array(obj)
+
+        # if Y.ndim == 1:
+        #     decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
+        # else:
+        #     decisions, objs = GrbSolve(Y, optSolver)
+        # return np.array(decisions)
+
+    # def get_decision_and_objective(
+    #     self, Y, params, isTrain=True, optSolver=None, **kwargs
+    # ):
+    #     if optSolver is None:
+    #         if params.ndim > 2:
+    #             params[0]
+    #         else:
+    #             pass
+    #         optSolver = KPGrbSolver(**kwargs)
+
+    #     if Y.ndim == 1:
+    #         decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
+    #     else:
+    #         decisions, objs = GrbSolve(Y, optSolver)
+    #     return np.array(decisions), np.array(objs)
 
     def init_API(self):
         return {

@@ -1,6 +1,5 @@
 from itertools import repeat
 
-import numpy as np
 import torch
 
 
@@ -58,7 +57,7 @@ def solve_lineqn(A, b, eps=1e-5):
 ############################### Solve ##################################
 
 
-def _solve_in_pass(cp, optmodel, processes, pool):
+def _solve_in_pass(cp, params, problem, optSolver, processes, pool):
     """
     A function to solve optimization in the forward/backward pass
     """
@@ -66,8 +65,7 @@ def _solve_in_pass(cp, optmodel, processes, pool):
 
     # single-core
     if processes == 1:
-        sol, obj = optmodel.solve(cp)
-        # sol, obj = GrbSolve(cp, optmodel)
+        sol, obj = problem.get_decision(cp, params, optSolver, **problem.init_API())
     # multi-core
     else:
         raise NotImplementedError("Parallel computing is not supported yet.")

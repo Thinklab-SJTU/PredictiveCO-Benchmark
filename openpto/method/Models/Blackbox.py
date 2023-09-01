@@ -31,13 +31,13 @@ class blackboxOpt(optModel):
     def __init__(self, optSolver, lambd=10, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
         """
-        super().__init__(optSolver ,processes, solve_ratio)
+        super().__init__(optSolver, processes, solve_ratio)
         # smoothing parameter
         if lambd <= 0:
             raise ValueError("lambda is not positive.")
@@ -46,9 +46,10 @@ class blackboxOpt(optModel):
         self.dbb = blackboxOptFunc()
 
     def forward(
-        self, 
+        self,
         problem,
         coeff_hat,
+        params,
         **hyperparams,
     ):
         """
@@ -56,6 +57,8 @@ class blackboxOpt(optModel):
         """
         loss = self.dbb.apply(
             coeff_hat,
+            problem,
+            params,
             self.optSolver,
             self.processes,
             self.pool,
@@ -73,22 +76,24 @@ class blackboxOptFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(
-        ctx, 
-        coeff_hat, 
-        optSolver, 
-        processes, 
-        pool, 
-        solve_ratio, 
-        lambd, 
+        ctx,
+        coeff_hat,
+        problem,
+        params,
+        optSolver,
+        processes,
+        pool,
+        solve_ratio,
+        lambd,
         module,
     ):
         """
         Forward pass for DBB
 
         Args:
-            coeff_hat (torch.tensor): a batch of predicted values of the cost//coeff_hat 
+            coeff_hat (torch.tensor): a batch of predicted values of the cost//coeff_hat
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             solve_ratio (float): the ratio of new solutions computed during training
@@ -104,14 +109,14 @@ class blackboxOptFunc(torch.autograd.Function):
         # solve
         rand_sigma = np.random.uniform()
         if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cp, optSolver, processes, pool)
+            sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
-        #else:
-            #sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
+        # else:
+        # sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
         # convert to tensor
         sol = np.array(sol)
         pred_sol = torch.FloatTensor(sol).to(device)
@@ -123,6 +128,8 @@ class blackboxOptFunc(torch.autograd.Function):
         ctx.processes = processes
         ctx.pool = pool
         ctx.solve_ratio = solve_ratio
+        ctx.params = params
+        ctx.problem = problem
         if solve_ratio < 1:
             ctx.module = module
         ctx.rand_sigma = rand_sigma
@@ -137,6 +144,8 @@ class blackboxOptFunc(torch.autograd.Function):
         lambd = ctx.lambd
         optSolver = ctx.optSolver
         processes = ctx.processes
+        params = ctx.params
+        problem = ctx.problem
         pool = ctx.pool
         solve_ratio = ctx.solve_ratio
         rand_sigma = ctx.rand_sigma
@@ -152,13 +161,13 @@ class blackboxOptFunc(torch.autograd.Function):
         cq = cp + lambd * dl
         # solve
         if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cq, optSolver, processes, pool)
+            sol, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
-        #else:
+        # else:
         #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
         grad = []
@@ -167,4 +176,4 @@ class blackboxOptFunc(torch.autograd.Function):
         # convert to tensor
         grad = np.array(grad)
         grad = torch.FloatTensor(grad).to(device)
-        return grad, None, None, None, None, None, None
+        return grad, None, None, None, None, None, None, None, None

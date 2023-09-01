@@ -9,8 +9,8 @@
 
 # from gurobipy import GRB
 
-# # from pyepo.func.abcmodule import optModule
-# # from pyepo.utlis import getArgs
+# # from .func.abcmodule import optModule
+# # from .utlis import getArgs
 # from openpto.method.Models.abcOptModel import optModel
 
 
@@ -40,7 +40,7 @@
 #     ):
 #         """
 #         Args:
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
@@ -99,7 +99,7 @@
 
 #         Args:
 #             pred_cost (torch.tensor): a batch of predicted values of the cost
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
@@ -187,7 +187,7 @@
 #     ):
 #         """
 #         Args:
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
@@ -258,7 +258,7 @@
 #         Args:
 #             pred_cost (torch.tensor): a batch of predicted values of the cost
 #             true_sol (torch.tensor): a batch of true optimal solutions
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores

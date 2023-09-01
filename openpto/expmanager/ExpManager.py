@@ -2,6 +2,7 @@ import random
 
 from copy import deepcopy
 
+import numpy as np
 import torch
 
 from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
@@ -59,6 +60,7 @@ class ExpManager:
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
+        # Train data
         best = (float("inf"), None)
         time_since_best = 0
         for iter_idx in range(n_epochs):
@@ -108,7 +110,6 @@ class ExpManager:
 
             loss = torch.stack(losses).mean()
             self.optimizer.zero_grad()
-            # loss.retain_grad()
             loss.backward()
             self.optimizer.step()
             time_since_best += 1
@@ -124,29 +125,37 @@ class ExpManager:
             (X_val, Y_val, Y_val_aux, "val"),
             (X_test, Y_test, Y_test_aux, "test"),
         ]
-        print_metrics(
+        results = print_metrics(
             datasets, self.pred_model, problem, loss_fn, "Final", **self.model_args
         )
 
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
-            Z_test_rand = problem.get_decision(
+            Z_test_rand, objectives_rand = problem.get_decision(
                 torch.rand_like(Y_test),
                 params=Y_test_aux,
                 isTrain=False,
                 **problem.init_API(),
             )
-            objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
-            objs_rand.append(torch.Tensor(objectives))
-        print(f"\nRandom Decision Quality: {torch.stack(objs_rand).mean().item():.3f}")
+            # objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
+            objs_rand.append(torch.Tensor(objectives_rand))
 
         #   Document the optimal value
-        Z_test_opt = problem.get_decision(
+        Z_test_opt, objectives_opt = problem.get_decision(
             Y_test, params=Y_test_aux, isTrain=False, **problem.init_API()
         )
-        objectives = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
-        print(f"Optimal Decision Quality: {objectives.mean().item():.3f}")
+        # objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
+
+        # regret
+        regret = np.abs(objectives_opt - results["test"]["objective"])
+
+        # print
+        print(
+            f"\n[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
+            f"[Optimal Decision Quality]: {objectives_opt.mean().item():.3f} "
+            f"[Regret]: {regret.mean():.3f}"
+        )
         print()
 
         return True

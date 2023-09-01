@@ -45,7 +45,7 @@ class PTOProblem(ABC):
     @abstractmethod
     def get_objective(Y, Z, **kwargs):
         raise NotImplementedError()
-               
+
     def _set_seed(self, rand_seed=int(time.time())):
         random.seed(rand_seed)
         torch.manual_seed(rand_seed)

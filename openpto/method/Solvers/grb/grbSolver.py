@@ -8,8 +8,6 @@ from copy import copy
 
 import gurobipy as gp
 
-import numpy as np
-
 from openpto.method.Solvers.abcOptSolver import optSolver
 
 
@@ -44,22 +42,8 @@ class optGrbSolver(optSolver):
         obj = gp.quicksum(c[i] * self.x[k] for i, k in enumerate(self.x))
         self._model.setObjective(obj)
 
-    def solve(self, cp, optmodel):
-        if cp.ndim == 1:
-            cp = cp.reshape(1, -1)
-        ins_num = len(cp)
-        sol = []
-        obj = []
-        for i in range(ins_num):
-            # solve
-            optmodel.setObj(cp[i])
-            solp, objp = optmodel.solve_single()
-            sol.append(solp)
-            obj.append(objp)
-        
-        return np.array(sol), np.array(obj)
 
-    def solve_single(self):
+    def solve(self):
         """
         A method to solve model
 
