@@ -1,16 +1,15 @@
 import pdb
 import random
 
-import torch
 import numpy as np
+import torch
 
 from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 from openpto.problems.PTOProblem import PTOProblem
 
-from gurobipy import GRB
 
 class CubicTopK(PTOProblem):
-    """ The budget allocation predict-then-optimise problem from Wilder et. al. (2019) """
+    """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
 
     def __init__(
         self,
@@ -42,7 +41,7 @@ class CubicTopK(PTOProblem):
         self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
         self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
 
-        #try to print 
+        # try to print
         print(self.Xs_train)
         print(self.Xs_test)
         print(self.Ys_train)
@@ -90,8 +89,8 @@ class CubicTopK(PTOProblem):
         return Z
 
     def opt_test(self, Y):
-        if isinstance(Y, np.ndarray): 
-            Y=torch.from_numpy(Y)
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
         return Z if self.budget == 0 else Z.sum(dim=-2)
@@ -109,8 +108,8 @@ class CubicTopK(PTOProblem):
         return "mse"
 
     def init_API(self):
-        return {
-        }
+        return {}
+
 
 # Unit test for RandomTopK
 if __name__ == "__main__":

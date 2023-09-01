@@ -52,7 +52,9 @@ def get_args():
     parser.add_argument(
         "--pred_model", type=str, choices=["LR", "dense"], default="dense"
     )
-    parser.add_argument("--solver", type=str, choices=["gurobi","neural"], default="neural")
+    parser.add_argument(
+        "--solver", type=str, choices=["gurobi", "neural"], default="neural"
+    )
     parser.add_argument("--gpu", type=str, default="0", help="Visible GPU")
 
     # training

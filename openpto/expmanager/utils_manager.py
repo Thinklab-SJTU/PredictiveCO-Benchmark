@@ -19,13 +19,14 @@ def print_metrics(datasets, model, problem, loss_fn, prefix="", **model_args):
 
             # Decision Quality
             pred = model(Xs).squeeze()
-            Zs_pred = problem.get_decision(
+            Zs_pred, objective_pred = problem.get_decision(
                 pred.cpu().numpy(),
                 params=Ys_aux,
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            objectives = problem.get_objective(Ys.cpu(), Zs_pred, aux_data=Ys_aux)
+            # print("Zs_pred:",Zs_pred[0].shape )
+            # objectives = problem.get_objective(Ys.cpu(), Zs_pred, aux_data=Ys_aux)
 
             # Loss and Error
             if partition != "test":
@@ -45,14 +46,14 @@ def print_metrics(datasets, model, problem, loss_fn, prefix="", **model_args):
                     )
                 losses = torch.stack(losses).flatten()
             else:
-                losses = torch.zeros_like(torch.Tensor(objectives))
+                losses = torch.zeros_like(torch.Tensor(objective_pred))
 
             # Print
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
-            metrics[partition] = {"objective": objectives, "loss": loss}
+            metrics[partition] = {"objective": objective_pred, "loss": loss}
             print(
-                f"{prefix} {partition} Objective: {objectives.mean():.3f}, Loss: {loss:.3f}"
+                f"{prefix} {partition} Objective: {objective_pred.mean():.3f}, Loss: {loss:.3f}"
             )
 
     return metrics

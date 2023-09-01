@@ -1,6 +1,7 @@
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.neural.TopKSolver import TopKSolver
 
+
 ################################# Wrappers ################################################
 def solver_wrapper(args, conf, problem):
     return str2solver(args.solver, args.problem, problem)

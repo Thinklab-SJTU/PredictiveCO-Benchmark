@@ -28,7 +28,7 @@ class negativeIdentity(optModel):
     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
@@ -38,7 +38,7 @@ class negativeIdentity(optModel):
         self.nid = negativeIdentityFunc()
 
     def forward(
-        self, 
+        self,
         problem,
         coeff_hat,
         **hyperparams,
@@ -47,12 +47,7 @@ class negativeIdentity(optModel):
         Forward pass
         """
         loss = self.nid.apply(
-            coeff_hat, 
-            self.optSolver, 
-            self.processes, 
-            self.pool, 
-            self.solve_ratio, 
-            self
+            coeff_hat, self.optSolver, self.processes, self.pool, self.solve_ratio, self
         )
         return loss
 
@@ -64,12 +59,12 @@ class negativeIdentityFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(
-        ctx, 
-        coeff_hat, 
-        optSolver, 
-        processes, 
-        pool, 
-        solve_ratio, 
+        ctx,
+        coeff_hat,
+        optSolver,
+        processes,
+        pool,
+        solve_ratio,
         module,
     ):
         """
@@ -77,11 +72,11 @@ class negativeIdentityFunc(torch.autograd.Function):
 
         Args:
             pred_cost (torch.tensor): a batch of predicted values of the cost
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             solve_ratio (float): the ratio of new solutions computed during training
-            module (optModule): blackboxOpt module
+            module (optModule):  module
 
         Returns:
             torch.tensor: predicted solutions
@@ -99,8 +94,8 @@ class negativeIdentityFunc(torch.autograd.Function):
                 module.solpool = np.concatenate((module.solpool, sol))
                 # remove duplicates
                 module.solpool = np.unique(module.solpool, axis=0)
-        #else:
-            #sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
+        # else:
+        # sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
         # convert to tensor
         pred_sol = torch.FloatTensor(np.array(sol)).to(device)
         # add other objects to ctx

@@ -32,7 +32,7 @@ class listwiseLTR(optModel):
     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (PTOProblem): the training data, usually this is simply the training set
@@ -96,7 +96,7 @@ class pairwiseLTR(optModel):
     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (PTOProblem): the training data
@@ -176,7 +176,7 @@ class pointwiseLTR(optModel):
     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
         """
         Args:
-            optSolver (optModel): an PyEPO optimization model
+            optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (PTOProblem): the training data

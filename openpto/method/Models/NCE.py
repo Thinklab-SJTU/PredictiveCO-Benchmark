@@ -9,9 +9,9 @@
 
 # from gurobipy import GRB
 
-# # from pyepo.func.abcmodule import optModel
-# # from pyepo.data.dataset import optDataset
-# # from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+# # from .func.abcmodule import optModel
+# # from .data.dataset import optDataset
+# # from .func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 # from openpto.method.Models.abcoptModel import optModel
 
 
@@ -31,7 +31,7 @@
 #     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
 #         """
 #         Args:
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             solve_ratio (float): the ratio of new solutions computed during training
 #             dataset (None/optDataset): the training data, usually this is simply the training set
@@ -95,7 +95,7 @@
 #     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
 #         """
 #         Args:
-#             optSolver (optModel): an PyEPO optimization model
+#             optSolver (optModel): an  optimization model
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             solve_ratio (float): the ratio of new solutions computed during training
 #             dataset (None/optDataset): the training data, usually this is simply the training set

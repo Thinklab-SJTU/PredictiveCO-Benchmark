@@ -132,20 +132,20 @@ class ExpManager:
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
-            Z_test_rand = problem.get_decision(
+            Z_test_rand, objectives_rand = problem.get_decision(
                 torch.rand_like(Y_test),
                 params=Y_test_aux,
                 isTrain=False,
                 **problem.init_API(),
             )
-            objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
-            objs_rand.append(torch.Tensor(objectives))
+            # objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
+            objs_rand.append(torch.Tensor(objectives_rand))
 
         #   Document the optimal value
-        Z_test_opt = problem.get_decision(
+        Z_test_opt, objectives_opt = problem.get_decision(
             Y_test, params=Y_test_aux, isTrain=False, **problem.init_API()
         )
-        objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
+        # objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
 
         # regret
         regret = np.abs(objectives_opt - results["test"]["objective"])

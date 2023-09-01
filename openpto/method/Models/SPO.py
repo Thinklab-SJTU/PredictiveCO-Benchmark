@@ -9,8 +9,8 @@ import torch
 
 from gurobipy import GRB
 
-# from pyepo.func.abcmodule import optModule
-# from pyepo.func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
+# from .func.abcmodule import optModule
+# from .func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass  # , _cache_in_pass
 
@@ -33,7 +33,7 @@ class SPOPlus(optModel):
     def __init__(self, optSolver, processes=1, solve_ratio=1):
         """
         Args:
-            optSolver (optSolver): an PyEPO optimization model
+            optSolver (optSolver): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
