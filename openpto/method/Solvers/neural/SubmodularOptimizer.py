@@ -72,6 +72,8 @@ class OptimiseSubmodular(torch.autograd.Function):
         Run some variant of SGD for the coverage problem with given
         coverage probabilities Yhat
         """
+        if isinstance(Yhat, np.ndarray): 
+            Yhat=torch.from_numpy(Yhat).to('cpu') 
         # Decision variables
         Z = (
             Z_init.detach().clone()

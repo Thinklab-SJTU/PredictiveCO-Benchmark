@@ -56,6 +56,7 @@ class optGrbSolver(optSolver):
             solp, objp = optmodel.solve_single()
             sol.append(solp)
             obj.append(objp)
+        
         return np.array(sol), np.array(obj)
 
     def solve_single(self):
