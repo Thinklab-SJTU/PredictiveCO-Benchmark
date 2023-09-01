@@ -1,4 +1,5 @@
 import random
+
 from copy import deepcopy
 
 import numpy as np
@@ -147,12 +148,14 @@ class ExpManager:
         objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
 
         # regret
-        regret = np.abs(objectives_opt - results['test']['objective'])
+        regret = np.abs(objectives_opt - results["test"]["objective"])
 
         # print
-        print(f"\n[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
-              f"[Optimal Decision Quality]: {objectives_opt.mean().item():.3f} "
-              f"[Regret]: {regret.mean():.3f}")
+        print(
+            f"\n[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
+            f"[Optimal Decision Quality]: {objectives_opt.mean().item():.3f} "
+            f"[Regret]: {regret.mean():.3f}"
+        )
         print()
 
         return True

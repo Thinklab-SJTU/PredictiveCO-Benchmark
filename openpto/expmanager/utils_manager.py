@@ -51,6 +51,8 @@ def print_metrics(datasets, model, problem, loss_fn, prefix="", **model_args):
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {"objective": objectives, "loss": loss}
-            print(f"{prefix} {partition} Objective: {objectives.mean():.3f}, Loss: {loss:.3f}")
+            print(
+                f"{prefix} {partition} Objective: {objectives.mean():.3f}, Loss: {loss:.3f}"
+            )
 
     return metrics

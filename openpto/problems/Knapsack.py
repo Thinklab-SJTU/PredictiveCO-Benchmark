@@ -73,7 +73,10 @@ class Knapsack(PTOProblem):
             # train set
             self.weights = weights
             self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
-            self.Xs_train, self.Ys_train = train_feats, train_profits # (bz, feature_dim), (bz, n_items)
+            self.Xs_train, self.Ys_train = (
+                train_feats,
+                train_profits,
+            )  # (bz, feature_dim), (bz, n_items)
             # test set
             self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
