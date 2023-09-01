@@ -41,13 +41,21 @@ class negativeIdentity(optModel):
         self,
         problem,
         coeff_hat,
+        params,
         **hyperparams,
     ):
         """
         Forward pass
         """
         loss = self.nid.apply(
-            coeff_hat, self.optSolver, self.processes, self.pool, self.solve_ratio, self
+            coeff_hat, 
+            problem,
+            params,
+            self.optSolver, 
+            self.processes, 
+            self.pool, 
+            self.solve_ratio, 
+            self
         )
         return loss
 
@@ -61,6 +69,8 @@ class negativeIdentityFunc(torch.autograd.Function):
     def forward(
         ctx,
         coeff_hat,
+        problem,
+        params,
         optSolver,
         processes,
         pool,
@@ -88,7 +98,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         # solve
         rand_sigma = np.random.uniform()
         if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cp, optSolver, processes, pool)
+            sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
@@ -100,6 +110,8 @@ class negativeIdentityFunc(torch.autograd.Function):
         pred_sol = torch.FloatTensor(np.array(sol)).to(device)
         # add other objects to ctx
         ctx.optSolver = optSolver
+        ctx.params=params
+        ctx.problem=problem
         return pred_sol
 
     @staticmethod
@@ -116,4 +128,4 @@ class negativeIdentityFunc(torch.autograd.Function):
             grad = -Ident
         if optSolver.modelSense == GRB.MAXIMIZE:
             grad = Ident
-        return grad_output @ grad, None, None, None, None, None
+        return grad_output @ grad, None, None, None, None, None, None, None

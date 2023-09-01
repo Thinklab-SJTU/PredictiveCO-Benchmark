@@ -45,10 +45,9 @@ class budgetallocSolver(optSolver):
         if len(Y.shape) == 2:
             Z=self.opt(Y, Z_init=Z_init)
             obj=self.get_objective(Y,Z)
-            print("Z_shape=",Z.shape,"obj_shape=",obj.shape)
-            print(Z)
-            print(obj)
-            Z.shape = 
+            #print("Z_shape=",Z.shape,"obj_shape=",obj.shape)
+            #print(Z)
+            #print(obj)
             return Z,obj
         # If it's not...
         #   Remember the shape
