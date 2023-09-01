@@ -36,6 +36,7 @@ class optModel(nn.Module):
     @abstractmethod
     def forward(
         self,
+        problem,
         coeff_hat,
         coeff_true=None,
         sol_hat=None,
