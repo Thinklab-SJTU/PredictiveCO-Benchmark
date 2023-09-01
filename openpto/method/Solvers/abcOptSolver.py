@@ -44,7 +44,7 @@ class optSolver:  # (ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
+    # @abstractmethod
     def setObj(self, c):
         """
         An abstract method to set objective function

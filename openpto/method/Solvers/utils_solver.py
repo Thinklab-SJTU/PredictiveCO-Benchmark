@@ -56,19 +56,6 @@ def solve_lineqn(A, b, eps=1e-5):
 
 
 ############################### Solve ##################################
-def GrbSolve(cp, optmodel):
-    if cp.ndim == 1:
-        cp = cp.reshape(1, -1)
-    ins_num = len(cp)
-    sol = []
-    obj = []
-    for i in range(ins_num):
-        # solve
-        optmodel.setObj(cp[i])
-        solp, objp = optmodel.solve()
-        sol.append(solp)
-        obj.append(objp)
-    return np.array(sol), np.array(obj)
 
 
 def _solve_in_pass(cp, optmodel, processes, pool):
@@ -79,7 +66,8 @@ def _solve_in_pass(cp, optmodel, processes, pool):
 
     # single-core
     if processes == 1:
-        sol, obj = GrbSolve(cp, optmodel)
+        sol, obj = optmodel.solve(cp)
+        # sol, obj = GrbSolve(cp, optmodel)
     # multi-core
     else:
         raise NotImplementedError("Parallel computing is not supported yet.")

@@ -6,7 +6,7 @@ import torch
 from gurobipy import GRB
 
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
-from openpto.method.Solvers.utils_solver import GrbSolve
+#from openpto.method.Solvers.utils_solver import GrbSolve
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.problems.utils_prob import generate_uniform_weights_from_seed, read_file
 

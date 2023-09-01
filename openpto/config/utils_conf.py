@@ -43,13 +43,16 @@ def get_args():
             "spo",
             "ltr",
             "intopt",
+            "blackbox",
+            "Identity",
+            "LODL",
         ],
         default="mse",
     )
     parser.add_argument(
         "--pred_model", type=str, choices=["LR", "dense"], default="dense"
     )
-    parser.add_argument("--solver", type=str, choices=["gurobi"], default="gurobi")
+    parser.add_argument("--solver", type=str, choices=["gurobi","neural"], default="neural")
     parser.add_argument("--gpu", type=str, default="0", help="Visible GPU")
 
     # training

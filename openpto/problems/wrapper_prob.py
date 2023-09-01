@@ -120,7 +120,7 @@ def find_saved_problem(
         if col in relevant_models.columns:
             relevant_models = relevant_models.loc[
                 relevant_models[col] == val
-            ]  # filtering models by parameters
+            ] # filtering models by parameters
 
     # If it has, find the relevant filename
     filename = None

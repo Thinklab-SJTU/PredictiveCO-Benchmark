@@ -14,3 +14,7 @@ dataset:
 models:
   spo:
     reduction: mean
+  blackbox:
+    reductuin: mean
+  Identity:
+    reductuin: mean

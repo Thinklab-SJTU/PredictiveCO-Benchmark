@@ -3,7 +3,7 @@ import torch
 
 from gurobipy import GRB
 
-from openpto.method.Solvers.utils_solver import _cache_in_pass, _solve_in_pass
+from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 from .abcOptModel import optModel
 
@@ -33,18 +33,28 @@ class negativeIdentity(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
             dataset (None/optDataset): the training data
         """
-        super().__init__(optSolver, processes, solve_ratio, dataset)
+        super().__init__(optSolver, processes, solve_ratio)
         # build blackbox optimizer
         self.nid = negativeIdentityFunc()
 
-    def forward(self, pred_cost):
+    def forward(
+        self, 
+        problem,
+        coeff_hat,
+        **hyperparams,
+    ):
         """
         Forward pass
         """
-        sols = self.nid.apply(
-            pred_cost, self.optSolver, self.processes, self.pool, self.solve_ratio, self
+        loss = self.nid.apply(
+            coeff_hat, 
+            self.optSolver, 
+            self.processes, 
+            self.pool, 
+            self.solve_ratio, 
+            self
         )
-        return sols
+        return loss
 
 
 class negativeIdentityFunc(torch.autograd.Function):
@@ -53,7 +63,15 @@ class negativeIdentityFunc(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, pred_cost, optSolver, processes, pool, solve_ratio, module):
+    def forward(
+        ctx, 
+        coeff_hat, 
+        optSolver, 
+        processes, 
+        pool, 
+        solve_ratio, 
+        module,
+    ):
         """
         Forward pass for NID
 
@@ -69,9 +87,9 @@ class negativeIdentityFunc(torch.autograd.Function):
             torch.tensor: predicted solutions
         """
         # get device
-        device = pred_cost.device
+        device = coeff_hat.device
         # convert tenstor
-        cp = pred_cost.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         rand_sigma = np.random.uniform()
         if rand_sigma <= solve_ratio:
@@ -79,10 +97,10 @@ class negativeIdentityFunc(torch.autograd.Function):
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
-                # remove duplicate
+                # remove duplicates
                 module.solpool = np.unique(module.solpool, axis=0)
-        else:
-            sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
+        #else:
+            #sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
         # convert to tensor
         pred_sol = torch.FloatTensor(np.array(sol)).to(device)
         # add other objects to ctx
