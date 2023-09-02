@@ -58,30 +58,22 @@ class SPOPlus(optModel):
         if coeff_hat.dim() == 1:
             coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
         if sol_true is None:
-            if hasattr(problem, "get_decision_and_objective"):
-                sol_true, obj_true = problem.get_decision_and_objective(
-                    coeff_true.cpu(),
-                    params.cpu(),
-                    isTrain=False,
-                    optSolver=None,
-                    **problem.init_API(),
-                )
-            else:
-                sol_true = problem.get_decision(
-                    coeff_true.cpu(),
-                    params.cpu(),
-                    isTrain=False,
-                    optSolver=None,
-                    **problem.init_API(),
-                )
-                obj_true = problem.get_objective(coeff_true, sol_true)
-                # sol_true = torch.Tensor(sol_true).to(coeff_true.device)
+            sol_true, obj_true = problem.get_decision(
+                coeff_true.cpu(),
+                params.cpu(),
+                isTrain=False,
+                optSolver=None,
+                **problem.init_API(),
+            )
+            # obj_true = problem.get_objective(coeff_true, sol_true)
         #
         loss = self.spop.apply(
             coeff_hat,
             coeff_true,
             sol_true,
             obj_true,
+            problem,
+            params,
             self.optSolver,
             self.processes,
             self.pool,
@@ -112,6 +104,8 @@ class SPOPlusFunc(torch.autograd.Function):
         coeff_true,
         sol_true,
         obj_true,
+        problem,
+        params,
         optSolver,
         processes,
         pool,
@@ -146,7 +140,9 @@ class SPOPlusFunc(torch.autograd.Function):
         # _check_sol(c, w, z)
         # solve
         if np.random.uniform() <= solve_ratio:
-            sol, obj = _solve_in_pass(2 * cp - c, optSolver, processes, pool)
+            sol, obj = _solve_in_pass(
+                2 * cp - c, params, problem, optSolver, processes, pool
+            )
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
@@ -186,4 +182,16 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = 2 * (w - wq)
         if optSolver.modelSense == GRB.MAXIMIZE:
             grad = 2 * (wq - w)
-        return grad_output * grad, None, None, None, None, None, None, None, None
+        return (
+            grad_output * grad,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
