@@ -22,6 +22,7 @@ class BudgetAllocation(PTOProblem):
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         opt="submodular",
+        data_dir="./openpto/data/",
     ):
         super(BudgetAllocation, self).__init__()
         # Do some random seed fu
@@ -176,17 +177,23 @@ class BudgetAllocation(PTOProblem):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
             return self.opt(Y, Z_init=Z_init)
-
+        print(Y.shape)
         # If it's not...
         #   Remember the shape
         Y_shape = Y.shape
+        print(Y_shape[-2])
+        print(Y_shape[-1])
         #   Break it down into individual instances and solve
-        Y_new = Y.view((-1, Y_shape[-2], Y_shape[-1]))
+        Y_new = Y
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
         return Z
-
+    
+    def init_API(self):
+        return {
+        }
+    
 
 # Unit test for RandomTopK
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.neural.TopKSolver import TopKSolver
-
-
+from openpto.method.Solvers.neural.BudgetallocSolver import budgetallocSolver
 ################################# Wrappers ################################################
 def solver_wrapper(args, conf, problem):
     return str2solver(args.solver, args.problem, problem)
@@ -9,7 +8,7 @@ def solver_wrapper(args, conf, problem):
 
 def str2solver(solver_str, prob_str, problem):
     prob_solver_dict = {
-        # "budgetalloc": BudgetAllocation,
+        "budgetalloc":  {"neural": budgetallocSolver},
         # "cubic":CubicTopK,
         # "bipartitematching": BipartiteMatching,
         # 'rmab':RMAB,

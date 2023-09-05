@@ -7,6 +7,6 @@ models:
   spo:
     reduction: mean
   blackbox:
-    reductuin: mean
+    reduction: mean
   Identity:
-    reductuin: mean
+    reduction: mean

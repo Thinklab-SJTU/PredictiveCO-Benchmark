@@ -42,6 +42,7 @@ class optGrbSolver(optSolver):
         obj = gp.quicksum(c[i] * self.x[k] for i, k in enumerate(self.x))
         self._model.setObjective(obj)
 
+
     def solve(self):
         """
         A method to solve model

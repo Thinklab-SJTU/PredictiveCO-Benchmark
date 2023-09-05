@@ -1,5 +1,14 @@
 dataset:
   num_targets: 10
   num_fake_targets: 0
-  budget: 1
+  budget: 2
   num_items: 50
+
+
+models:
+  spo:
+    reduction: mean
+  blackbox:
+    reduction: mean
+  Identity:
+    reduction: mean
