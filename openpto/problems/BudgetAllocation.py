@@ -55,6 +55,13 @@ class BudgetAllocation(PTOProblem):
         self.Xs_train, self.Xs_test = self._generate_features(
             [self.Ys_train, self.Ys_test], self.num_fake_targets
         )  # features
+        Xs_train= Xs_train.reshape(400,50,10,1)
+        Xs_test= Xs_test.reshape(200,50,10,1)
+        
+        print(self.Xs_train.shape)
+        print(self.Xs_test.shape)
+        print(self.Ys_train.shape)
+        print(self.Ys_test.shape)
         assert not (torch.isnan(self.Xs_train).any() or torch.isnan(self.Xs_test).any())
 
         # Split training data into train/val
@@ -173,22 +180,20 @@ class BudgetAllocation(PTOProblem):
         obj = (w * (1 - p_all_fail)).sum(dim=-1)
         return obj
 
-    def get_decision(self, Y, Z_init=None, **kwargs):
+    def get_decision(self, Y, params, optSolver, Z_init=None, **kwargs):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
-            return self.opt(Y, Z_init=Z_init)
-        print(Y.shape)
+            Z=self.opt(Y, Z_init=Z_init)
+            return Z.cpu().numpy(), self.get_objective(Y,Z).cpu().numpy()
         # If it's not...
         #   Remember the shape
         Y_shape = Y.shape
-        print(Y_shape[-2])
-        print(Y_shape[-1])
         #   Break it down into individual instances and solve
         Y_new = Y
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
-        return Z
+        return Z.cpu().numpy(),self.get_objective(Y,Z).cpu().numpy()
     
     def init_API(self):
         return {
