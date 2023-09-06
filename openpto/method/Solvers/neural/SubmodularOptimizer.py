@@ -72,11 +72,12 @@ class OptimiseSubmodular(torch.autograd.Function):
         Run some variant of SGD for the coverage problem with given
         coverage probabilities Yhat
         """
-        if isinstance(Yhat, np.ndarray): 
-            Yhat=torch.from_numpy(Yhat).to('cpu') 
-        if isinstance(Z_init, np.ndarray): 
-            Z_init=torch.from_numpy(Z_init).to('cpu') 
-        if Z_init is not None: print(Z_init)
+        if isinstance(Yhat, np.ndarray):
+            Yhat = torch.from_numpy(Yhat).to("cpu")
+        if isinstance(Z_init, np.ndarray):
+            Z_init = torch.from_numpy(Z_init).to("cpu")
+        if Z_init is not None:
+            print(Z_init)
         # Decision variables
         Z = (
             Z_init.detach().clone()
@@ -118,7 +119,7 @@ class OptimiseSubmodular(torch.autograd.Function):
         ctx.save_for_backward(Yhat, Z)
         ctx.get_obj = get_obj
         ctx.budget = budget
-
+        # print("Z", Z)
         return Z
 
     # TODO: Make this operate on torch tensors?

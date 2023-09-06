@@ -89,9 +89,9 @@ class CubicTopK(PTOProblem):
         _, idxs = torch.topk(Y, self.budget)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
         # return Z if self.budget == 0 else Z.sum(dim=-2)
-        return Z.cpu().numpy(), (Z*Y).sum().cpu().numpy()
+        return Z.cpu().numpy(), (Z * Y).sum().cpu().numpy()
 
-    def get_decision(self, Y,  params, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, isTrain=False, **kwargs):
         return self.opt_test(Y)
 
     def get_model_shape(self):

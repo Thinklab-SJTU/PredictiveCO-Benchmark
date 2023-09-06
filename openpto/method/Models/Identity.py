@@ -48,14 +48,14 @@ class negativeIdentity(optModel):
         Forward pass
         """
         loss = self.nid.apply(
-            coeff_hat, 
+            coeff_hat,
             problem,
             params,
-            self.optSolver, 
-            self.processes, 
-            self.pool, 
-            self.solve_ratio, 
-            self
+            self.optSolver,
+            self.processes,
+            self.pool,
+            self.solve_ratio,
+            self,
         )
         return loss
 
@@ -110,8 +110,8 @@ class negativeIdentityFunc(torch.autograd.Function):
         pred_sol = torch.FloatTensor(np.array(sol)).to(device)
         # add other objects to ctx
         ctx.optSolver = optSolver
-        ctx.params=params
-        ctx.problem=problem
+        ctx.params = params
+        ctx.problem = problem
         return pred_sol
 
     @staticmethod

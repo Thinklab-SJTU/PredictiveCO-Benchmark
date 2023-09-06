@@ -39,7 +39,7 @@ class PTOProblem(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_decision(self, Y, params,optSolver=None,isTrain=True, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         raise NotImplementedError()
 
     @abstractmethod

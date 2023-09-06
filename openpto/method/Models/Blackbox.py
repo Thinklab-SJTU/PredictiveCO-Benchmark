@@ -110,6 +110,7 @@ class blackboxOptFunc(torch.autograd.Function):
         rand_sigma = np.random.uniform()
         if rand_sigma <= solve_ratio:
             sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
+            # print("input: ", cp.shape, "output: ", sol.shape)
             if solve_ratio < 1:
                 # add into solpool
                 module.solpool = np.concatenate((module.solpool, sol))
@@ -157,20 +158,13 @@ class blackboxOptFunc(torch.autograd.Function):
         cp = coeff_hat.detach().to("cpu").numpy()
         wp = pred_sol.detach().to("cpu").numpy()
         dl = grad_output.detach().to("cpu").numpy()
-        
-        print("cp ",cp.shape)
-        print(cp)
-        if isinstance(cp, np.ndarray): print("cp 是 NumPy 数组")
-        elif isinstance(cp, torch.Tensor): print("cp 是 PyTorch 张量")
-        else: print("cp 不是 NumPy 数组也不是 PyTorch 张量")
-        #print("wp ",wp.shape)
-        #print("dl ",dl.shape)
-        #print(dl)
-        #print("lambd ",lambd)
+
+        ##### work around #####
+        if dl.shape != cp.shape:
+            dl = np.tile(dl, (1, cp.shape[-1]))
+        ##### end #####
+
         # perturbed costs
-        #if dl.shape != cp.shape: # 如果不一致，调整 dl 的形状与 cp 相匹配
-            #dl = dl[:, np.newaxis] 
-            #dl = np.tile(dl, (1, 10))
         cq = cp + lambd * dl
         # solve
         if rand_sigma <= solve_ratio:
@@ -188,5 +182,9 @@ class blackboxOptFunc(torch.autograd.Function):
             grad.append((sol[i] - wp[i]) / lambd)
         # convert to tensor
         grad = np.array(grad)
+        ##### work around #####
+        if grad.shape != cp.shape:
+            grad = np.tile(grad, (1, cp.shape[-1]))
+        ##### end #####
         grad = torch.FloatTensor(grad).to(device)
         return grad, None, None, None, None, None, None, None, None

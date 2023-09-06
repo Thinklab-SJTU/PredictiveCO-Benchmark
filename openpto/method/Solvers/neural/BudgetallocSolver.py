@@ -4,19 +4,18 @@
 Abstract optimization model based on GurobiPy
 """
 
-from copy import copy
 import torch
-import gurobipy as gp
+
 from openpto.method.Solvers.abcOptSolver import optSolver
 from openpto.method.Solvers.neural.SubmodularOptimizer import SubmodularOptimizer
 
 
 class budgetallocSolver(optSolver):
-    """
-    """
+    """ """
+
     def _getModel(self):
         return None, None
-    
+
     def get_objective(self, Y, Z, w=None, **kwargs):
         """
         For a given set of predictions/labels (Y), returns the decision quality.
@@ -38,18 +37,14 @@ class budgetallocSolver(optSolver):
         p_all_fail = p_fail.prod(dim=-2)
         obj = (w * (1 - p_all_fail)).sum(dim=-1)
         return obj
-    
-    def solve(self, Y, Z_init=None, **kwargs): 
+
+    def solve(self, Y, Z_init=None, **kwargs):
         self.budget = 2
         self.opt = SubmodularOptimizer(self.get_objective, self.budget)
         if len(Y.shape) == 2:
-            Z=self.opt(Y, Z_init=Z_init)
-            obj=self.get_objective(Y,Z)
-            print(obj)
-            #print("Z_shape=",Z.shape,"obj_shape=",obj.shape)
-            #print(Z)
-            #print(obj)
-            return Z,obj
+            Z = self.opt(Y, Z_init=Z_init)
+            obj = self.get_objective(Y, Z)
+            return Z, obj
         # If it's not...
         #   Remember the shape
         Y_shape = Y.shape
@@ -58,11 +53,7 @@ class budgetallocSolver(optSolver):
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
-        print(Z.shape)
-        
-        return Z,obj
-    
+        return Z, obj
+
     def setObj(self, Y):
         return None
-
-  

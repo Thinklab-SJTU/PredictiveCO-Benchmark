@@ -9,7 +9,9 @@ def move_to_gpu(problem, device):
             problem.__dict__[key] = value.to(device)
 
 
-def print_metrics(datasets, model, problem, loss_fn, optSolver = None, prefix="", **model_args):
+def print_metrics(
+    datasets, model, problem, loss_fn, optSolver=None, prefix="", **model_args
+):
     with torch.no_grad():
         # print(f"Current model parameters: {[param for param in model.parameters()]}")
         metrics = {}
@@ -22,7 +24,7 @@ def print_metrics(datasets, model, problem, loss_fn, optSolver = None, prefix=""
             Zs_pred, objective_pred = problem.get_decision(
                 pred.cpu().numpy(),
                 params=Ys_aux,
-                optSolver = optSolver,
+                optSolver=optSolver,
                 isTrain=isTrain,
                 **problem.init_API(),
             )
@@ -56,5 +58,5 @@ def print_metrics(datasets, model, problem, loss_fn, optSolver = None, prefix=""
             print(
                 f"{prefix} {partition} Objective: {objective_pred.mean():.3f}, Loss: {loss:.3f}"
             )
-            
+
     return metrics

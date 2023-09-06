@@ -18,7 +18,7 @@ class BudgetAllocation(PTOProblem):
         num_targets=10,  # number of items to choose from
         num_items=5,  # number of targets to consider
         budget=2,  # number of items that can be picked
-        num_fake_targets=500,  # number of random features added to make the task harder
+        num_fake_targets=0,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         opt="submodular",
@@ -55,13 +55,12 @@ class BudgetAllocation(PTOProblem):
         self.Xs_train, self.Xs_test = self._generate_features(
             [self.Ys_train, self.Ys_test], self.num_fake_targets
         )  # features
-        Xs_train= Xs_train.reshape(400,50,10,1)
-        Xs_test= Xs_test.reshape(200,50,10,1)
-        
-        print(self.Xs_train.shape)
-        print(self.Xs_test.shape)
-        print(self.Ys_train.shape)
-        print(self.Ys_test.shape)
+        # Xs_train= Xs_train.reshape(400,50,10,1)
+        # Xs_test= Xs_test.reshape(200,50,10,1)
+
+        # X_train:[400, 5, 10])     Ys_train: [400, 5, 10])  Z: torch.Size([5])
+        # assert Y.shape[-2] == Z.shape[-1]
+        # assert len(Z.shape) + 1 == len(Y.shape)
         assert not (torch.isnan(self.Xs_train).any() or torch.isnan(self.Xs_test).any())
 
         # Split training data into train/val
@@ -76,7 +75,7 @@ class BudgetAllocation(PTOProblem):
         # Create functions for optimisation
         assert budget < num_items
         self.budget = budget
-        self.opt = SubmodularOptimizer(self.get_objective, self.budget)
+        self.opt = SubmodularOptimizer(self.get_objective, self.budget, num_iters=1)
 
         # Undo random seed setting
         self._set_seed()
@@ -151,6 +150,7 @@ class BudgetAllocation(PTOProblem):
 
     def get_model_shape(self):
         return self.num_features, self.num_targets
+        # return self.num_features, 1
 
     def get_output_activation(self):
         return "relu"
@@ -164,8 +164,11 @@ class BudgetAllocation(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
+        # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)
+        # assert Y.shape[-2] == Z.shape[-2]
+        # assert len(Z.shape) == len(Y.shape)
 
         # Initialise weights to default value
         if w is None:
@@ -183,22 +186,24 @@ class BudgetAllocation(PTOProblem):
     def get_decision(self, Y, params, optSolver, Z_init=None, **kwargs):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
-            Z=self.opt(Y, Z_init=Z_init)
-            return Z.cpu().numpy(), self.get_objective(Y,Z).cpu().numpy()
+            Z = self.opt(Y, Z_init=Z_init)
+            objective = self.get_objective(Y, Z).cpu().numpy()
+            Z = Z.unsqueeze(1)
+            return Z.cpu().numpy(), objective
         # If it's not...
-        #   Remember the shape
         Y_shape = Y.shape
         #   Break it down into individual instances and solve
         Y_new = Y
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
-        return Z.cpu().numpy(),self.get_objective(Y,Z).cpu().numpy()
-    
+        final_sol = Z.cpu().unsqueeze(1).numpy()
+        final_obj = self.get_objective(Y, Z).cpu().numpy()
+        return final_sol, final_obj
+
     def init_API(self):
-        return {
-        }
-    
+        return {}
+
 
 # Unit test for RandomTopK
 if __name__ == "__main__":
