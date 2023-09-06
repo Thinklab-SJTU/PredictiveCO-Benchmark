@@ -17,6 +17,4 @@ def str2solver(solver_str, prob_str, problem):
         "knapsack": {"gurobi": KPGrbSolver},
     }
     # TODO: more problems
-    print(prob_str)
-    print(solver_str)
     return prob_solver_dict[prob_str][solver_str](**problem.init_API())

@@ -21,6 +21,7 @@ class CubicTopK(PTOProblem):
         rand_seed=0,  # for reproducibility
         data_dir="./openpto/data/",
     ):
+        print("!!!!!!!!!!")
         super(CubicTopK, self).__init__()
         # Do some random seed fu
         self.rand_seed = rand_seed
@@ -40,12 +41,6 @@ class CubicTopK(PTOProblem):
         #   Generate Labels
         self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
         self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
-
-        # try to print
-        print(self.Xs_train)
-        print(self.Xs_test)
-        print(self.Ys_train)
-        print(self.Ys_test)
 
         # Split training data into train/val
         assert 0 < val_frac < 1
@@ -93,9 +88,10 @@ class CubicTopK(PTOProblem):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
-        return Z if self.budget == 0 else Z.sum(dim=-2)
+        # return Z if self.budget == 0 else Z.sum(dim=-2)
+        return Z.cpu().numpy(), (Z*Y).sum().cpu().numpy()
 
-    def get_decision(self, Y, isTrain=False, **kwargs):
+    def get_decision(self, Y,  params, isTrain=False, **kwargs):
         return self.opt_test(Y)
 
     def get_model_shape(self):

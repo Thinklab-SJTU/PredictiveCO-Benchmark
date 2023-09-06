@@ -49,7 +49,7 @@ class ExpManager:
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 
-    def run(self, problem, loss_fn, n_epochs=1, debug=False):
+    def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
         #   Move everything to GPU, if available
         if torch.cuda.is_available():
             move_to_gpu(problem, self.device)
@@ -76,6 +76,7 @@ class ExpManager:
                     self.pred_model,
                     problem,
                     loss_fn,
+                    optSolver,
                     f"Iter {iter_idx},",
                     **self.model_args,
                 )
@@ -126,7 +127,7 @@ class ExpManager:
             (X_test, Y_test, Y_test_aux, "test"),
         ]
         results = print_metrics(
-            datasets, self.pred_model, problem, loss_fn, "Final", **self.model_args
+            datasets, self.pred_model, problem, loss_fn, optSolver, "Final", **self.model_args
         )
 
         #   Document the value of a random guess
@@ -135,6 +136,7 @@ class ExpManager:
             Z_test_rand, objectives_rand = problem.get_decision(
                 torch.rand_like(Y_test),
                 params=Y_test_aux,
+                optSolver = optSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
@@ -143,7 +145,7 @@ class ExpManager:
 
         #   Document the optimal value
         Z_test_opt, objectives_opt = problem.get_decision(
-            Y_test, params=Y_test_aux, isTrain=False, **problem.init_API()
+            Y_test, params=Y_test_aux, optSolver = optSolver, isTrain=False, **problem.init_API()
         )
         # objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
 

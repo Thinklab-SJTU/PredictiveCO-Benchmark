@@ -157,7 +157,20 @@ class blackboxOptFunc(torch.autograd.Function):
         cp = coeff_hat.detach().to("cpu").numpy()
         wp = pred_sol.detach().to("cpu").numpy()
         dl = grad_output.detach().to("cpu").numpy()
+        
+        print("cp ",cp.shape)
+        print(cp)
+        if isinstance(cp, np.ndarray): print("cp 是 NumPy 数组")
+        elif isinstance(cp, torch.Tensor): print("cp 是 PyTorch 张量")
+        else: print("cp 不是 NumPy 数组也不是 PyTorch 张量")
+        #print("wp ",wp.shape)
+        #print("dl ",dl.shape)
+        #print(dl)
+        #print("lambd ",lambd)
         # perturbed costs
+        #if dl.shape != cp.shape: # 如果不一致，调整 dl 的形状与 cp 相匹配
+            #dl = dl[:, np.newaxis] 
+            #dl = np.tile(dl, (1, 10))
         cq = cp + lambd * dl
         # solve
         if rand_sigma <= solve_ratio:

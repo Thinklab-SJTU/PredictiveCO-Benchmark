@@ -45,6 +45,7 @@ class budgetallocSolver(optSolver):
         if len(Y.shape) == 2:
             Z=self.opt(Y, Z_init=Z_init)
             obj=self.get_objective(Y,Z)
+            print(obj)
             #print("Z_shape=",Z.shape,"obj_shape=",obj.shape)
             #print(Z)
             #print(obj)
@@ -58,7 +59,8 @@ class budgetallocSolver(optSolver):
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
         print(Z.shape)
-        return Z
+        
+        return Z,obj
     
     def setObj(self, Y):
         return None
