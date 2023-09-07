@@ -37,9 +37,9 @@ class optGrbSolver(optSolver):
         Args:
             c (np.ndarray / list): cost of objective function
         """
-        if len(c) != self.num_cost:
+        if len(c) != self.num_vars:
             raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[i] * self.x[k] for i, k in enumerate(self.x))
+        obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
         self._model.setObjective(obj)
 
     def solve(self):
@@ -51,7 +51,8 @@ class optGrbSolver(optSolver):
         """
         self._model.update()
         self._model.optimize()
-        return [self.x[k].x for k in self.x], self._model.objVal
+        others = {}
+        return [self.z[k].x for k in self.z], self._model.objVal, others
 
     def copy(self):
         """
@@ -67,7 +68,7 @@ class optGrbSolver(optSolver):
         new_model._model = self._model.copy()
         # variables for new model
         x = new_model._model.getVars()
-        new_model.x = {key: x[i] for i, key in enumerate(self.x)}
+        new_model.x = {key: x[i] for i, key in enumerate(self.z)}
         return new_model
 
     def addConstr(self, coefs, rhs):
@@ -81,7 +82,7 @@ class optGrbSolver(optSolver):
         Returns:
             optModel: new model with the added constraint
         """
-        if len(coefs) != self.num_cost:
+        if len(coefs) != self.num_vars:
             raise ValueError("Size of coef vector cannot cost.")
         # copy
         new_model = self.copy()

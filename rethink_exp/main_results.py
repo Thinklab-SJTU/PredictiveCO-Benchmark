@@ -48,7 +48,7 @@ if __name__ == "__main__":
         lr=args.lr,
         serial=args.serial,
         dflalpha=args.dflalpha,
-    )(optSolver)
+    )(optSolver, args.processes, args.solve_ratio)
 
     ipdim, opdim = problem.get_model_shape()
     pred_model_args = {

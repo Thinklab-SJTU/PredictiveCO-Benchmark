@@ -5,6 +5,7 @@ from openpto.method.Models.Identity import negativeIdentity
 from openpto.method.Models.LODL import _get_learned_loss
 from openpto.method.Models.LTR import listwiseLTR, pairwiseLTR, pointwiseLTR
 from openpto.method.Models.MSE import CE, MSE, MSE_Sum
+from openpto.method.Models.QPTL import QPTL
 from openpto.method.Models.SPO import SPOPlus
 
 # from openpto.method.Models.Intopt import Intopt
@@ -27,19 +28,21 @@ def get_loss_fn(name, problem, **kwargs):
         return _get_learned_loss(problem, name, **kwargs)
     elif name == "spo":
         return SPOPlus
-    elif name == "listLTR":
-        return listwiseLTR
+    elif name == "pointLTR":
+        return pointwiseLTR
     elif name == "pairLTR":
         return pairwiseLTR
-    elif name == "pointwiseLTR":
-        return pointwiseLTR
+    elif name == "listLTR":
+        return listwiseLTR
+    elif name == "QPTL":
+        return QPTL
     elif name == "intopt":
         return None
     elif name == "nce":
         return None
     elif name == "blackbox":
         return blackboxOpt
-    elif name == "Identity":
+    elif name == "identity":
         return negativeIdentity
     else:
         raise LookupError()
@@ -50,8 +53,6 @@ def _get_decision_focused(
     problem,
     coeff_hat,
     coeff_true,
-    sol_hat=None,
-    sol_true=None,
     params=None,
     **hyperparams,
 ):
@@ -68,15 +69,12 @@ def _get_decision_focused(
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
-        # problem.get_decision(coeff_hat, isTrain=True, **hyperparams)
-        obj = problem.get_objective(coeff_true, sol_true, isTrain=True, **hyperparams)
+        sol_hat, _ = problem.get_decision(coeff_hat, isTrain=True, **hyperparams)
+        obj = problem.get_objective(coeff_true, sol_hat, isTrain=True, **hyperparams)
         loss = -obj + dflalpha * twostageloss(coeff_hat, coeff_true)
-
         return loss
 
     return decision_focused_loss

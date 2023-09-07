@@ -96,6 +96,7 @@ class ExpManager:
             for i in random.sample(
                 range(len(X_train)), min(self.args.batchsize, len(X_train))
             ):
+                # TODO:currently, only support individually train
                 pred = self.pred_model(X_train[i]).squeeze()
                 losses.append(
                     loss_fn(

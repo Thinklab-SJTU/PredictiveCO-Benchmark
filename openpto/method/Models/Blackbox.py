@@ -28,7 +28,7 @@ class blackboxOpt(optModel):
     Reference: <https://arxiv.org/abs/1912.02175>
     """
 
-    def __init__(self, optSolver, lambd=10, processes=1, solve_ratio=1, dataset=None):
+    def __init__(self, optSolver, lambd=10, processes=1, solve_ratio=1):
         """
         Args:
             optSolver (optModel): an  optimization model

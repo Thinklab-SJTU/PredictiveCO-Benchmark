@@ -18,3 +18,11 @@ models:
     reduction: mean
   Identity:
     reduction: mean
+  QPTL:
+    reduction: mean
+  listLTR:
+    reduction: mean
+  pairLTR:
+    reduction: mean
+  pointLTR:
+    reduction: mean

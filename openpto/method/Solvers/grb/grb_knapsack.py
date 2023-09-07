@@ -8,8 +8,8 @@ from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 # optimization model
 class KPGrbSolver(optGrbSolver):
     def __init__(self, weights, capacity, modelSense):
-        # super().__init__()
-        self._model, self.x = self._getModel(weights, capacity)
+        # super().__init__() # do not use default __init__ func
+        self._model, self.z = self._getModel(weights, capacity)
         self.modelSense = modelSense
 
     def _getModel(self, weights, capacity):
@@ -35,7 +35,7 @@ class KPGrbSolver(optGrbSolver):
         Args:
             c (np.ndarray / list): cost of objective function
         """
-        if len(c) != self.num_cost:
+        if len(c) != self.num_vars:
             raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[i] * self.x[k] for i, k in enumerate(self.x))
+        obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
         self._model.setObjective(obj)

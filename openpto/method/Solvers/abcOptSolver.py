@@ -22,17 +22,17 @@ class optSolver:  # (ABC):
         # super(optSolver, self).__init__()
         # default sense
         self.modelSense = modelSense if modelSense is not None else GRB.MINIMIZE
-        self._model, self.x = self._getModel()
+        self._model, self.z = self._getModel()
 
     def __repr__(self):
         return "optSolver " + self.__class__.__name__
 
     @property
-    def num_cost(self):
+    def num_vars(self):
         """
         number of cost to be predicted
         """
-        return len(self.x)
+        return len(self.z)
 
     @abstractmethod
     def _getModel(self):

@@ -39,17 +39,14 @@ class optModel(nn.Module):
         problem,
         coeff_hat,
         coeff_true=None,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
         """
         Input:
+            problem:
             coeff_hat:
             coeff_true:
-            sol_hat:
-            sol_true:
             params:
         Output:
             sol, obj, loss

@@ -34,7 +34,6 @@ class negativeIdentity(optModel):
             dataset (None/optDataset): the training data
         """
         super().__init__(optSolver, processes, solve_ratio)
-        # build blackbox optimizer
         self.nid = negativeIdentityFunc()
 
     def forward(

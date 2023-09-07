@@ -134,32 +134,10 @@ class Knapsack(PTOProblem):
         for i in range(ins_num):
             # solve
             optSolver.setObj(Y[i])
-            solp, objp = optSolver.solve()
+            solp, objp, other = optSolver.solve()
             sol.append(solp)
             obj.append(objp)
         return np.array(sol), np.array(obj)
-
-        # if Y.ndim == 1:
-        #     decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
-        # else:
-        #     decisions, objs = GrbSolve(Y, optSolver)
-        # return np.array(decisions)
-
-    # def get_decision_and_objective(
-    #     self, Y, params, isTrain=True, optSolver=None, **kwargs
-    # ):
-    #     if optSolver is None:
-    #         if params.ndim > 2:
-    #             params[0]
-    #         else:
-    #             pass
-    #         optSolver = KPGrbSolver(**kwargs)
-
-    #     if Y.ndim == 1:
-    #         decisions, objs = GrbSolve(Y.unsqueeze(0), optSolver)
-    #     else:
-    #         decisions, objs = GrbSolve(Y, optSolver)
-    #     return np.array(decisions), np.array(objs)
 
     def init_API(self):
         return {
@@ -167,9 +145,6 @@ class Knapsack(PTOProblem):
             "capacity": self.capacity,
             "modelSense": GRB.MAXIMIZE,
         }
-
-    # def params_API(self):
-    #     return { "capacity": self.capacity}
 
     def get_model_shape(self):
         if self.prob_version == "gen":

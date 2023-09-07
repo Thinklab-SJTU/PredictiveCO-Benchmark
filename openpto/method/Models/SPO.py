@@ -47,8 +47,6 @@ class SPOPlus(optModel):
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
@@ -57,15 +55,14 @@ class SPOPlus(optModel):
         """
         if coeff_hat.dim() == 1:
             coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
-        if sol_true is None:
-            sol_true, obj_true = problem.get_decision(
-                coeff_true.cpu(),
-                params.cpu(),
-                isTrain=False,
-                optSolver=None,
-                **problem.init_API(),
-            )
-            # obj_true = problem.get_objective(coeff_true, sol_true)
+        sol_true, obj_true = problem.get_decision(
+            coeff_true.cpu(),
+            params.cpu(),
+            isTrain=False,
+            optSolver=None,
+            **problem.init_API(),
+        )
+        # obj_true = problem.get_objective(coeff_true, sol_true)
         #
         loss = self.spop.apply(
             coeff_hat,

@@ -12,8 +12,6 @@ class MSE(optModel):
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
@@ -33,8 +31,6 @@ class MAE(optModel):
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
@@ -54,8 +50,6 @@ class CE(optModel):
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
@@ -71,8 +65,6 @@ class MSE_Sum(optModel):
         problem,
         coeff_hat,
         coeff_true,
-        sol_hat=None,
-        sol_true=None,
         params=None,
         **hyperparams,
     ):
