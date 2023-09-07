@@ -15,6 +15,7 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
+# TODO: currently only support single-instance batch
 class listwiseLTR(optModel):
     """
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>

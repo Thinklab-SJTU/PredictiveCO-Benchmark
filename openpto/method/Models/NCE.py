@@ -1,82 +1,97 @@
-# #!/usr/bin/env python
-# # coding: utf-8
-# """
-# Noise contrastive estimation loss function
-# """
+#!/usr/bin/env python
+# coding: utf-8
+"""
+Noise contrastive estimation loss function
+"""
 
-# import numpy as np
-# import torch
+import numpy as np
+import torch
 
-# from gurobipy import GRB
+from gurobipy import GRB
 
-# # from .func.abcmodule import optModel
-# # from .data.dataset import optDataset
-# # from .func.utlis import _solveWithObj4Par, _solve_in_pass, _cache_in_pass
-# from openpto.method.Models.abcoptModel import optModel
+from openpto.method.Models.abcOptModel import optModel
+from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
-# class NCE(optModel):
-#     """
-#     An autograd module for noise contrastive estimation as surrogate loss
-#     functions, based on viewing non-optimal solutions as negative examples.
+class NCE(optModel):
+    """
+    Code from:
+    Reference: <https://www.ijcai.org/proceedings/2021/390>
+    """
 
-#     For the NCE, the cost vector needs to be predicted from contextual data and
-#     maximizes the separation of the probability of the optimal solution.
+    def __init__(self, optSolver, processes=1, solve_ratio=1):
+        """
+        Args:
+            optSolver (optModel): an  optimization model
+            processes (int): number of processors, 1 for single-core, 0 for all of cores
+            solve_ratio (float): the ratio of new solutions computed during training
+        """
+        super().__init__(optSolver, processes, solve_ratio)
+        # solution pool
+        n_vars = optSolver.num_vars
+        self.solpool = np.empty((0, n_vars))
 
-#     Thus, allows us to design an algorithm based on stochastic gradient descent.
-
-#     Reference: <https://www.ijcai.org/proceedings/2021/390>
-#     """
-
-#     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
-#         """
-#         Args:
-#             optSolver (optModel): an  optimization model
-#             processes (int): number of processors, 1 for single-core, 0 for all of cores
-#             solve_ratio (float): the ratio of new solutions computed during training
-#             dataset (None/optDataset): the training data, usually this is simply the training set
-#         """
-#         super().__init__(optSolver, processes, solve_ratio, dataset)
-#         # solution pool
-#         if not isinstance(dataset, optDataset):  # type checking
-#             raise TypeError("dataset is not an optDataset")
-#         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
-
-#     def forward(self, pred_cost, true_sol, reduction="mean"):
-#         """
-#         Forward pass
-#         """
-#         # get device
-#         device = pred_cost.device
-#         # convert tensor
-#         cp = pred_cost.detach().to("cpu").numpy()
-#         # solve
-#         if np.random.uniform() <= self.solve_ratio:
-#             sol, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
-#             # add into solpool
-#             self.solpool = np.concatenate((self.solpool, sol))
-#             # remove duplicate
-#             self.solpool = np.unique(self.solpool, axis=0)
-#         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-#         # get current obj
-#         obj_cp = torch.einsum("bd,bd->b", pred_cost, true_sol).unsqueeze(1)
-#         # get obj for solpool
-#         objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool)
-#         # get loss
-#         if self.optSolver.modelSense == GRB.MINIMIZE:
-#             loss = (obj_cp - objpool_cp).mean(axis=1)
-#         if self.optSolver.modelSense == GRB.MAXIMIZE:
-#             loss = (objpool_cp - obj_cp).mean(axis=1)
-#         # reduction
-#         if reduction == "mean":
-#             loss = torch.mean(loss)
-#         elif reduction == "sum":
-#             loss = torch.sum(loss)
-#         elif reduction == "none":
-#             loss = loss
-#         else:
-#             raise ValueError("No reduction '{}'.".format(reduction))
-#         return loss
+    def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
+        """
+        Forward pass
+        """
+        # get device
+        device = coeff_hat.device
+        # get true solution
+        true_sol, _ = problem.get_decision(
+            coeff_true,
+            params=params,
+            optSolver=self.optSolver,
+            isTrain=False,
+            **problem.init_API(),
+        )
+        true_sol = torch.from_numpy(true_sol.astype(np.float32)).to(device)
+        # obtain solution cache if empty
+        if len(self.solpool) == 0:
+            # TODO: all problems
+            _, Y_train, _ = problem.get_train_data()
+            self.solpool, _ = problem.get_decision(
+                Y_train,
+                params=params,
+                optSolver=self.optSolver,
+                isTrain=False,
+                **problem.init_API(),
+            )
+        # convert tensor
+        cp = coeff_hat.detach().to("cpu").numpy()
+        # solve
+        if np.random.uniform() <= self.solve_ratio:
+            sol, _ = _solve_in_pass(
+                cp, params, problem, self.optSolver, self.processes, self.pool
+            )
+            # add into solpool
+            self.solpool = np.concatenate((self.solpool, sol))
+            # remove duplicate
+            self.solpool = np.unique(self.solpool, axis=0)
+        solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
+        # get current obj
+        # obj_cp = torch.einsum("bd,bd->b", coeff_hat, true_sol).unsqueeze(1)
+        obj_cp = torch.einsum("d,bd->b", coeff_hat, true_sol).unsqueeze(1)
+        # get obj for solpool
+        # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
+        objpool_cp = torch.einsum("d,nd->n", coeff_hat, solpool)
+        # get loss
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            # loss = (obj_cp - objpool_cp).mean(axis=1)
+            loss = (obj_cp - objpool_cp).mean(axis=0)
+        if self.optSolver.modelSense == GRB.MAXIMIZE:
+            # loss = (objpool_cp - obj_cp).mean(axis=1)
+            loss = (objpool_cp - obj_cp).mean(axis=0)
+        # reduction
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(loss)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(loss)
+        elif hyperparams["reduction"] == "none":
+            loss = loss
+        else:
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        return loss
 
 
 # class contrastiveMAP(optModel):
@@ -106,14 +121,14 @@
 #             raise TypeError("dataset is not an optDataset")
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
-#     def forward(self, pred_cost, true_sol, reduction="mean"):
+#     def forward(self, coeff_hat, true_sol, reduction="mean"):
 #         """
 #         Forward pass
 #         """
 #         # get device
-#         device = pred_cost.device
+#         device = coeff_hat.device
 #         # convert tensor
-#         cp = pred_cost.detach().to("cpu").numpy()
+#         cp = coeff_hat.detach().to("cpu").numpy()
 #         # solve
 #         if np.random.uniform() <= self.solve_ratio:
 #             sol, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
@@ -123,20 +138,20 @@
 #             self.solpool = np.unique(self.solpool, axis=0)
 #         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
 #         # get current obj
-#         obj_cp = torch.einsum("bd,bd->b", pred_cost, true_sol).unsqueeze(1)
+#         obj_cp = torch.einsum("bd,bd->b", coeff_hat, true_sol).unsqueeze(1)
 #         # get obj for solpool
-#         objpool_cp = torch.einsum("bd,nd->bn", pred_cost, solpool)
+#         objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
 #         # get loss
 #         if self.optSolver.modelSense == GRB.MINIMIZE:
 #             loss, _ = (obj_cp - objpool_cp).max(axis=1)
 #         if self.optSolver.modelSense == GRB.MAXIMIZE:
 #             loss, _ = (objpool_cp - obj_cp).max(axis=1)
 #         # reduction
-#         if reduction == "mean":
+#         if hyperparams["reduction"] == "mean":
 #             loss = torch.mean(loss)
-#         elif reduction == "sum":
+#         elif hyperparams["reduction"] == "sum":
 #             loss = torch.sum(loss)
-#         elif reduction == "none":
+#         elif hyperparams["reduction"] == "none":
 #             loss = loss
 #         else:
 #             raise ValueError("No reduction '{}'.".format(reduction))

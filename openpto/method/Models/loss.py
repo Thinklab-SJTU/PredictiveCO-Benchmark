@@ -1,49 +1,63 @@
 import os
 
-from openpto.method.Models.Blackbox import blackboxOpt
-from openpto.method.Models.Identity import negativeIdentity
-from openpto.method.Models.LODL import _get_learned_loss
-from openpto.method.Models.LTR import listwiseLTR, pairwiseLTR, pointwiseLTR
-from openpto.method.Models.MSE import CE, MSE, MSE_Sum
-from openpto.method.Models.QPTL import QPTL
-from openpto.method.Models.SPO import SPOPlus
-
-# from openpto.method.Models.Intopt import Intopt
-# from openpto.method.Models.NCE import NCE
-
-
 NUM_CPUS = os.cpu_count()
 
 
 def get_loss_fn(name, problem, **kwargs):
     if name == "mse":
+        from openpto.method.Models.MSE import MSE
+
         return MSE
     elif name == "msesum":
+        from openpto.method.Models.MSE import MSE_Sum
+
         return MSE_Sum
     elif name == "ce":
+        from openpto.method.Models.MSE import CE
+
         return CE
     elif name == "dfl":
         return _get_decision_focused(problem, **kwargs)
-    elif name == "learned":
-        return _get_learned_loss(problem, name, **kwargs)
     elif name == "spo":
+        from openpto.method.Models.SPO import SPOPlus
+
         return SPOPlus
     elif name == "pointLTR":
+        from openpto.method.Models.LTR import pointwiseLTR
+
         return pointwiseLTR
     elif name == "pairLTR":
+        from openpto.method.Models.LTR import pairwiseLTR
+
         return pairwiseLTR
     elif name == "listLTR":
+        from openpto.method.Models.LTR import listwiseLTR
+
         return listwiseLTR
-    elif name == "QPTL":
-        return QPTL
+    elif name == "qptl":
+        # from openpto.method.Models.QPTL import QPTL
+        return None
+        # return QPTL
     elif name == "intopt":
+        # from openpto.method.Models.Intopt import Intopt
         return None
     elif name == "nce":
-        return None
+        from openpto.method.Models.NCE import NCE
+
+        return NCE
     elif name == "blackbox":
+        from openpto.method.Models.Blackbox import blackboxOpt
+
         return blackboxOpt
     elif name == "identity":
+        from openpto.method.Models.Identity import negativeIdentity
+
         return negativeIdentity
+    elif name == "lodl":
+        from openpto.method.Models.LODL import _get_learned_loss
+
+        return _get_learned_loss(problem, name, **kwargs)
+
     else:
         raise LookupError()
 
@@ -58,8 +72,12 @@ def _get_decision_focused(
 ):
     dflalpha = hyperparams["dflalpha"]
     if problem.get_twostageloss() == "mse":
+        from openpto.method.Models.MSE import MSE
+
         twostageloss = MSE
     elif problem.get_twostageloss() == "ce":
+        from openpto.method.Models.MSE import CE
+
         twostageloss = CE
     else:
         raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")

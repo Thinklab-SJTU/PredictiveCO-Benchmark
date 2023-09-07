@@ -1,3 +1,11 @@
+'''
+# Supported problems: 
+    knapsack (--prob_version=gen),
+
+# Supported models: 
+    spo, 
+
+'''
 
 # budget allocation
 python rethink_exp/main_results.py --problem=budgetalloc --opt_model mse --epochs 1 --gpu 0 

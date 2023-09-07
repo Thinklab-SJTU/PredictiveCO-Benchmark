@@ -47,8 +47,9 @@ def get_args():
             "intopt",
             "blackbox",
             "identity",
-            "LODL",
-            "QPTL",
+            "lodl",
+            "nce",
+            "qptl",
         ],
         default="mse",
     )

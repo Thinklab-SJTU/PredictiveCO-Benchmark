@@ -26,3 +26,5 @@ models:
     reduction: mean
   pointLTR:
     reduction: mean
+  nce:
+    reduction: mean
