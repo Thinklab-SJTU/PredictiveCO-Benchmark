@@ -11,6 +11,8 @@ import torch
 
 from torch.multiprocessing import Pool
 
+from openpto.method.Models.MSE import MSE
+from openpto.method.pred_model import dense_nn
 from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.problems.wrapper_prob import (
     RMAB,
@@ -18,9 +20,6 @@ from openpto.problems.wrapper_prob import (
     BudgetAllocation,
     find_saved_problem,
 )
-
-from ..pred_model import dense_nn
-from .MSE import MSE
 
 # from openpto.method.Models.Models_utils import DenseLoss, LowRankQuadratic, WeightedMSESum, WeightedMSE, WeightedCE, WeightedMSESum, QuadraticPlusPlus, WeightedMSEPlusPlus
 

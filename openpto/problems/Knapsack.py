@@ -292,16 +292,17 @@ def transform_energy_data(
     Y = np.roll(Y, kfold * k_fold_rotation, axis=1)
     # X = X[[0,7],:].reshape(2,-1)
     if is_spo_tree:
-        dataset = get_benchmarks_spotree(
-            X,
-            Y,
-            BENCHMARK_SIZE,
-            generate_weight,
-            unit_weight,
-            weight_seed,
-            noise_level=noise_level,
-            seed=seed,
-        )
+        assert 0
+        # dataset = get_benchmarks_spotree(
+        #     X,
+        #     Y,
+        #     BENCHMARK_SIZE,
+        #     generate_weight,
+        #     unit_weight,
+        #     weight_seed,
+        #     noise_level=noise_level,
+        #     seed=seed,
+        # )
     else:
         dataset = get_benchmarks(
             X,
@@ -468,156 +469,6 @@ def get_benchmarks(
     if generate_weight and not unit_weight and add_weights:
         X = np.vstack((X, benchmark_noisy_weights.flatten()))
 
-    X = np.delete(X, 0, 0)
-
-    dataset = {
-        "X": X,
-        "Y": Y,
-        "weights": weights,
-        "benchmarks_X": benchmarks_X,
-        "benchmarks_Y": benchmarks_Y,
-        "benchmarks_weights": benchmarks_weights,
-    }
-    return dataset
-
-
-def get_benchmarks_spotree(
-    X,
-    Y,
-    benchmark_size,
-    generate_weight=True,
-    unit_weight=True,
-    weight_seed=None,
-    add_weights=True,
-    noise_level=0,
-    seed=0,
-):
-    """
-    Splits the dataset into benchmarks of a certain size for the optimization problem. Used in the second stage.
-    Might not be used in the feature if we choose to use predetermined benchmarks.
-    :param is_weighted:
-    :param X:
-    :param Y:
-    :param benchmark_size:
-    :return:
-    """
-
-    feature_size, sample_size = X.shape
-    if weight_seed is not None:
-        if unit_weight:
-            weight_seed = [1]
-        else:
-            weight_seed = [3, 5, 7]
-            # IMPLEMENT ADDING NOISE
-            np.random.seed(seed)
-            # if noise_level > 0:
-            #     print('noise generate')
-            #     noise = (1-np.random.random(sample_size)*noise_level/100)
-            #     Y = Y * noise
-
-    benchmark_count = int(sample_size / benchmark_size)
-    benchmarks_X = []
-    benchmarks_Y = []
-    benchmarks_weights = []
-
-    # do weights if needed
-    if generate_weight:
-        weights = np.ones(Y.shape)
-        noisy_weights = np.ones(Y.shape)
-    else:
-        weights = X[-1, :].reshape(Y.shape)
-    for i in range(benchmark_count):
-        start_index = i * benchmark_size
-        end_index = start_index + benchmark_size
-
-        benchmark_X = X[1:, start_index:end_index].reshape(
-            feature_size - 1, benchmark_size
-        )
-        if generate_weight:
-            if unit_weight:
-                benchmark_weights = generate_uniform_weights_from_seed(
-                    benchmark_size, weight_seed
-                ).astype(int)
-                benchmark_noisy_weights = benchmark_weights
-            else:
-                # set same weight array for SPO implementation
-                benchmark_weights = np.array(
-                    [
-                        5,
-                        3,
-                        3,
-                        5,
-                        5,
-                        7,
-                        7,
-                        3,
-                        7,
-                        7,
-                        3,
-                        3,
-                        5,
-                        3,
-                        7,
-                        3,
-                        7,
-                        7,
-                        5,
-                        5,
-                        3,
-                        5,
-                        5,
-                        3,
-                        7,
-                        7,
-                        3,
-                        7,
-                        5,
-                        5,
-                        7,
-                        3,
-                        7,
-                        3,
-                        3,
-                        5,
-                        7,
-                        5,
-                        3,
-                        5,
-                        3,
-                        7,
-                        5,
-                        7,
-                        5,
-                        5,
-                        3,
-                        7,
-                    ]
-                ).reshape(1, 48)
-                benchmark_noisy_weights = benchmark_weights + (
-                    np.ones(benchmark_weights.shape) * noise_level
-                )
-            # benchmark_weights = np.hstack([seed_array for i in range(int(sample_size/len(seed_array)))])
-            Y[:, start_index:end_index] = (
-                Y[:, start_index:end_index] * benchmark_noisy_weights
-            )
-            weights[:, start_index:end_index] = benchmark_weights
-            noisy_weights[:, start_index:end_index] = benchmark_noisy_weights
-            benchmark_X = np.vstack((benchmark_X, benchmark_noisy_weights.flatten()))
-            # benchmark_X = np.mean(benchmark_X,axis=1)
-
-        else:
-            benchmark_weights = weights[:, start_index:end_index].reshape(
-                1, benchmark_size
-            )
-
-        benchmark_Y = Y[:, start_index:end_index].reshape(1, benchmark_size)
-
-        benchmarks_X.append(benchmark_X.T.flatten())
-        benchmarks_Y.append(benchmark_Y)
-        benchmarks_weights.append(benchmark_weights)
-
-    # if generate_weight and not unit_weight and add_weights:
-    #     X = np.vstack((X, benchmark_noisy_weights.flatten()))
     X = np.delete(X, 0, 0)
 
     dataset = {

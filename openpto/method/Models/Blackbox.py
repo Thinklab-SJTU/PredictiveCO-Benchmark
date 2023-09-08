@@ -14,21 +14,10 @@ from .abcOptModel import optModel
 
 class blackboxOpt(optModel):
     """
-    An autograd module for differentiable black-box optimizer, which yield
-    optimal a solution and derive a gradient.
-
-    For differentiable block-box, the objective function is linear and
-    constraints are known and fixed, but the cost vector need to be predict
-    ed
-    from contextual data.
-
-    The block-box approximate gradient of optimizer smoothly. Thus, allows us to
-    design an algorithm based on stochastic gradient descent.
-
     Reference: <https://arxiv.org/abs/1912.02175>
     """
 
-    def __init__(self, optSolver, lambd=10, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
@@ -39,9 +28,9 @@ class blackboxOpt(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio)
         # smoothing parameter
-        if lambd <= 0:
+        if kwargs["lambd"] <= 0:
             raise ValueError("lambda is not positive.")
-        self.lambd = lambd
+        self.lambd = kwargs["lambd"]
         # build blackbox optimizer
         self.dbb = blackboxOptFunc()
 
@@ -106,16 +95,19 @@ class blackboxOptFunc(torch.autograd.Function):
         device = coeff_hat.device
         # convert tenstor
         cp = coeff_hat.detach().to("cpu").numpy()
+        # TODO: remove solution cache
+        sols, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
+        sol = sols[0]
         # solve
         rand_sigma = np.random.uniform()
-        if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
-            # print("input: ", cp.shape, "output: ", sol.shape)
-            if solve_ratio < 1:
-                # add into solpool
-                module.solpool = np.concatenate((module.solpool, sol))
-                # remove duplicate
-                module.solpool = np.unique(module.solpool, axis=0)
+        # if rand_sigma <= solve_ratio:
+        # sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
+        # print("input: ", cp.shape, "output: ", sol.shape)
+        # if solve_ratio < 1:
+        #     # add into solpool
+        #     module.solpool = np.concatenate((module.solpool, sol))
+        #     # remove duplicate
+        #     module.solpool = np.unique(module.solpool, axis=0)
         # else:
         # sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
         # convert to tensor
@@ -149,9 +141,8 @@ class blackboxOptFunc(torch.autograd.Function):
         problem = ctx.problem
         pool = ctx.pool
         solve_ratio = ctx.solve_ratio
-        rand_sigma = ctx.rand_sigma
         if solve_ratio < 1:
-            module = ctx.module
+            pass
         # get device
         device = coeff_hat.device
         # convert tenstor
@@ -166,17 +157,22 @@ class blackboxOptFunc(torch.autograd.Function):
 
         # perturbed costs
         cq = cp + lambd * dl
+        # TODO: support batch-1 solution for now
+        sols, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
+        sol = sols[0]
         # solve
-        if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
-            if solve_ratio < 1:
-                # add into solpool
-                module.solpool = np.concatenate((module.solpool, sol))
-                # remove duplicate
-                module.solpool = np.unique(module.solpool, axis=0)
+        # if rand_sigma <= solve_ratio:
+        # sols, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
+        # sol = sols[0]
+        # if solve_ratio < 1:
+        # # add into solpool
+        # module.solpool = np.concatenate((module.solpool, sol))
+        # # remove duplicate
+        # module.solpool = np.unique(module.solpool, axis=0)
         # else:
         #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
+
         grad = []
         for i in range(len(sol)):
             grad.append((sol[i] - wp[i]) / lambd)

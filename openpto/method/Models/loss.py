@@ -54,9 +54,8 @@ def get_loss_fn(name, problem, **kwargs):
 
         return negativeIdentity
     elif name == "lodl":
-        from openpto.method.Models.LODL import _get_learned_loss
-
-        return _get_learned_loss(problem, name, **kwargs)
+        return None
+        # return _get_learned_loss(problem, name, **kwargs)
 
     else:
         raise LookupError()

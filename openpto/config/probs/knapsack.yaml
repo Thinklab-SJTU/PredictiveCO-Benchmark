@@ -16,6 +16,7 @@ models:
     reduction: mean
   blackbox:
     reduction: mean
+    lambd: 0.1
   Identity:
     reduction: mean
   QPTL:
@@ -28,3 +29,5 @@ models:
     reduction: mean
   nce:
     reduction: mean
+  LODL:
+    sampling: random #

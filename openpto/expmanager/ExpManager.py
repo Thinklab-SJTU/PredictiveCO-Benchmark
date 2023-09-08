@@ -23,7 +23,7 @@ class ExpManager:
 
     """
 
-    def __init__(self, pred_model_args, save_path=None, args=None, conf=None):
+    def __init__(self, pred_model_args, args, conf, save_path):
         self.args = args
         self.conf = conf
         self.model_args = self.conf["models"][self.args.opt_model]
@@ -97,7 +97,7 @@ class ExpManager:
                 range(len(X_train)), min(self.args.batchsize, len(X_train))
             ):
                 # TODO:currently, only support individually train
-                pred = self.pred_model(X_train[i]).squeeze()
+                pred = self.pred_model(X_train[i])  # .squeeze()
                 losses.append(
                     loss_fn(
                         problem,

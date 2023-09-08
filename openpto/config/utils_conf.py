@@ -76,7 +76,7 @@ def get_args():
     parser.add_argument("--testinstances", type=int, default=200)
     # debug
     parser.add_argument("--valfrac", type=float, default=0.5)
-    parser.add_argument("--valfreq", type=int, default=5)
+    parser.add_argument("--valfreq", type=int, default=1)
 
     # model
     parser.add_argument("--layers", type=int, default=2)
@@ -87,21 +87,7 @@ def get_args():
     parser.add_argument("--dflalpha", type=float, default=1.0)
     #   Learned-Loss
     parser.add_argument("--serial", type=ast.literal_eval, default=True)
-    parser.add_argument(
-        "--sampling",
-        type=str,
-        choices=[
-            "random",
-            "random_flip",
-            "random_uniform",
-            "numerical_jacobian",
-            "random_jacobian",
-            "random_hessian",
-            "random",
-        ],
-        default="random",
-    )
-    parser.add_argument("--samplingstd", type=float)
+
     parser.add_argument("--numsamples", type=int, default=5000)
     parser.add_argument("--losslr", type=float, default=0.01)
     #       Approach-Specific: Quadratic

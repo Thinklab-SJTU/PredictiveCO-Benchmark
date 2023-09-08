@@ -35,20 +35,24 @@ if __name__ == "__main__":
     print(f"--- Loading [{args.solver}] solver ...")
     optSolver = solver_wrapper(args, conf, problem)
 
+    # method args
+
     # Load loss function
     print(f"--- Loading [{args.opt_model}] Loss Function...")
     loss_fn = get_loss_fn(
         args.opt_model,
         problem,
-        sampling=args.sampling,
-        num_samples=args.numsamples,
-        rank=args.quadrank,
-        sampling_std=args.samplingstd,
-        quadalpha=args.quadalpha,
-        lr=args.lr,
-        serial=args.serial,
-        dflalpha=args.dflalpha,
-    )(optSolver, args.processes, args.solve_ratio)
+    )(
+        optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model]
+    )  # TODO: add
+    #         sampling=args.sampling,
+    # num_samples=args.numsamples,
+    # rank=args.quadrank,
+    # sampling_std=args.samplingstd,
+    # quadalpha=args.quadalpha,
+    # lr=args.lr,
+    # serial=args.serial,
+    # dflalpha=args.dflalpha,
 
     ipdim, opdim = problem.get_model_shape()
     pred_model_args = {
@@ -56,7 +60,7 @@ if __name__ == "__main__":
         "opdim": opdim,
         "out_act": problem.get_output_activation(),
     }
-    exp = ExpManager(pred_model_args, save_path="saved_records", args=args, conf=conf)
+    exp = ExpManager(pred_model_args, args=args, conf=conf, save_path="saved_records")
 
     # Train neural network with a given loss function
     print(f"--- Start training [{args.pred_model}] model on [{args.opt_model}] loss...")
