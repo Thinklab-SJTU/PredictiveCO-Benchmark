@@ -25,7 +25,7 @@ class negativeIdentity(optModel):
     Reference: <https://arxiv.org/abs/2205.15213>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model

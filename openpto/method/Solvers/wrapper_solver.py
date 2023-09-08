@@ -11,7 +11,6 @@ def solver_wrapper(args, conf, problem):
 def str2solver(solver_str, prob_str, problem):
     prob_solver_dict = {
         "budgetalloc": {"neural": budgetallocSolver},
-        # "cubic":CubicTopK,
         # "bipartitematching": BipartiteMatching,
         # 'rmab':RMAB,
         # 'portfolio':PortfolioOpt,

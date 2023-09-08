@@ -25,6 +25,7 @@ def get_args():
         default="portfolio",
     )
     parser.add_argument("--prob_version", type=str, default=None)
+    parser.add_argument("--config_path", type=str, default="")
     parser.add_argument(
         "--opt_model",
         type=str,
@@ -67,8 +68,8 @@ def get_args():
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)
     parser.add_argument("--patience", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--batchsize", type=int, default=1000)
+    parser.add_argument("--lr", type=float, default=1e-2)
+    parser.add_argument("--batchsize", type=int, default=1)
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--debug", action="store_true")
@@ -81,7 +82,7 @@ def get_args():
     # model
     parser.add_argument("--layers", type=int, default=2)
     # solver
-    parser.add_argument("--solve_ratio", type=float, default=0.5)
+    parser.add_argument("--solve_ratio", type=float, default=1.0)
     parser.add_argument("--processes", type=int, default=1)
     #   Decision-Focused Learning
     parser.add_argument("--dflalpha", type=float, default=1.0)
@@ -119,11 +120,7 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
         The config file converted to Namespace.
 
     """
-    if path is None and method_name is None:
-        raise KeyError
-    if path is None and prob_name is None:
-        raise KeyError
-    if path is None:
+    if path == "":
         # method_names = ['spo','ltr','intopt','nce','blackbox']
         # prob_names = ['knapsack', '']
 
@@ -134,8 +131,8 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
         )
         path = os.path.join(dir, prob_name + ".yaml")
 
-        if os.path.exists(path) is False:
-            raise KeyError("The configuration file is not provided.")
+    if os.path.exists(path) is False:
+        raise KeyError("The configuration file is not provided.")
 
     conf = open(path, "r").read()
     conf = yaml.safe_load(conf)

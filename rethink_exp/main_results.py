@@ -27,7 +27,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     # Load problem
-    conf = load_conf(method_name=args.opt_model, prob_name=args.problem)
+    conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
     print(f"--- Loading [{args.problem}] Problem... Config: {conf}")
     problem = problem_wrapper(args, conf)
 
@@ -42,6 +42,7 @@ if __name__ == "__main__":
     loss_fn = get_loss_fn(
         args.opt_model,
         problem,
+        **conf,
     )(
         optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model]
     )  # TODO: add

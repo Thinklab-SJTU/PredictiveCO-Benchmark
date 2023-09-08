@@ -17,20 +17,10 @@ from openpto.method.Solvers.utils_solver import _solve_in_pass  # , _cache_in_pa
 
 class SPOPlus(optModel):
     """
-    An autograd module for SPO+ Loss, as a surrogate loss function of SPO Loss,
-    which measures the decision error of optimization problem.
-
-    For SPO/SPO+ Loss, the objective function is linear and constraints are
-    known and fixed, but the cost vector need to be predicted from contextual
-    data.
-
-    The SPO+ Loss is convex with subgradient. Thus, allows us to design an
-    algorithm based on stochastic gradient descent.
-
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optSolver): an  optimization model

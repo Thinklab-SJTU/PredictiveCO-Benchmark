@@ -28,8 +28,6 @@ def print_metrics(
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            # print("Zs_pred:",Zs_pred[0].shape )
-            # objectives = problem.get_objective(Ys.cpu(), Zs_pred, aux_data=Ys_aux)
 
             # Loss and Error
             if partition != "test":
@@ -55,7 +53,7 @@ def print_metrics(
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {"objective": objective_pred, "loss": loss}
             print(
-                f"{prefix} {partition} Objective: {objective_pred.mean():.3f}, Loss: {loss:.3f}"
+                f"{prefix:<6} {partition:<6} Objective: {objective_pred.mean():.3f}, {'Loss':>5}: {loss:.3f}"
             )
-
+        print()
     return metrics

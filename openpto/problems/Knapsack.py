@@ -113,8 +113,7 @@ class Knapsack(PTOProblem):
         objectives = []
         num_instances = Y.shape[0]
         for ins in range(num_instances):
-            print("Y:", Y[ins].shape, Z[ins].shape)
-            objectives.append(sum(Y[ins].cpu() * torch.Tensor(Z[ins])))
+            objectives.append(sum(Y[ins] * Z[ins]))
         return np.array(objectives)
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
@@ -217,6 +216,9 @@ class Knapsack(PTOProblem):
             torch.Tensor(feats),
             torch.Tensor(profits),
         )
+
+    def get_twostageloss(self):
+        return "mse"
 
 
 def get_energy_data(

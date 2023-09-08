@@ -17,7 +17,9 @@ def get_loss_fn(name, problem, **kwargs):
 
         return CE
     elif name == "dfl":
-        return _get_decision_focused(problem, **kwargs)
+        from openpto.method.Models.MSE import DFL
+
+        return DFL
     elif name == "spo":
         from openpto.method.Models.SPO import SPOPlus
 
@@ -59,39 +61,3 @@ def get_loss_fn(name, problem, **kwargs):
 
     else:
         raise LookupError()
-
-
-# def _get_decision_focused( problem, dflalpha=1., **kwargs,):
-def _get_decision_focused(
-    problem,
-    coeff_hat,
-    coeff_true,
-    params=None,
-    **hyperparams,
-):
-    dflalpha = hyperparams["dflalpha"]
-    if problem.get_twostageloss() == "mse":
-        from openpto.method.Models.MSE import MSE
-
-        twostageloss = MSE
-    elif problem.get_twostageloss() == "ce":
-        from openpto.method.Models.MSE import CE
-
-        twostageloss = CE
-    else:
-        raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
-
-    # def decision_focused_loss(Yhats, Ys, **kwargs):
-    def decision_focused_loss(
-        problem,
-        coeff_hat,
-        coeff_true,
-        params=None,
-        **hyperparams,
-    ):
-        sol_hat, _ = problem.get_decision(coeff_hat, isTrain=True, **hyperparams)
-        obj = problem.get_objective(coeff_true, sol_hat, isTrain=True, **hyperparams)
-        loss = -obj + dflalpha * twostageloss(coeff_hat, coeff_true)
-        return loss
-
-    return decision_focused_loss

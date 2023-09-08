@@ -147,7 +147,6 @@ class ExpManager:
                 isTrain=False,
                 **problem.init_API(),
             )
-            # objectives = problem.get_objective(Y_test, Z_test_rand, aux_data=Y_test_aux)
             objs_rand.append(torch.Tensor(objectives_rand))
 
         #   Document the optimal value
@@ -158,7 +157,6 @@ class ExpManager:
             isTrain=False,
             **problem.init_API(),
         )
-        # objectives_opt = problem.get_objective(Y_test, Z_test_opt, aux_data=Y_test_aux)
 
         # regret
         regret = np.abs(objectives_opt - results["test"]["objective"])

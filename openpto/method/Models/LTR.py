@@ -22,7 +22,7 @@ class listwiseLTR(optModel):
     Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
@@ -74,7 +74,7 @@ class listwiseLTR(optModel):
             # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
             loss = -(F.log_softmax(objpool_cp, dim=0) * F.softmax(objpool_c, dim=0))
         if self.optSolver.modelSense == GRB.MAXIMIZE:
-            loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
+            # loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
             loss = -(F.log_softmax(-objpool_cp, dim=0) * F.softmax(-objpool_c, dim=0))
         # reduction
         if hyperparams["reduction"] == "mean":
@@ -101,7 +101,7 @@ class pairwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
@@ -201,7 +201,7 @@ class pointwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model

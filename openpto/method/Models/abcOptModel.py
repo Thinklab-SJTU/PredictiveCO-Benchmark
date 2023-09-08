@@ -1,8 +1,5 @@
-import multiprocessing as mp
-
 from abc import abstractmethod
 
-from pathos.multiprocessing import ProcessingPool
 from torch import nn
 
 
@@ -12,26 +9,26 @@ class optModel(nn.Module):
     vector and the true cost vector rank a pool of feasible solutions.
     """
 
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
         super(optModel, self).__init__()
         self.optSolver = optSolver
-        self.processes = processes
         self.solve_ratio = solve_ratio
+        # TODO: multi-process
         # number of processes
-        if processes not in range(mp.cpu_count() + 1):
-            raise ValueError(
-                "Invalid processors number {}, only {} cores.".format(
-                    processes, mp.cpu_count()
-                )
-            )
-        self.processes = mp.cpu_count() if not processes else processes
-        # single-core
-        if processes == 1:
-            self.pool = None
-        # multi-core
-        else:
-            self.pool = ProcessingPool(processes)
-        print("Num of cores: {}".format(self.processes))
+        # if processes not in range(mp.cpu_count() + 1):
+        #     raise ValueError(
+        #         "Invalid processors number {}, only {} cores.".format(
+        #             processes, mp.cpu_count()
+        #         )
+        #     )
+        # self.processes = mp.cpu_count() if not processes else processes
+        # # single-core
+        # if processes == 1:
+        #     self.pool = None
+        # # multi-core
+        # else:
+        #     self.pool = ProcessingPool(processes)
+        # print("Num of cores: {}".format(self.processes))
 
     @abstractmethod
     def forward(

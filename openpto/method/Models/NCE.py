@@ -19,14 +19,14 @@ class NCE(optModel):
     Reference: <https://www.ijcai.org/proceedings/2021/390>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes, solve_ratio, **kwargs)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars))

@@ -13,7 +13,7 @@
 # class QPTL(optModel):
 #     """ """
 
-#     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
+#     def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
 #         """
 #         Args:
 #             optSolver (optModel): an  optimization model
