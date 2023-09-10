@@ -1,4 +1,5 @@
 import inspect
+import time
 
 import torch
 
@@ -18,7 +19,9 @@ def print_metrics(
         for Xs, Ys, Ys_aux, partition in datasets:
             # Choose whether we should use train or test
             isTrain = (partition == "train") and (prefix != "Final")
-
+            # timing
+            if partition == "test":
+                time_test_start = time.time()
             # Decision Quality
             pred = model(Xs).squeeze()
             Zs_pred, objective_pred = problem.get_decision(
@@ -32,27 +35,35 @@ def print_metrics(
             # Loss and Error
             if partition != "test":
                 losses = []
-                for i in range(len(Xs)):
-                    pred = model(Xs[i]).squeeze()
+                for idx, X_idx in enumerate(Xs):
+                    pred = model(X_idx).squeeze()
                     losses.append(
                         loss_fn(
                             problem,
                             coeff_hat=pred,
-                            coeff_true=Ys[i],
-                            params=Ys_aux[i],
+                            coeff_true=Ys[idx],
+                            params=Ys_aux[idx],
                             partition="train",
-                            index=i,
+                            index=idx,
                             **model_args,
                         )
                     )
                 losses = torch.stack(losses).flatten()
+                test_time = 0
             else:
+                # timing
+                test_time = time.time() - time_test_start
+                # loss
                 losses = torch.zeros_like(torch.Tensor(objective_pred))
 
             # Print
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
-            metrics[partition] = {"objective": objective_pred, "loss": loss}
+            metrics[partition] = {
+                "objective": objective_pred,
+                "loss": loss,
+                "time": test_time,
+            }
             logger.info(
                 f"{prefix:<6} {partition:<6} Objective: {objective_pred.mean():.3f}, {'Loss':>5}: {loss:.3f}"
             )

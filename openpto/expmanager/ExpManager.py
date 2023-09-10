@@ -1,4 +1,5 @@
 import random
+import time
 
 from copy import deepcopy
 
@@ -63,6 +64,7 @@ class ExpManager:
         # Train data
         best = (float("inf"), None)
         time_since_best = 0
+        total_train_time = 0
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -93,11 +95,12 @@ class ExpManager:
 
             # Learn
             # TODO: batch train or individually train?
+            time_train_start = time.time()
             losses = []
             for i in random.sample(
                 range(len(X_train)), min(self.args.batchsize, len(X_train))
             ):
-                # TODO:currently, only support individually train
+                # TODO: currently, only support individually train
                 pred = self.pred_model(X_train[i])  # .squeeze()
                 losses.append(
                     loss_fn(
@@ -116,12 +119,13 @@ class ExpManager:
             loss.backward()
             self.optimizer.step()
             time_since_best += 1
+            total_train_time += time.time() - time_train_start
 
         if self.args.earlystopping:
             self.pred_model = best[1]
 
         # Document how well this trained model does
-        self.logger.info("\nBenchmarking Model...")
+        self.logger.info("Benchmarking Model...")
         # Print final metrics
         datasets = [
             (X_train, Y_train, Y_train_aux, "train"),
@@ -138,6 +142,7 @@ class ExpManager:
             self.logger,
             **self.model_args,
         )
+        total_test_time = results["test"]["time"]
 
         #   Document the value of a random guess
         objs_rand = []
@@ -165,9 +170,11 @@ class ExpManager:
 
         # print
         self.logger.info(
-            f"[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
-            f"[Optimal Decision Quality]: {objectives_opt.mean().item():.3f} "
-            f"[Regret]: {regret.mean():.3f}"
+            f"[Random Obj]: {torch.stack(objs_rand).mean().item():.3f} "
+            f"[Optimal Obj]: {objectives_opt.mean().item():.3f} "
+            f"[Regret]: {regret.mean():.3f} "
+            f"[avg Train Time]: {total_train_time / n_epochs:.3f} "
+            f"[avg Test Time]: {total_test_time:.3f} "
         )
 
         return True
