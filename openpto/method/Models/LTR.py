@@ -31,7 +31,8 @@ class listwiseLTR(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
-        self.solpool = np.empty()  # (0, n_vars))
+        n_vars = optSolver.num_vars
+        self.solpool = np.empty((0, n_vars))
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """

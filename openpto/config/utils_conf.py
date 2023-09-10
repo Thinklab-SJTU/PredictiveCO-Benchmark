@@ -24,7 +24,6 @@ def get_args():
         ],
         default="portfolio",
     )
-    parser.add_argument("--prob_version", type=str, default=None)
     parser.add_argument("--config_path", type=str, default="")
     parser.add_argument(
         "--opt_model",
@@ -77,8 +76,9 @@ def get_args():
     parser.add_argument("--instances", type=int, default=400)
     parser.add_argument("--testinstances", type=int, default=200)
     # debug
-    parser.add_argument("--valfrac", type=float, default=0.5)
+    # parser.add_argument("--valfrac", type=float, default=0.5)
     parser.add_argument("--valfreq", type=int, default=1)
+    parser.add_argument("--prefix", type=str, default="default")
 
     # model
     parser.add_argument("--layers", type=int, default=2)

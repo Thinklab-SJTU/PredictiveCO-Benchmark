@@ -17,9 +17,9 @@ models:
   blackbox:
     reduction: mean
     lambd: 1
-  Identity:
+  identity:
     reduction: mean
-  QPTL:
+  qptl:
     reduction: mean
   listLTR:
     reduction: mean

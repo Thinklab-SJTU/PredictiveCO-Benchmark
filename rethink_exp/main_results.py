@@ -19,16 +19,22 @@ if not hashseed:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 if __name__ == "__main__":
+    # get configs
     args = get_args()
+    conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
-    log_dir = os.path.join("saved_records", args.problem, args.opt_model)
+    log_dir = os.path.join(
+        "saved_records",
+        args.problem + "-" + conf["dataset"]["prob_version"],
+        args.opt_model,
+        args.prefix,
+    )
     os.makedirs(log_dir, exist_ok=True)
     logger = get_logger(log_dir)
-    logger.info(f" args: {args} \\m")
+    logger.info(f" args: {args} \n")
 
     # Load problem
-    conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
     logger.info(f" Loading [{args.problem}] Problem...")
     logger.info(f" dataset configs: {conf['dataset']},\n")
     logger.info(f" model configs: {conf['models'][args.opt_model]} \n")

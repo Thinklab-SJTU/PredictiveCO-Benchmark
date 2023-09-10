@@ -1,4 +1,3 @@
-import random
 import time
 
 from copy import deepcopy
@@ -97,19 +96,20 @@ class ExpManager:
             # TODO: batch train or individually train?
             time_train_start = time.time()
             losses = []
-            for i in random.sample(
-                range(len(X_train)), min(self.args.batchsize, len(X_train))
-            ):
+            # for i in random.sample(
+            #     range(len(X_train)), min(self.args.batchsize, len(X_train))
+            # ):
+            for idx, X_idx in enumerate(X_train):
                 # TODO: currently, only support individually train
-                pred = self.pred_model(X_train[i])  # .squeeze()
+                pred = self.pred_model(X_idx)  # .squeeze()
                 losses.append(
                     loss_fn(
                         problem,
                         coeff_hat=pred,
-                        coeff_true=Y_train[i],
-                        params=Y_train_aux[i],
+                        coeff_true=Y_train[idx],
+                        params=Y_train_aux[idx],
                         partition="train",
-                        index=i,
+                        index=idx,
                         **self.model_args,
                     )
                 )
