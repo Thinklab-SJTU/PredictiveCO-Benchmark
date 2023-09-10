@@ -48,7 +48,7 @@
 #             solve_ratio (float): the ratio of new solutions computed during training
 #             dataset (None/optDataset): the training data
 #         """
-#         super().__init__(optSolver, processes, solve_ratio, dataset)
+#         super().__init__(optSolver, processes, solve_ratio)
 #         # number of samples
 #         self.n_samples = n_samples
 #         # perturbation amplitude
@@ -195,7 +195,7 @@
 #             solve_ratio (float): the ratio of new solutions computed during training
 #             dataset (None/optDataset): the training data
 #         """
-#         super().__init__(optSolver, processes, solve_ratio, dataset)
+#         super().__init__(optSolver, processes, solve_ratio)
 #         # number of samples
 #         self.n_samples = n_samples
 #         # perturbation amplitude

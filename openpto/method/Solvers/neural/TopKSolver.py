@@ -12,6 +12,9 @@ from openpto.method.Solvers.abcOptSolver import optSolver
 class TopKSolver(optSolver):
     """ """
 
+    def __init__(self, n_vars):
+        self.n_vars = n_vars
+
     def _getModel(self):
         return None, None
 

@@ -22,12 +22,14 @@ class optModel(nn.Module):
         #         )
         #     )
         # self.processes = mp.cpu_count() if not processes else processes
+        self.processes = processes
         # # single-core
-        # if processes == 1:
-        #     self.pool = None
-        # # multi-core
-        # else:
-        #     self.pool = ProcessingPool(processes)
+        if processes == 1:
+            self.pool = None
+        # multi-core
+        else:
+            assert 0
+            # self.pool = ProcessingPool(processes)
         # print("Num of cores: {}".format(self.processes))
 
     @abstractmethod

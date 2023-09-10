@@ -38,8 +38,8 @@ def get_loss_fn(name, problem, **kwargs):
         return listwiseLTR
     elif name == "qptl":
         # from openpto.method.Models.QPTL import QPTL
-        return None
         # return QPTL
+        return None
     elif name == "intopt":
         # from openpto.method.Models.Intopt import Intopt
         return None
@@ -56,8 +56,11 @@ def get_loss_fn(name, problem, **kwargs):
 
         return negativeIdentity
     elif name == "lodl":
-        return None
-        # return _get_learned_loss(problem, name, **kwargs)
+        from openpto.method.Models.LODLs import LODL
 
+        return LODL
+        # return _get_learned_loss(problem, name, **kwargs)
+    elif name == "perturb":
+        return None
     else:
         raise LookupError()

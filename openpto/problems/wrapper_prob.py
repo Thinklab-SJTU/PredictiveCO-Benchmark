@@ -6,12 +6,12 @@ from typing import Dict
 
 import pandas as pd
 
-from .BipartiteMatching import BipartiteMatching
-from .BudgetAllocation import BudgetAllocation
-from .CubicTopK import CubicTopK
-from .Knapsack import Knapsack
-from .PortfolioOpt import PortfolioOpt
-from .RMAB import RMAB
+from openpto.problems.BipartiteMatching import BipartiteMatching
+from openpto.problems.BudgetAllocation import BudgetAllocation
+from openpto.problems.CubicTopK import CubicTopK
+from openpto.problems.Knapsack import Knapsack
+from openpto.problems.PortfolioOpt import PortfolioOpt
+from openpto.problems.RMAB import RMAB
 
 
 ################################# Wrappers ################################################

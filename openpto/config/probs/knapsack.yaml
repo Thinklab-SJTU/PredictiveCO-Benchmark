@@ -29,7 +29,7 @@ models:
     reduction: mean
   nce:
     reduction: mean
-  LODL:
+  lodl:
     sampling: random 
   mse:
     reduction: mean

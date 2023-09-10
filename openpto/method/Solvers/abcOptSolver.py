@@ -32,7 +32,10 @@ class optSolver:  # (ABC):
         """
         number of cost to be predicted
         """
-        return len(self.z)
+        if hasattr(self, "n_vars"):
+            return self.n_vars
+        else:
+            return len(self.z)
 
     @abstractmethod
     def _getModel(self):

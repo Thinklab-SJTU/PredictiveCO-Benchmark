@@ -31,8 +31,7 @@ class listwiseLTR(optModel):
         """
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
-        n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty()  # (0, n_vars))
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -238,6 +237,7 @@ class pointwiseLTR(optModel):
                 cp, params, problem, self.optSolver, self.processes, self.pool
             )
             # add into solpool
+            # print("shape: ", self.solpool.shape, sol.shape)
             self.solpool = np.concatenate((self.solpool, sol))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)

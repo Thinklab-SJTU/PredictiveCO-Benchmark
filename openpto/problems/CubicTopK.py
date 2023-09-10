@@ -21,7 +21,6 @@ class CubicTopK(PTOProblem):
         rand_seed=0,  # for reproducibility
         data_dir="./openpto/data/",
     ):
-        print("!!!!!!!!!!")
         super(CubicTopK, self).__init__()
         # Do some random seed fu
         self.rand_seed = rand_seed
@@ -104,7 +103,7 @@ class CubicTopK(PTOProblem):
         return "mse"
 
     def init_API(self):
-        return {}
+        return {"n_vars": self.Ys_train.shape[1]}
 
 
 # Unit test for RandomTopK

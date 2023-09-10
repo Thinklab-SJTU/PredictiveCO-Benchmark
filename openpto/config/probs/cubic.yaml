@@ -10,3 +10,23 @@ models:
     reduction: mean
   Identity:
     reduction: mean
+  QPTL:
+    reduction: mean
+  listLTR:
+    reduction: mean
+  pairLTR:
+    reduction: mean
+  pointLTR:
+    reduction: mean
+  nce:
+    reduction: mean
+  LODL:
+    sampling: random
+  mse:
+    reduction: mean
+  msesum:
+    alpha: 0.1
+  ce:
+    reduction: mean
+  dfl:
+    dflalpha: 0.1

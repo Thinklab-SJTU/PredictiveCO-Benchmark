@@ -107,18 +107,15 @@ class NCE(optModel):
 #     Reference: <https://www.ijcai.org/proceedings/2021/390>
 #     """
 
-#     def __init__(self, optSolver, processes=1, solve_ratio=1, dataset=None):
+#     def __init__(self, optSolver, processes=1, solve_ratio=1):
 #         """
 #         Args:
 #             optSolver (optModel): an  optimization model
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             solve_ratio (float): the ratio of new solutions computed during training
-#             dataset (None/optDataset): the training data, usually this is simply the training set
 #         """
-#         super().__init__(optSolver, processes, solve_ratio, dataset)
+#         super().__init__(optSolver, processes, solve_ratio)
 #         # solution pool
-#         if not isinstance(dataset, optDataset):  # type checking
-#             raise TypeError("dataset is not an optDataset")
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
 #     def forward(self, coeff_hat, true_sol, reduction="mean"):

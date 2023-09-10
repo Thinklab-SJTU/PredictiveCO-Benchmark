@@ -51,6 +51,7 @@ def get_args():
             "lodl",
             "nce",
             "qptl",
+            "lodl",
         ],
         default="mse",
     )

@@ -41,6 +41,7 @@ def print_metrics(
                             coeff_true=Ys[i],
                             params=Ys_aux[i],
                             partition="train",
+                            index=i,
                             **model_args,
                         )
                     )
