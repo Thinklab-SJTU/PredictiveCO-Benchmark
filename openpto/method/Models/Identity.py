@@ -3,9 +3,8 @@ import torch
 
 from gurobipy import GRB
 
+from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
-
-from .abcOptModel import optModel
 
 
 class negativeIdentity(optModel):

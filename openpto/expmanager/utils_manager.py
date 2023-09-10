@@ -10,10 +10,10 @@ def move_to_gpu(problem, device):
 
 
 def print_metrics(
-    datasets, model, problem, loss_fn, optSolver=None, prefix="", **model_args
+    datasets, model, problem, loss_fn, optSolver, prefix, logger, **model_args
 ):
     with torch.no_grad():
-        # print(f"Current model parameters: {[param for param in model.parameters()]}")
+        # logger.info(f"Current model parameters: {[param for param in model.parameters()]}")
         metrics = {}
         for Xs, Ys, Ys_aux, partition in datasets:
             # Choose whether we should use train or test
@@ -53,8 +53,8 @@ def print_metrics(
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {"objective": objective_pred, "loss": loss}
-            print(
+            logger.info(
                 f"{prefix:<6} {partition:<6} Objective: {objective_pred.mean():.3f}, {'Loss':>5}: {loss:.3f}"
             )
-        print()
+        logger.info("----\n")
     return metrics

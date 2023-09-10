@@ -7,7 +7,7 @@
 
 # from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
 
-# from .abcOptModel import optModel
+# from openpto.method.Models.abcOptModel import optModel
 
 
 # class QPTL(optModel):

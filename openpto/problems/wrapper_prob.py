@@ -44,22 +44,6 @@ def prob2args(args, conf):
         "val_frac": args.valfrac,
         "rand_seed": args.seed,
     }
-    # if args.problem == 'budgetalloc':
-    #     # assert args.opt_model in ['']
-    #     problem_kwargs =    {}
-    # elif args.problem == 'cubic':
-    #     # assert args.opt_model in ['']
-    #     problem_kwargs =    {}
-    # elif args.problem == 'bipartitematching':
-    #     # assert args.opt_model in ['']
-    #     problem_kwargs =    {}
-    # elif args.problem == 'rmab':
-    #     # assert args.opt_model in ['']
-    #     problem_kwargs =    {}
-    # elif args.problem == 'portfolio':
-    #     # assert args.opt_model in ['']
-    #     problem_kwargs =    {}
-    # else:
     problem_kwargs = {}
     return {**conf["dataset"], **common_kwargs, **problem_kwargs}
 
@@ -83,8 +67,8 @@ def init_if_not_saved(
         problem = problem_cls(**kwargs)
 
         # Save model for the future
-        print("Saving the problem")
         filename = os.path.join(folder, f"{problem_cls.__name__}_{len(saved_probs)}.pkl")
+        print(f"Saving the problem to {filename}")
         with open(filename, "wb") as file:
             pickle.dump(problem, file)
 

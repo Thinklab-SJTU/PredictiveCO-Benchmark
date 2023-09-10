@@ -1,23 +1,24 @@
 import os
-import time
 import pickle
 import random
-from functools import partial
+import time
+
 from copy import deepcopy
+from functools import partial
 
 import numpy as np
 import torch
+
 from torch.multiprocessing import Pool
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.pred_model import dense_nn
 from openpto.method.Models.MSE import MSE
-
+from openpto.method.pred_model import dense_nn
+from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.RMAB import RMAB
 from openpto.problems.wrapper_prob import find_saved_problem
-from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 
 NUM_CPUS = os.cpu_count()
 
@@ -104,7 +105,7 @@ class LODL(optModel):
             for Ys, Ys_aux, partition in datasets:
                 # Get new sampled points
                 start_time = time.time()
-                if serial == True:
+                if serial is True:
                     sampled_points = [
                         self._sample_points(
                             Y, problem, sampling, num_extra_samples, Y_aux, sampling_std
@@ -203,7 +204,7 @@ class LODL(optModel):
 
             # Learn a loss
             start_time = time.time()
-            if serial == True:
+            if serial is True:
                 losses_and_stats = [
                     self._learn_loss(
                         problem,
@@ -354,7 +355,7 @@ class LODL(optModel):
 
         # Calculate decision-focused loss for points
         opt = partial(problem.get_decision, isTrain=False, aux_data=Y_aux)
-        obj = partial(problem.get_objective, aux_data=Y_aux)
+        partial(problem.get_objective, aux_data=Y_aux)
 
         #   Calculate for 'true label'
         best = None

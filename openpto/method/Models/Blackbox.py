@@ -7,9 +7,8 @@ Differentiable Black-box optimization function
 import numpy as np
 import torch
 
+from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
-
-from .abcOptModel import optModel
 
 
 class blackboxOpt(optModel):
@@ -102,7 +101,6 @@ class blackboxOptFunc(torch.autograd.Function):
         rand_sigma = np.random.uniform()
         # if rand_sigma <= solve_ratio:
         # sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
-        # print("input: ", cp.shape, "output: ", sol.shape)
         # if solve_ratio < 1:
         #     # add into solpool
         #     module.solpool = np.concatenate((module.solpool, sol))

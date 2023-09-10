@@ -8,7 +8,6 @@ import torch
 from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
 
 # from openpto.utils.utils import set_seed
-# from openpto.utils.logger import Logger
 # from openpto.config.util import save_conf
 
 
@@ -23,14 +22,15 @@ class ExpManager:
 
     """
 
-    def __init__(self, pred_model_args, args, conf, save_path):
+    def __init__(self, pred_model_args, args, conf, logger):
         self.args = args
         self.conf = conf
+        self.logger = logger
         self.model_args = self.conf["models"][self.args.opt_model]
         self.device = torch.device(
             f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
         )
-        print(f"--- Running on {self.device}")
+        self.logger.info(f"--- Running on {self.device}")
         # you can change random seed here TODO: set seed
         # self.train_seeds = [i for i in range(400)]
         # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -45,7 +45,7 @@ class ExpManager:
             intermediate_size=500,
             output_activation=pred_model_args["out_act"],
         )
-        print(f"--- Built [{args.pred_model}] Prediction Model")
+        self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 
@@ -78,6 +78,7 @@ class ExpManager:
                     loss_fn,
                     optSolver,
                     f"Iter {iter_idx},",
+                    self.logger,
                     **self.model_args,
                 )
 
@@ -120,7 +121,7 @@ class ExpManager:
             self.pred_model = best[1]
 
         # Document how well this trained model does
-        print("\nBenchmarking Model...")
+        self.logger.info("\nBenchmarking Model...")
         # Print final metrics
         datasets = [
             (X_train, Y_train, Y_train_aux, "train"),
@@ -134,6 +135,7 @@ class ExpManager:
             loss_fn,
             optSolver,
             "Final",
+            self.logger,
             **self.model_args,
         )
 
@@ -162,11 +164,10 @@ class ExpManager:
         regret = np.abs(objectives_opt - results["test"]["objective"])
 
         # print
-        print(
-            f"\n[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
+        self.logger.info(
+            f"[Random Decision Quality]: {torch.stack(objs_rand).mean().item():.3f} "
             f"[Optimal Decision Quality]: {objectives_opt.mean().item():.3f} "
             f"[Regret]: {regret.mean():.3f}"
         )
-        print()
 
         return True

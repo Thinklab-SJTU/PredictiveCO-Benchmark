@@ -358,7 +358,7 @@ class PortfolioOpt(PTOProblem):
 
         # Load data if it exists
         if not overwrite and os.path.exists(self.torch_file):
-            print("Portfolio:Loading pytorch data...", self.torch_file)
+            print(f"Portfolio:Loading pytorch data... {self.torch_file}")
             (
                 feature_mat,
                 target_mat,

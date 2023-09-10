@@ -3,12 +3,10 @@ import sys
 
 import torch
 
-from openpto.config import get_args, load_conf
+from openpto.config import get_args, get_logger, load_conf
 from openpto.expmanager import ExpManager
 from openpto.method.Models.loss import get_loss_fn
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
-
-# from openpto.metrics import *
 from openpto.problems.wrapper_prob import problem_wrapper
 
 torch.set_num_threads(1)
@@ -22,38 +20,31 @@ if not hashseed:
 
 if __name__ == "__main__":
     args = get_args()
-    print(f"Hyperparameters: {args}\n")
-
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
+    log_dir = os.path.join("saved_records", args.problem, args.opt_model)
+    os.makedirs(log_dir, exist_ok=True)
+    logger = get_logger(log_dir)
+    logger.info(f" args: {args} \\m")
 
     # Load problem
     conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
-    print(f"--- Loading [{args.problem}] Problem... Config: {conf}")
+    logger.info(f" Loading [{args.problem}] Problem...")
+    logger.info(f" dataset configs: {conf['dataset']},\n")
+    logger.info(f" model configs: {conf['models'][args.opt_model]} \n")
     problem = problem_wrapper(args, conf)
 
     # Load solver
-    print(f"--- Loading [{args.solver}] solver ...")
+    logger.info(f" Loading [{args.solver}] solver ...")
     optSolver = solver_wrapper(args, conf, problem)
 
-    # method args
-
     # Load loss function
-    print(f"--- Loading [{args.opt_model}] Loss Function...")
+    logger.info(f" Loading [{args.opt_model}] Loss Function...")
     loss_fn = get_loss_fn(
         args.opt_model,
         problem,
         **conf,
-    )(
-        optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model]
-    )  # TODO: add
-    #         sampling=args.sampling,
-    # num_samples=args.numsamples,
-    # rank=args.quadrank,
-    # sampling_std=args.samplingstd,
-    # quadalpha=args.quadalpha,
-    # lr=args.lr,
-    # serial=args.serial,
-    # dflalpha=args.dflalpha,
+    )(optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model])
 
     ipdim, opdim = problem.get_model_shape()
     pred_model_args = {
@@ -61,8 +52,10 @@ if __name__ == "__main__":
         "opdim": opdim,
         "out_act": problem.get_output_activation(),
     }
-    exp = ExpManager(pred_model_args, args=args, conf=conf, save_path="saved_records")
+    exp = ExpManager(pred_model_args, args=args, conf=conf, logger=logger)
 
     # Train neural network with a given loss function
-    print(f"--- Start training [{args.pred_model}] model on [{args.opt_model}] loss...")
+    logger.info(
+        f" Start training [{args.pred_model}] model on [{args.opt_model}] loss..."
+    )
     exp.run(problem, loss_fn, optSolver, n_epochs=args.epochs)
