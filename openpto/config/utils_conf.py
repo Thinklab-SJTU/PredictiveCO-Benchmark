@@ -40,6 +40,7 @@ def get_args():
             "quad",
             "quad++",
             "ce",
+            "mae",
             "spo",
             "pointLTR",
             "pairLTR",
@@ -81,22 +82,15 @@ def get_args():
     # parser.add_argument("--valfrac", type=float, default=0.5)
     parser.add_argument("--valfreq", type=int, default=1)
     parser.add_argument("--prefix", type=str, default="default")
-
     # model
     parser.add_argument("--layers", type=int, default=2)
     # solver
     parser.add_argument("--solve_ratio", type=float, default=1.0)
     parser.add_argument("--processes", type=int, default=1)
     #   Decision-Focused Learning
-    parser.add_argument("--dflalpha", type=float, default=1.0)
-    #   Learned-Loss
-    parser.add_argument("--serial", type=ast.literal_eval, default=True)
-
-    parser.add_argument("--numsamples", type=int, default=5000)
+    # parser.add_argument("--numsamples", type=int, default=5000)
     parser.add_argument("--losslr", type=float, default=0.01)
-    #       Approach-Specific: Quadratic
-    parser.add_argument("--quadrank", type=int, default=20)
-    parser.add_argument("--quadalpha", type=float, default=0)
+
     args = parser.parse_args()
     return args
 

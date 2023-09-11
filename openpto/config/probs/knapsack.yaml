@@ -30,7 +30,10 @@ models:
   nce:
     reduction: mean
   lodl:
-    sampling: random 
+    sampling: random
+    quadrank: 20
+    quadalpha: 0
+    serial: 1
   mse:
     reduction: mean
   msesum:

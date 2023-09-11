@@ -9,6 +9,7 @@ import pandas as pd
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.CubicTopK import CubicTopK
+from openpto.problems.Energy import Energy
 from openpto.problems.Knapsack import Knapsack
 from openpto.problems.PortfolioOpt import PortfolioOpt
 from openpto.problems.RMAB import RMAB
@@ -31,6 +32,7 @@ def str2prob(prob_str):
         "rmab": RMAB,
         "portfolio": PortfolioOpt,
         "knapsack": Knapsack,
+        "energy": Energy,
     }
     return prob_dict[prob_str]
 

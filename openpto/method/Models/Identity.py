@@ -109,6 +109,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         device = grad_output.device
         # identity matrix
         Ident = torch.eye(grad_output.shape[1]).to(device)
+        # check the negative
         if optSolver.modelSense == GRB.MINIMIZE:
             grad = -Ident
         if optSolver.modelSense == GRB.MAXIMIZE:

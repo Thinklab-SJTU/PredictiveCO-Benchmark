@@ -1,3 +1,4 @@
+from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.neural.BudgetallocSolver import budgetallocSolver
 from openpto.method.Solvers.neural.TopKSolver import TopKSolver
@@ -15,6 +16,7 @@ def str2solver(solver_str, prob_str, problem):
         # 'rmab':RMAB,
         # 'portfolio':PortfolioOpt,
         "cubic": {"neural": TopKSolver},
+        "energy": {"gurobi": ICONGrbSolver},
         "knapsack": {"gurobi": KPGrbSolver},
     }
     # TODO: more problems

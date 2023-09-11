@@ -5,15 +5,14 @@
 
 # import torch
 
-# from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
-
 # from openpto.method.Models.abcOptModel import optModel
+# from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
 
 
 # class QPTL(optModel):
 #     """ """
 
-#     def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+#     def __init__(self, optSolver, processes=1, solve_ratio=1, lambd=0.1, **kwargs):
 #         """
 #         Args:
 #             optSolver (optModel): an  optimization model
