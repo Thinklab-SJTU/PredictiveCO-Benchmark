@@ -12,7 +12,7 @@ from .CubicTopK import CubicTopK
 from .Knapsack import Knapsack
 from .PortfolioOpt import PortfolioOpt
 from .RMAB import RMAB
-
+from .Energy import Energy
 
 ################################# Wrappers ################################################
 def problem_wrapper(args, conf):
@@ -31,19 +31,24 @@ def str2prob(prob_str):
         "rmab": RMAB,
         "portfolio": PortfolioOpt,
         "knapsack": Knapsack,
+        "energy": Energy,
     }
     # TODO: more problems
     return prob_dict[prob_str]
 
 
 def prob2args(args, conf):
-    common_kwargs = {
-        "data_dir": args.data_dir,
-        "num_train_instances": args.instances,
-        "num_test_instances": args.testinstances,
-        "val_frac": args.valfrac,
-        "rand_seed": args.seed,
-    }
+    if args.problem == 'energy':
+        common_kwargs={
+            "data_dir": args.data_dir,
+        }
+    else: common_kwargs = {
+            "data_dir": args.data_dir,
+            "num_train_instances": args.instances,
+            "num_test_instances": args.testinstances,
+            "val_frac": args.valfrac,
+            "rand_seed": args.seed,
+        }   
     # if args.problem == 'budgetalloc':
     #     # assert args.opt_model in ['']
     #     problem_kwargs =    {}

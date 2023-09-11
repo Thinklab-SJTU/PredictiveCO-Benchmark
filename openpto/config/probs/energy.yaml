@@ -1,1 +1,5 @@
 dataset:
+  prob_version: energy
+models:
+  spo:
+    reduction: mean

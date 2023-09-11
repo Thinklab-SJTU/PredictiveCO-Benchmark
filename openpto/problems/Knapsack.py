@@ -182,7 +182,13 @@ class Knapsack(PTOProblem):
 
     @staticmethod
     def genData(
-        num_instances, num_features, num_items, dim=1, poly_deg=1, noise_width=0, seed=135
+        num_instances, 
+        num_features, 
+        num_items, 
+        dim=1, 
+        poly_deg=1, 
+        noise_width=0, 
+        seed=135
     ):
         #     A function to generate synthetic data and features for knapsack
 

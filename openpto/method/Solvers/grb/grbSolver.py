@@ -30,7 +30,7 @@ class optGrbSolver(optSolver):
     def __repr__(self):
         return "optGRBModel " + self.__class__.__name__
 
-    def setObj(self, c):
+    def setObj(self, c): #
         """
         A method to set objective function
 
@@ -71,7 +71,7 @@ class optGrbSolver(optSolver):
         new_model.x = {key: x[i] for i, key in enumerate(self.x)}
         return new_model
 
-    def addConstr(self, coefs, rhs):
+    def addConstr(self, coefs, rhs): #
         """
         A method to add new constraint
 
@@ -82,8 +82,8 @@ class optGrbSolver(optSolver):
         Returns:
             optModel: new model with the added constraint
         """
-        if len(coefs) != self.num_cost:
-            raise ValueError("Size of coef vector cannot cost.")
+        #if len(coefs) != self.num_cost:
+            #raise ValueError("Size of coef vector cannot cost.")
         # copy
         new_model = self.copy()
         # add constraint
