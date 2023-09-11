@@ -32,7 +32,6 @@ def str2prob(prob_str):
         "portfolio": PortfolioOpt,
         "knapsack": Knapsack,
     }
-    # TODO: more problems
     return prob_dict[prob_str]
 
 

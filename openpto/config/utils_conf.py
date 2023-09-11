@@ -64,15 +64,17 @@ def get_args():
 
     # training
     parser.add_argument("--loadnew", type=ast.literal_eval, default=False)
-    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--n_epochs", type=int, default=1)
+    parser.add_argument("--n_ptr_epochs", type=int, default=0)
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)
     parser.add_argument("--patience", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--batchsize", type=int, default=1)
+    parser.add_argument("--pred_bz", type=int, default=64)
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--do_debug", action="store_true")
     parser.add_argument("--instances", type=int, default=400)
     parser.add_argument("--testinstances", type=int, default=200)
     # debug

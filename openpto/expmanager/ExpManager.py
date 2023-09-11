@@ -5,11 +5,25 @@ from copy import deepcopy
 
 import numpy as np
 import torch
+import tqdm
+
+from torch.utils.data import DataLoader, Dataset
 
 from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
 
-# from openpto.utils.utils import set_seed
-# from openpto.config.util import save_conf
+
+class OptDataset(Dataset):
+    def __init__(self, features, labels):
+        self.features = features
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        feature = self.features[idx]
+        label = self.labels[idx]
+        return feature, label
 
 
 class ExpManager:
@@ -18,8 +32,6 @@ class ExpManager:
 
     Parameters
     ----------
-    debug : bool
-        Whether to print statistics during training.
 
     """
 
@@ -61,7 +73,38 @@ class ExpManager:
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
-        # Train data
+        # Pretrain prediction model
+        if self.args.n_ptr_epochs > 0:
+            pred_dataset = OptDataset(X_train, Y_train)
+            pred_dataloader = DataLoader(
+                pred_dataset,
+                batch_size=self.args.pred_bz,
+                shuffle=True,
+                num_workers=1,
+                drop_last=False,
+            )
+            criterion = torch.nn.MSELoss()
+            self.logger.info("Pretraining Prediction Model...")
+            pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)
+
+            for ptr_epoch in range(self.args.n_ptr_epochs):
+                ptr_total_loss = 0
+                for batch in pred_dataloader:
+                    X_idx, Y_idx = batch
+                    preds = self.pred_model(X_idx)
+                    loss = criterion(preds, Y_idx.float())
+
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                    ptr_total_loss += loss.item()
+                avg_loss = ptr_total_loss / len(pred_dataloader)
+                pbar.update(1)
+                pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.3f}"})
+                # print(f"Epoch [{ptr_epoch + 1}/{self.args.n_ptr_epochs}] - Loss: {avg_loss:.4f}")
+            pbar.close()
+
+        # Train PTO
         best = (float("inf"), None)
         time_since_best = 0
         total_train_time = 0

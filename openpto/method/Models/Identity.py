@@ -9,18 +9,6 @@ from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 class negativeIdentity(optModel):
     """
-    An autograd module for differentiable optimizer, which yield optimal a
-    solution and use negative identity as gradient on the backward pass.
-
-    For negative identity backpropagation, the objective function is linear and
-    constraints are known and fixed, but the cost vector need to be predicted
-    from contextual data.
-
-    If the interpolation hyperparameter λ aligns with an appropriate step size,
-    then the identity update is tantamount to DBB. However, the identity update
-    does not require an additional call to the solver during the backward pass
-    and tuning an additional hyperparameter λ.
-
     Reference: <https://arxiv.org/abs/2205.15213>
     """
 
@@ -30,7 +18,6 @@ class negativeIdentity(optModel):
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
-            dataset (None/optDataset): the training data
         """
         super().__init__(optSolver, processes, solve_ratio)
         self.nid = negativeIdentityFunc()

@@ -4,10 +4,7 @@ from torch import nn
 
 
 class optModel(nn.Module):
-    """
-    An abstract module for the learning to rank losses, which measure the difference in how the predicted cost
-    vector and the true cost vector rank a pool of feasible solutions.
-    """
+    """ """
 
     def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
         super(optModel, self).__init__()

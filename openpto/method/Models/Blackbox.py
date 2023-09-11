@@ -23,7 +23,6 @@ class blackboxOpt(optModel):
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
-            dataset (None/optDataset): the training data
         """
         super().__init__(optSolver, processes, solve_ratio)
         # smoothing parameter
@@ -58,9 +57,7 @@ class blackboxOpt(optModel):
 
 
 class blackboxOptFunc(torch.autograd.Function):
-    """
-    A autograd function for differentiable black-box optimizer
-    """
+    """ """
 
     @staticmethod
     def forward(

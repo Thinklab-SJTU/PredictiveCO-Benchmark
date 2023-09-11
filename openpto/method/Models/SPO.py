@@ -24,7 +24,6 @@ class SPOPlus(optModel):
             optSolver (optSolver): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             solve_ratio (float): the ratio of new solutions computed during training
-            dataset (None/optDataset): the training data
         """
         super().__init__(optSolver, processes, solve_ratio)
         # build carterion

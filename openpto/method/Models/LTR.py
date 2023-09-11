@@ -90,13 +90,6 @@ class listwiseLTR(optModel):
 
 class pairwiseLTR(optModel):
     """
-    An autograd module for pairwise learning to rank, where the goal is to learn
-    an objective function that ranks a pool of feasible solutions correctly.
-
-    For the pairwise LTR, the cost vector needs to be predicted from contextual
-    data, and the loss learns the relative ordering of pairs of items.
-
-    Thus, allows us to design an algorithm based on stochastic gradient descent.
 
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
@@ -189,15 +182,6 @@ class pairwiseLTR(optModel):
 
 class pointwiseLTR(optModel):
     """
-    An autograd module for pointwise learning to rank, where the goal is to
-    learn an objective function that ranks a pool of feasible solutions
-    correctly.
-
-    For the pointwise LTR, the cost vector needs to be predicted from contextual
-    data, and calculates the ranking scores of the items.
-
-    Thus, allows us to design an algorithm based on stochastic gradient descent.
-
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 

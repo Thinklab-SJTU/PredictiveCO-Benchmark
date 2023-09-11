@@ -10,9 +10,8 @@ from copy import deepcopy
 from gurobipy import GRB
 
 
-class optSolver:  # (ABC):
+class optSolver:
     """
-    This is an abstract class for optimization model
 
     Attributes:
         _model (GurobiPy model): Gurobi model
