@@ -30,6 +30,7 @@ if __name__ == "__main__":
         args.opt_model,
         args.prefix,
     )
+    args.log_dir = log_dir
     os.makedirs(log_dir, exist_ok=True)
     logger = get_logger(log_dir)
     logger.info(f" args: {args} \n")

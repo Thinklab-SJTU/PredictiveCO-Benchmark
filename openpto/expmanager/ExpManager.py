@@ -1,3 +1,4 @@
+import os
 import time
 
 from copy import deepcopy
@@ -168,6 +169,11 @@ class ExpManager:
         # regret
         regret = np.abs(objectives_opt - results["test"]["objective"])
 
+        # save to file
+        np.save(
+            os.path.join(self.args.log_dir, "results.npy"),
+            [objectives_opt, results["test"]["objective"], regret],
+        )
         # print
         self.logger.info(
             f"[Random Obj]: {torch.stack(objs_rand).mean().item():.3f} "
