@@ -195,7 +195,8 @@ class BudgetAllocation(PTOProblem):
         if len(Y.shape) == 2:
             Z = self.opt(Y, Z_init=Z_init)
             objective = self.get_objective(Y, Z).cpu().numpy()
-            Z = Z.unsqueeze(1)
+            print("raw Z shape: ", Z.shape)
+            # Z = Z.unsqueeze(1)
             return Z.cpu().numpy(), objective
 
         Y_shape = Y.shape
@@ -205,7 +206,9 @@ class BudgetAllocation(PTOProblem):
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
-        final_sol = Z.cpu().unsqueeze(1).numpy()
+        # print("multi-raw Z shape: ", Z.shape)
+        # Z = Z.unsqueeze(1)
+        final_sol = Z.cpu().numpy()
         final_obj = self.get_objective(Y, Z).cpu().numpy()
         return final_sol, final_obj
 

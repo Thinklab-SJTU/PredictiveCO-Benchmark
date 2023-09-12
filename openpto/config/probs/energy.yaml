@@ -1,5 +1,6 @@
 dataset:
   prob_version: energy
+
 models:
   spo:
     is_plus: False

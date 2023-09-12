@@ -145,14 +145,14 @@ class ExpManager:
             # for i in random.sample(
             #     range(len(X_train)), min(self.args.batchsize, len(X_train))
             # ):
-            for idx, X_idx in enumerate(X_train):
-                pred = self.pred_model(X_idx)  # .squeeze()
-                print("pred shape: ", pred.shape)
+            preds = self.pred_model(X_train)
+            for idx in range(len(X_train)):
+                pred = preds[[idx]]
                 losses.append(
                     loss_fn(
                         problem,
                         coeff_hat=pred,
-                        coeff_true=Y_train[idx],
+                        coeff_true=Y_train[[idx]],
                         params=Y_train_aux[idx],
                         partition="train",
                         index=idx,

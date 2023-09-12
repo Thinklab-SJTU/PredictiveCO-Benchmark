@@ -23,11 +23,9 @@ def print_metrics(
             if partition == "test":
                 time_test_start = time.time()
             # Decision Quality
-            print("utils Xs shape: ", Xs.shape, "partition: ", partition)
-            pred = model(Xs)  # .squeeze()
-            print("utils pred shape, ", pred.shape)
+            preds = model(Xs)
             Zs_pred, objective_pred = problem.get_decision(
-                pred.cpu().numpy(),
+                preds.cpu().numpy(),
                 params=Ys_aux,
                 optSolver=optSolver,
                 isTrain=isTrain,
@@ -37,15 +35,16 @@ def print_metrics(
             # Loss and Error
             if partition != "test":
                 losses = []
-                for idx, X_idx in enumerate(Xs):
-                    pred = model(X_idx)  # .squeeze()
+                preds = model(Xs)
+                for idx in range(len(Xs)):
+                    pred = preds[[idx]]
                     losses.append(
                         loss_fn(
                             problem,
                             coeff_hat=pred,
-                            coeff_true=Ys[idx],
+                            coeff_true=Ys[[idx]],
                             params=Ys_aux[idx],
-                            partition="train",
+                            partition=partition,
                             index=idx,
                             **model_args,
                         )

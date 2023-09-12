@@ -43,8 +43,8 @@ class CubicTopK(PTOProblem):
             self._set_seed(test_seed)
             self.Xs_test = 2 * torch.rand(self.num_test_instances, self.num_items, 1) - 1
             #   Generate Labels
-            self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
-            self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
+            self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train)
+            self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test)
         else:
             raise NotImplementedError
         # Split training data into train/val
@@ -80,9 +80,6 @@ class CubicTopK(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
-    def get_objective(self, Y, Z, **kwargs):
-        return (Z * Y).sum(dim=-1)
-
     def opt_train(self, Y):
         gamma = TopK_custom(self.budget)(-Y).squeeze()
         Z = gamma[..., 0] * Y.shape[-1]
@@ -92,11 +89,14 @@ class CubicTopK(PTOProblem):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
-        print("Y shape: ", Y.shape)
-        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
+        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2)
         # return Z if self.budget == 0 else Z.sum(dim=-2)
-        print("Z shape: ", Z.cpu().numpy().shape)
-        return Z.cpu().numpy(), (Z * Y).sum().cpu().numpy()
+        output_sols = Z.sum(-1).cpu().numpy()
+        output_vals = self.get_objective(Y, Z).cpu().numpy()
+        return output_sols, output_vals
+
+    def get_objective(self, Y, Z, **kwargs):
+        return (Z * Y).sum(dim=-1)
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
         return self.opt_test(Y)

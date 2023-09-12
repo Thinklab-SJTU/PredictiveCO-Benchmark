@@ -3,7 +3,6 @@ dataset:
   num_items: 50
   prob_version: gen
 
-
 models:
   spo:
     is_plus: False
