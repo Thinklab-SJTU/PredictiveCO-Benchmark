@@ -1,12 +1,11 @@
 import logging
 import math
 
-# from gurobipy import *
-import gurobipy as gp
+import gurobipy as gp  # pylint: disable=no-name-in-module
 import numpy as np
 import torch
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 

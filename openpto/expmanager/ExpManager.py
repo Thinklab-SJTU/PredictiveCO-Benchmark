@@ -14,6 +14,7 @@ from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
 
 class OptDataset(Dataset):
     def __init__(self, features, labels):
+        super().__init__()
         self.features = features
         self.labels = labels
 
@@ -74,6 +75,7 @@ class ExpManager:
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
         # Pretrain prediction model
+        total_train_time = 0
         if self.args.n_ptr_epochs > 0:
             pred_dataset = OptDataset(X_train, Y_train)
             pred_dataloader = DataLoader(
@@ -107,7 +109,6 @@ class ExpManager:
         # Train PTO
         best = (float("inf"), None)
         time_since_best = 0
-        total_train_time = 0
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -138,14 +139,15 @@ class ExpManager:
 
             # Learn
             # TODO: batch train or individually train?
+            # currently, only support individually train
             time_train_start = time.time()
             losses = []
             # for i in random.sample(
             #     range(len(X_train)), min(self.args.batchsize, len(X_train))
             # ):
             for idx, X_idx in enumerate(X_train):
-                # TODO: currently, only support individually train
                 pred = self.pred_model(X_idx)  # .squeeze()
+                print("pred shape: ", pred.shape)
                 losses.append(
                     loss_fn(
                         problem,

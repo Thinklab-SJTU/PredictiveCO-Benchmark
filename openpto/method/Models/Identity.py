@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass

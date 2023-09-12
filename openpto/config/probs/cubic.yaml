@@ -1,16 +1,19 @@
 dataset:
   budget: 1
   num_items: 50
+  prob_version: gen
 
 
 models:
   spo:
+    is_plus: False
     reduction: mean
   blackbox:
     reduction: mean
-  Identity:
+    lambd: 0.1
+  identity:
     reduction: mean
-  QPTL:
+  qptl:
     reduction: mean
   listLTR:
     reduction: mean
@@ -20,8 +23,11 @@ models:
     reduction: mean
   nce:
     reduction: mean
-  LODL:
+  lodl:
     sampling: random
+    quadrank: 20
+    quadalpha: 0
+    serial: 1
   mse:
     reduction: mean
   msesum:

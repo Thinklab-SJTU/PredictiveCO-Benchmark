@@ -4,6 +4,8 @@ import random
 import numpy as np
 import torch
 
+from gurobipy import GRB  # pylint: disable=no-name-in-module
+
 from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 from openpto.problems.PTOProblem import PTOProblem
 
@@ -19,28 +21,32 @@ class CubicTopK(PTOProblem):
         budget=2,  # number of items that can be picked
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        prob_version="gen",
         data_dir="./openpto/data/",
     ):
-        super(CubicTopK, self).__init__()
+        super(CubicTopK, self).__init__(data_dir)
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
         train_seed, test_seed = random.randrange(2**32), random.randrange(2**32)
-
-        # Generate Dataset
-        #   Save relevant parameters
-        self.num_items = num_items
-        self.num_train_instances = num_train_instances
-        self.num_test_instances = num_test_instances
-        #   Generate features
-        self._set_seed(train_seed)
-        self.Xs_train = 2 * torch.rand(self.num_train_instances, self.num_items, 1) - 1
-        self._set_seed(test_seed)
-        self.Xs_test = 2 * torch.rand(self.num_test_instances, self.num_items, 1) - 1
-        #   Generate Labels
-        self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
-        self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
-
+        if prob_version == "gen":
+            # Generate Dataset
+            #   Save relevant parameters
+            self.num_items = num_items
+            self.num_train_instances = num_train_instances
+            self.num_test_instances = num_test_instances
+            #   Generate features
+            self._set_seed(train_seed)
+            self.Xs_train = (
+                2 * torch.rand(self.num_train_instances, self.num_items, 1) - 1
+            )
+            self._set_seed(test_seed)
+            self.Xs_test = 2 * torch.rand(self.num_test_instances, self.num_items, 1) - 1
+            #   Generate Labels
+            self.Ys_train = 10 * (self.Xs_train.pow(3) - 0.65 * self.Xs_train).squeeze()
+            self.Ys_test = 10 * (self.Xs_test.pow(3) - 0.65 * self.Xs_test).squeeze()
+        else:
+            raise NotImplementedError
         # Split training data into train/val
         assert 0 < val_frac < 1
         self.val_frac = val_frac
@@ -86,8 +92,10 @@ class CubicTopK(PTOProblem):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
+        print("Y shape: ", Y.shape)
         Z = torch.nn.functional.one_hot(idxs, Y.shape[-1])
         # return Z if self.budget == 0 else Z.sum(dim=-2)
+        print("Z shape: ", Z.cpu().numpy().shape)
         return Z.cpu().numpy(), (Z * Y).sum().cpu().numpy()
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
@@ -103,7 +111,7 @@ class CubicTopK(PTOProblem):
         return "mse"
 
     def init_API(self):
-        return {"n_vars": self.Ys_train.shape[1]}
+        return {"modelSense": GRB.MINIMIZE, "n_vars": self.Ys_train.shape[1]}
 
 
 # Unit test for RandomTopK

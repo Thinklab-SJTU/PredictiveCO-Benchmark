@@ -13,6 +13,10 @@ from openpto.method.Solvers.neural.SubmodularOptimizer import SubmodularOptimize
 class budgetallocSolver(optSolver):
     """ """
 
+    def __init__(self, modelSense, n_vars):
+        super().__init__(modelSense)
+        self.n_vars = n_vars
+
     def _getModel(self):
         return None, None
 

@@ -6,8 +6,6 @@ Abstract optimization model based on GurobiPy
 
 from copy import copy
 
-import gurobipy as gp
-
 from openpto.method.Solvers.abcOptSolver import optSolver
 
 
@@ -22,25 +20,12 @@ class optGrbSolver(optSolver):
     def __init__(self):
         super().__init__()
         # model sense
-        self._model.update()
         self.modelSense = self._model.modelSense
         # turn off output
         self._model.Params.outputFlag = 0
 
     def __repr__(self):
         return "optGRBModel " + self.__class__.__name__
-
-    def setObj(self, c):  #
-        """
-        A method to set objective function
-
-        Args:
-            c (np.ndarray / list): cost of objective function
-        """
-        if len(c) != self.num_vars:
-            raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
-        self._model.setObjective(obj)
 
     def solve(self):
         """
@@ -69,28 +54,4 @@ class optGrbSolver(optSolver):
         # variables for new model
         x = new_model._model.getVars()
         new_model.x = {key: x[i] for i, key in enumerate(self.z)}
-        return new_model
-
-    def addConstr(self, coefs, rhs):  #
-        """
-        A method to add new constraint
-
-        Args:
-            coefs (np.ndarray / list): coeffcients of new constraint
-            rhs (float): right-hand side of new constraint
-
-        Returns:
-            optModel: new model with the added constraint
-        """
-
-        if len(coefs) != self.num_vars:
-            raise ValueError("Size of coef vector cannot cost.")
-        # copy
-        new_model = self.copy()
-        # add constraint
-        expr = (
-            gp.quicksum(coefs[i] * new_model.x[k] for i, k in enumerate(new_model.x))
-            <= rhs
-        )
-        new_model._model.addConstr(expr)
         return new_model

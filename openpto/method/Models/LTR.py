@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 from torch import nn
 
 from openpto.method.Models.abcOptModel import optModel

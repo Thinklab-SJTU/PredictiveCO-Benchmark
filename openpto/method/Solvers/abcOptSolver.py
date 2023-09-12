@@ -7,8 +7,6 @@ Abstract optimization model
 from abc import abstractmethod
 from copy import deepcopy
 
-from gurobipy import GRB
-
 
 class optSolver:
     """
@@ -17,10 +15,9 @@ class optSolver:
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self, modelSense=None):
-        # super(optSolver, self).__init__()
+    def __init__(self, modelSense):
         # default sense
-        self.modelSense = modelSense if modelSense is not None else GRB.MINIMIZE
+        self.modelSense = modelSense  # if modelSense is not None else GRB.MINIMIZE
         self._model, self.z = self._getModel()
 
     def __repr__(self):
@@ -46,16 +43,6 @@ class optSolver:
         """
         raise NotImplementedError
 
-    # @abstractmethod
-    def setObj(self, c):
-        """
-        An abstract method to set objective function
-
-        Args:
-            c (ndarray): cost of objective function
-        """
-        raise NotImplementedError
-
     @abstractmethod
     def solve(self):
         """
@@ -75,22 +62,3 @@ class optSolver:
         """
         new_model = deepcopy(self)
         return new_model
-
-    def addConstr(self, coefs, rhs):
-        """
-        An abstract method to add new constraint
-
-        Args:
-            coefs (ndarray): coeffcients of new constraint
-            rhs (float): right-hand side of new constraint
-
-        Returns:
-            optSolver: new model with the added constraint
-        """
-        raise NotImplementedError
-
-    def relax(self):
-        """
-        A unimplemented method to relax MIP model
-        """
-        raise RuntimeError("Method 'relax' is not implemented.")
