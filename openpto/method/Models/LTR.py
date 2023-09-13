@@ -42,11 +42,10 @@ class listwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -68,8 +67,8 @@ class listwiseLTR(optModel):
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
         # TODO: currently only support linear objective
-        objpool_c = problem.get_objective(coeff_true, solpool.unsqueeze(-1))
-        objpool_cp = problem.get_objective(coeff_hat, solpool.unsqueeze(-1))
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # objpool_c = coeff_true @ solpool.T  # true cost
         # objpool_cp = coeff_hat @ solpool.T  # pred cost
         # cross entropy loss
@@ -117,11 +116,10 @@ class pairwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -140,8 +138,8 @@ class pairwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        objpool_c = problem.get_objective(coeff_true, solpool.unsqueeze(-1))
-        objpool_cp = problem.get_objective(coeff_hat, solpool.unsqueeze(-1))
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # objpool_c = torch.einsum("bd,nd->bn", coeff_true, solpool)  # true cost
         # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)  # pred cost
         # init relu as max(0,x)
@@ -151,18 +149,18 @@ class pairwiseLTR(optModel):
         for i in range(len(coeff_hat)):
             # best sol
             if self.optSolver.modelSense == GRB.MINIMIZE:
-                best_ind = torch.argmin(objpool_c[i])
-                # best_ind = torch.argmin(objpool_c)
+                best_ind = torch.argmin(objpool_c)
+                # best_ind = torch.argmin(objpool_c[i])
             if self.optSolver.modelSense == GRB.MAXIMIZE:
-                best_ind = torch.argmax(objpool_c[i])
-                # best_ind = torch.argmax(objpool_c)
-            objpool_cp_best = objpool_cp[i, best_ind]
-            # objpool_cp_best = objpool_cp[best_ind]
+                best_ind = torch.argmax(objpool_c)
+                # best_ind = torch.argmax(objpool_c[i])
+            # objpool_cp_best = objpool_cp[i, best_ind]
+            objpool_cp_best = objpool_cp[best_ind]
             # rest sol
-            rest_ind = [j for j in range(len(objpool_cp[i])) if j != best_ind]
-            objpool_cp_rest = objpool_cp[i, rest_ind]
-            # rest_ind = [j for j in range(len(objpool_cp)) if j != best_ind]
-            # objpool_cp_rest = objpool_cp[rest_ind]
+            # rest_ind = [j for j in range(len(objpool_cp[i])) if j != best_ind]
+            # objpool_cp_rest = objpool_cp[i, rest_ind]
+            rest_ind = [j for j in range(len(objpool_cp)) if j != best_ind]
+            objpool_cp_rest = objpool_cp[rest_ind]
             # best vs rest loss
             if self.optSolver.modelSense == GRB.MINIMIZE:
                 loss.append(relu(objpool_cp_best - objpool_cp_rest).mean())
@@ -206,11 +204,11 @@ class pointwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
+            print("ltr shape: ", Y_train.shape)
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -230,8 +228,9 @@ class pointwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
-        objpool_c = problem.get_objective(coeff_true, solpool.unsqueeze(-1))
-        objpool_cp = problem.get_objective(coeff_hat, solpool.unsqueeze(-1))
+        # print("point ltr getting objective")
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # objpool_c = coeff_true @ solpool.T  # true cost
         # objpool_cp = coeff_hat @ solpool.T  # pred cost
         # squared loss

@@ -47,7 +47,7 @@ class SPOPlus(optModel):
             coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
         sol_true, obj_true = problem.get_decision(
             coeff_true.cpu(),
-            params.cpu(),
+            params,
             isTrain=False,
             optSolver=None,
             **problem.init_API(),

@@ -89,14 +89,18 @@ class CubicTopK(PTOProblem):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget)
-        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2)
+        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2).sum(-1)
         # return Z if self.budget == 0 else Z.sum(dim=-2)
-        output_sols = Z.sum(-1).cpu().numpy()
-        output_vals = self.get_objective(Y, Z).cpu().numpy()
+        output_sols = Z.cpu().numpy()
+        output_vals = self.get_objective(Y, Z)
         return output_sols, output_vals
 
     def get_objective(self, Y, Z, **kwargs):
-        return (Z * Y).sum(dim=-1)
+        if isinstance(Z, np.ndarray):
+            Z = np.expand_dims(Z, -1)
+        else:
+            Z = Z.unsqueeze(-1)
+        return (Z * Y).sum(-1)
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
         return self.opt_test(Y)

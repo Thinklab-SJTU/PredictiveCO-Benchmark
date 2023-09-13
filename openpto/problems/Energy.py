@@ -26,6 +26,8 @@ class Energy(PTOProblem):
     def __init__(
         self,
         prob_version="energy",
+        num_train_instances=0,
+        num_test_instances=0,
         rand_seed=0,
         data_dir="./openpto/data/",
     ):

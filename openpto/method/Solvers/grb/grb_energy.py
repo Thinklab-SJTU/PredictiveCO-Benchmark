@@ -1,4 +1,3 @@
-import logging
 import math
 
 import gurobipy as gp  # pylint: disable=no-name-in-module
@@ -183,7 +182,7 @@ class ICONGrbSolver(optGrbSolver):
         # if relax:
         #    Model = Model.relax()
         Model.setParam("Method", self.method)
-        logging.info("Number of constraints%d", Model.NumConstrs)
+        # logging.info("Number of constraints:%d", Model.NumConstrs)
         Model.optimize()
         # print("###################  Value after optimization #########################")
         # print(x)

@@ -172,6 +172,7 @@ class BudgetAllocation(PTOProblem):
         """
         # Sanity check inputs
         # TODO: check maximize or minimize
+        # print("shape in objective: ", Y.shape, Z.shape)
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)
         # assert Y.shape[-2] == Z.shape[-2]
@@ -193,6 +194,8 @@ class BudgetAllocation(PTOProblem):
     def get_decision(self, Y, params, optSolver, Z_init=None, **kwargs):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
+            print("Y.shape: ", Y.shape)
+            assert 0
             Z = self.opt(Y, Z_init=Z_init)
             objective = self.get_objective(Y, Z).cpu().numpy()
             print("raw Z shape: ", Z.shape)
@@ -200,7 +203,6 @@ class BudgetAllocation(PTOProblem):
             return Z.cpu().numpy(), objective
 
         Y_shape = Y.shape
-        print("Y_shape", Y_shape)
         #   Break it down into individual instances and solve
         Y_new = Y
         Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
@@ -209,6 +211,7 @@ class BudgetAllocation(PTOProblem):
         # print("multi-raw Z shape: ", Z.shape)
         # Z = Z.unsqueeze(1)
         final_sol = Z.cpu().numpy()
+        # print("shape in get decision", Y.shape, Z.shape)
         final_obj = self.get_objective(Y, Z).cpu().numpy()
         return final_sol, final_obj
 

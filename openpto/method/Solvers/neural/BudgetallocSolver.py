@@ -50,7 +50,6 @@ class budgetallocSolver(optSolver):
             obj = self.get_objective(Y, Z)
             return Z, obj
         # If it's not...
-        #   Remember the shape
         Y_shape = Y.shape
         #   Break it down into individual instances and solve
         Y_new = Y.view((-1, Y_shape[-2], Y_shape[-1]))
@@ -58,6 +57,3 @@ class budgetallocSolver(optSolver):
         #   Convert it back to the right shape
         Z = Z.view((*Y_shape[:-2], -1))
         return Z, obj
-
-    def setObj(self, Y):
-        return None

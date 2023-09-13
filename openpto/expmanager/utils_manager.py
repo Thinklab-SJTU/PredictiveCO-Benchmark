@@ -24,6 +24,7 @@ def print_metrics(
                 time_test_start = time.time()
             # Decision Quality
             preds = model(Xs)
+            # print("utils manager train start")
             Zs_pred, objective_pred = problem.get_decision(
                 preds.cpu().numpy(),
                 params=Ys_aux,
@@ -38,6 +39,8 @@ def print_metrics(
                 preds = model(Xs)
                 for idx in range(len(Xs)):
                     pred = preds[[idx]]
+                    # print("test for idx: ", idx)
+                    # print("utils manager shape: ", pred.shape, Ys[[idx]].shape)
                     losses.append(
                         loss_fn(
                             problem,

@@ -146,15 +146,21 @@ class blackboxOptFunc(torch.autograd.Function):
         dl = grad_output.detach().to("cpu").numpy()
 
         ##### work around #####
-        if dl.shape != cp.shape:
-            dl = np.tile(dl, (1, cp.shape[-1]))
+        # if dl.shape != cp.shape:
+        #     dl = np.tile(dl, (1, cp.shape[-1]))
         ##### end #####
 
         # perturbed costs
-        cq = cp + lambd * dl
-        # TODO: support batch-1 solution for now
+        ##### work around #####
+        if dl.shape != cp.shape:
+            cq = cp + lambd * dl.mean(-1, keepdims=True)
+        ##### end #####
+        else:
+            cq = cp + lambd * dl
+        # TODO: support batch=1 solution for now
+        # print("cp, cq: ", cp.shape, cq.shape)
         sols, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
-        sol = sols[0]
+        # sol = sols[0]
         # solve
         # if rand_sigma <= solve_ratio:
         # sols, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
@@ -168,14 +174,19 @@ class blackboxOptFunc(torch.autograd.Function):
         #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
 
+        # print("bb shape: ", sols.shape, cp.shape)
         grad = []
-        for i in range(len(sol)):
-            grad.append((sol[i] - wp[i]) / lambd)
+        for i in range(len(sols)):
+            grad.append((sols[i] - wp[i]) / lambd)
         # convert to tensor
         grad = np.array(grad)
+        # print("grad shape: ", grad.shape)
         ##### work around #####
         if grad.shape != cp.shape:
-            grad = np.tile(grad, (1, cp.shape[-1]))
+            if np.prod(grad.shape) == np.prod(cp.shape):
+                grad = grad.reshape(cp.shape)
+            else:
+                grad = np.tile(grad, (*grad.shape, cp.shape[-1]))
         ##### end #####
         grad = torch.FloatTensor(grad).to(device)
         return grad, None, None, None, None, None, None, None, None
