@@ -85,16 +85,6 @@ class CubicTopK(PTOProblem):
         Z = gamma[..., 0] * Y.shape[-1]
         return Z
 
-    def opt_test(self, Y):
-        if isinstance(Y, np.ndarray):
-            Y = torch.from_numpy(Y)
-        _, idxs = torch.topk(Y, self.budget)
-        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2).sum(-1)
-        # return Z if self.budget == 0 else Z.sum(dim=-2)
-        output_sols = Z.cpu().numpy()
-        output_vals = self.get_objective(Y, Z)
-        return output_sols, output_vals
-
     def get_objective(self, Y, Z, **kwargs):
         if isinstance(Z, np.ndarray):
             Z = np.expand_dims(Z, -1)
@@ -103,7 +93,13 @@ class CubicTopK(PTOProblem):
         return (Z * Y).sum(-1)
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
-        return self.opt_test(Y)
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
+        _, idxs = torch.topk(Y, self.budget)
+        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2).sum(-1)
+        output_sols = Z.cpu().numpy()
+        output_vals = self.get_objective(Y, Z)
+        return output_sols, output_vals
 
     def get_model_shape(self):
         return 1, 1
@@ -118,7 +114,6 @@ class CubicTopK(PTOProblem):
         return {"modelSense": GRB.MINIMIZE, "n_vars": self.Ys_train.shape[1]}
 
 
-# Unit test for RandomTopK
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 

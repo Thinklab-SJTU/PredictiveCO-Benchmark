@@ -9,7 +9,7 @@ import tqdm
 
 from torch.utils.data import DataLoader, Dataset
 
-from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
+from openpto.expmanager.utils_manager import print_metrics
 
 
 class OptDataset(Dataset):
@@ -66,7 +66,7 @@ class ExpManager:
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
         #   Move everything to GPU, if available
         if torch.cuda.is_available():
-            move_to_gpu(problem, self.device)
+            # move_to_gpu(problem, self.device)
             self.pred_model = self.pred_model.to(self.device)
 
         # Get data

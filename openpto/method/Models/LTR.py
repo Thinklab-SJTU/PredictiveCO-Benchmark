@@ -32,7 +32,7 @@ class listwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -66,11 +66,8 @@ class listwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        # TODO: currently only support linear objective
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
-        # objpool_c = coeff_true @ solpool.T  # true cost
-        # objpool_cp = coeff_hat @ solpool.T  # pred cost
         # cross entropy loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
@@ -106,7 +103,7 @@ class pairwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -194,7 +191,7 @@ class pointwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -231,8 +228,6 @@ class pointwiseLTR(optModel):
         # print("point ltr getting objective")
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
-        # objpool_c = coeff_true @ solpool.T  # true cost
-        # objpool_cp = coeff_hat @ solpool.T  # pred cost
         # squared loss
         # loss = (objpool_c - objpool_cp).square().mean(axis=1)
         loss = (objpool_c - objpool_cp).square().mean(axis=0)

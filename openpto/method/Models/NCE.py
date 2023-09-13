@@ -49,10 +49,10 @@ class NCE(optModel):
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -69,12 +69,13 @@ class NCE(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-        # get current obj
+        # get obj
+        obj_cp = problem.get_objective(coeff_hat, true_sol)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
+        # obj_cp = torch.einsum("d,bd->b", coeff_hat, true_sol).unsqueeze(1)
+        # objpool_cp = torch.einsum("d,nd->n", coeff_hat, solpool)
         # obj_cp = torch.einsum("bd,bd->b", coeff_hat, true_sol).unsqueeze(1)
-        obj_cp = torch.einsum("d,bd->b", coeff_hat, true_sol).unsqueeze(1)
-        # get obj for solpool
         # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
-        objpool_cp = torch.einsum("d,nd->n", coeff_hat, solpool)
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             # loss = (obj_cp - objpool_cp).mean(axis=1)

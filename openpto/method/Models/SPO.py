@@ -18,7 +18,7 @@ class SPOPlus(optModel):
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, is_plus=False, **kwargs):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, is_plus=True, **kwargs):
         """
         Args:
             optSolver (optSolver): an  optimization model
@@ -119,19 +119,17 @@ class SPOFunc(torch.autograd.Function):
         device = coeff_hat.device
         # convert tenstor
         cp = coeff_hat.detach().to("cpu").numpy()
-        c = coeff_true.detach().to("cpu").numpy()
-        w = sol_true
-        z = obj_true
+        coeff_true.detach().to("cpu").numpy()
         # check sol
         # _check_sol(c, w, z)
         # solve
         if np.random.uniform() <= solve_ratio:
-            sol, obj = _solve_in_pass(
-                2 * cp - c, params, problem, optSolver, processes, pool
+            sol_hat, obj_hat = _solve_in_pass(
+                cp, params, problem, optSolver, processes, pool
             )
             if solve_ratio < 1:
                 # add into solpool
-                module.solpool = np.concatenate((module.solpool, sol))
+                module.solpool = np.concatenate((module.solpool, sol_hat))
                 # remove duplicate
                 module.solpool = np.unique(module.solpool, axis=0)
         else:
@@ -139,8 +137,10 @@ class SPOFunc(torch.autograd.Function):
             # sol, obj = _cache_in_pass(2*cp-c, optSolver, module.solpool)
         # calculate loss
         loss = []
+        # TODO: check sign of the loss
         for i in range(len(cp)):
-            loss.append(-obj[i] + np.dot(cp[i], w[i]) - z[i])
+            loss.append(-obj_true[[i]] + problem.get_objective(cp[[i]], sol_hat[[i]]))
+            # loss.append(-obj[i] + np.dot(cp[i], w[i]) - z[i])
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
             loss = np.array(loss)
@@ -148,8 +148,7 @@ class SPOFunc(torch.autograd.Function):
             loss = -np.array(loss)
         # convert to tensor
         loss = torch.FloatTensor(loss).to(device)
-        sol = np.array(sol)
-        sol = torch.FloatTensor(sol).to(device)
+        sol = torch.FloatTensor(sol_hat).to(device)
         sol_true = torch.FloatTensor(sol_true).to(device)
         # save solutions
         ctx.save_for_backward(sol_true, sol)
@@ -225,8 +224,6 @@ class SPOPlusFunc(torch.autograd.Function):
         # convert tenstor
         cp = coeff_hat.detach().to("cpu").numpy()
         c = coeff_true.detach().to("cpu").numpy()
-        w = sol_true  # .detach().to("cpu").numpy()
-        z = obj_true  # .detach().to("cpu").numpy()
         # check sol
         # _check_sol(c, w, z)
         # solve
@@ -243,23 +240,28 @@ class SPOPlusFunc(torch.autograd.Function):
             raise NotImplementedError
             # sol, obj = _cache_in_pass(2*cp-c, optSolver, module.solpool)
         # calculate loss
-        loss = []
-        for i in range(len(cp)):
-            loss.append(-obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
+        loss = -obj + 2 * problem.get_objective(cp, sol) - obj_true
+        # loss = []
+        # for i in range(len(cp)):
+        #     loss.append(-obj[[i]]+2*problem.get_objective(cp[[i]], sol[[i]]) - obj_true[[i]])
+        #     loss.append(-obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
+        # convert to tensor
+        if isinstance(loss[0], np.ndarray):
+            loss = torch.FloatTensor(np.array(loss)).to(device)
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
-            loss = np.array(loss)
+            loss = loss
         if optSolver.modelSense == GRB.MAXIMIZE:
-            loss = -np.array(loss)
-        # convert to tensor
-        loss = torch.FloatTensor(loss).to(device)
+            loss = -loss
+
         sol = np.array(sol)
         sol = torch.FloatTensor(sol).to(device)
         sol_true = torch.FloatTensor(sol_true).to(device)
         # save solutions
         ctx.save_for_backward(sol_true, sol)
         # add other objects to ctx
-        ctx.optSolver = optSolver
+        ctx.modelSense = optSolver.modelSense
+        ctx.cp = cp
         return loss
 
     @staticmethod
@@ -268,11 +270,18 @@ class SPOPlusFunc(torch.autograd.Function):
         Backward pass for SPO+
         """
         w, wq = ctx.saved_tensors
-        optSolver = ctx.optSolver
-        if optSolver.modelSense == GRB.MINIMIZE:
+        if ctx.modelSense == GRB.MINIMIZE:
             grad = 2 * (w - wq)
-        if optSolver.modelSense == GRB.MAXIMIZE:
+        if ctx.modelSense == GRB.MAXIMIZE:
             grad = 2 * (wq - w)
+        ##### work around #####
+        cp = ctx.cp
+        if grad.shape != cp.shape:
+            if np.prod(grad.shape) == np.prod(cp.shape):
+                grad = grad.reshape(cp.shape)
+            else:
+                grad = torch.tile(grad, (*grad.shape, cp.shape[-1]))
+        ##### end #####
         return (
             grad_output * grad,
             None,
