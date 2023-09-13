@@ -17,8 +17,9 @@ class optSolver:
 
     def __init__(self, modelSense):
         # default sense
-        self.modelSense = modelSense  # if modelSense is not None else GRB.MINIMIZE
-        self._model, self.z = self._getModel()
+        self.modelSense = modelSense
+        self.z = None
+        # self._model, self.z = self._getModel()
 
     def __repr__(self):
         return "optSolver " + self.__class__.__name__

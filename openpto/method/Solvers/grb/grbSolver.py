@@ -17,10 +17,8 @@ class optGrbSolver(optSolver):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self):
-        super().__init__()
-        # model sense
-        self.modelSense = self._model.modelSense
+    def __init__(self, modelSense):
+        super().__init__(modelSense)
         # turn off output
         self._model.Params.outputFlag = 0
 

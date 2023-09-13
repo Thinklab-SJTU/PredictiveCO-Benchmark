@@ -18,7 +18,7 @@ class CubicTopK(PTOProblem):
         num_train_instances=100,  # number of instances to use from the dataset to train
         num_test_instances=100,  # number of instances to use from the dataset to test
         num_items=50,  # number of targets to consider
-        budget=2,  # number of items that can be picked
+        budget=1,  # number of items that can be picked
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         prob_version="gen",
@@ -95,8 +95,8 @@ class CubicTopK(PTOProblem):
     def get_decision(self, Y, params, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
-        _, idxs = torch.topk(Y, self.budget)
-        Z = torch.nn.functional.one_hot(idxs, Y.shape[-1]).sum(dim=-2).sum(-1)
+        _, idxs = torch.topk(Y, self.budget, dim=1)
+        Z = torch.nn.functional.one_hot(idxs, self.num_items).sum(dim=-2).sum(-2)
         output_sols = Z.cpu().numpy()
         output_vals = self.get_objective(Y, Z)
         return output_sols, output_vals

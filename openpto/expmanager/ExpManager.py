@@ -33,7 +33,6 @@ class ExpManager:
 
     Parameters
     ----------
-
     """
 
     def __init__(self, pred_model_args, args, conf, logger):
@@ -45,9 +44,6 @@ class ExpManager:
             f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
         )
         self.logger.info(f"--- Running on {self.device}")
-        # you can change random seed here TODO: set seed
-        # self.train_seeds = [i for i in range(400)]
-        # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         # prediction model
         from openpto.method.pred_model import pred_model_wrapper_solver
 
@@ -71,6 +67,8 @@ class ExpManager:
 
         # Get data
         X_train, Y_train, Y_train_aux = problem.get_train_data()
+        # torch.save(X_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_x.pt')
+        # torch.save(Y_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_y.pt')
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
