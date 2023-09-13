@@ -24,8 +24,7 @@ def print_metrics(
                 time_test_start = time.time()
             # Decision Quality
             preds = model(Xs)
-            # print("utils manager train start")
-            Zs_pred, objective_pred = problem.get_decision(
+            Zs_hat, objective_hat = problem.get_decision(
                 preds.cpu().numpy(),
                 params=Ys_aux,
                 optSolver=optSolver,
@@ -39,8 +38,6 @@ def print_metrics(
                 preds = model(Xs)
                 for idx in range(len(Xs)):
                     pred = preds[[idx]]
-                    # print("test for idx: ", idx)
-                    # print("utils manager shape: ", pred.shape, Ys[[idx]].shape)
                     losses.append(
                         loss_fn(
                             problem,
@@ -58,18 +55,18 @@ def print_metrics(
                 # timing
                 test_time = time.time() - time_test_start
                 # loss
-                losses = torch.zeros_like(torch.Tensor(objective_pred))
+                losses = torch.zeros_like(torch.Tensor(objective_hat))
 
             # Print
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
-                "objective": objective_pred,
+                "objective": objective_hat,
                 "loss": loss,
                 "time": test_time,
             }
             logger.info(
-                f"{prefix:<6} {partition:<6} Objective: {objective_pred.mean():.3f}, {'Loss':>5}: {loss:.3f}"
+                f"{prefix:<6} {partition:<6} Objective: {objective_hat.mean():.3f}, {'Loss':>5}: {loss:.3f}"
             )
         logger.info("----\n")
     return metrics
