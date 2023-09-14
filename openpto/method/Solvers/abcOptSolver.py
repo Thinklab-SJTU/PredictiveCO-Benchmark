@@ -8,8 +8,8 @@ from abc import abstractmethod
 from copy import deepcopy
 
 
-class optSolver:
-    """
+class optSolver(object):
+    """1
 
     Attributes:
         _model (GurobiPy model): Gurobi model

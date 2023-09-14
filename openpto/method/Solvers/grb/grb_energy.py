@@ -32,10 +32,13 @@ class ICONGrbSolver(optGrbSolver):
         verbose=False,
         warmstart=False,
         method=-1,
-        **h,
+        
+        **h
     ):
+        self.modelSense = GRB.MINIMIZE,
         self.nbMachines = nbMachines
         self.nbTasks = nbTasks
+        self.n_vars = nbMachines * nbTasks
         self.nbResources = nbResources
         self.MC = MC
         self.U = U
@@ -55,7 +58,6 @@ class ICONGrbSolver(optGrbSolver):
         self.presolve = presolve
         self.reset = reset
         self.warmstart = warmstart
-        self.modelSense = GRB.MINIMIZE
         self._getModel()
         # -1 : no objective cut; 0: cut for predictions only 'true' solution; 1: use sol_hist
 
@@ -110,12 +112,12 @@ class ICONGrbSolver(optGrbSolver):
         else:
             M.update()
         self.model = M
-        self.x = dict()
+        self.z = dict()
         for var in M.getVars():
             name = var.varName
             if name.startswith("x["):
                 (f, m, t) = map(int, name[2:-1].split(","))
-                self.x[(f, m, t)] = var
+                self.z[(f, m, t)] = var
 
     def solve(self, price, timelimit=None):
         Model = self.model
@@ -127,7 +129,7 @@ class ICONGrbSolver(optGrbSolver):
         if self.reset:
             Model.reset()
         verbose = self.verbose
-        x = self.x
+        x = self.z
         nbMachines = self.nbMachines
         nbTasks = self.nbTasks
         nbResources = self.nbResources

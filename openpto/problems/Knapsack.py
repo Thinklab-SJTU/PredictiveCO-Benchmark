@@ -106,8 +106,7 @@ class Knapsack(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, self.params_test
 
-    @staticmethod
-    def get_objective(Y, Z, **kwargs):
+    def get_objective(self, Y, Z, **kwargs):
         objectives = []
         num_instances = Y.shape[0]
         for ins in range(num_instances):

@@ -15,6 +15,8 @@ from openpto.method.Solvers.grb.grb_energy import (
 )
 from openpto.problems.PTOProblem import PTOProblem
 
+from gurobipy import GRB  # pylint: disable=no-name-in-module
+
 BENCHMARK_SIZE = 48
 
 
@@ -84,7 +86,6 @@ class Energy(PTOProblem):
             [None for _ in range(len(self.test_idxs))],
         )
 
-    @staticmethod
     def get_objective(self, Y, Z, **kwargs):
         objectives = []
         num_instances = Y.shape[0]
@@ -147,12 +148,9 @@ class Energy(PTOProblem):
     def init_API(self):
         dirct = "openpto/data/SchedulingInstances"
         os.listdir(dirct)[0]
-        return self.problem_data_reading(
-            "openpto/data/SchedulingInstances/load1/day01.txt"
-        )
-
-    # def params_API(self):
-    #     return { "capacity": self.capacity}
+        reading_dict = self.problem_data_reading("openpto/data/SchedulingInstances/load1/day01.txt" )
+        out_dict = {**reading_dict, **{"modelSense": GRB.MINIMIZE}}
+        return out_dict
 
     def get_model_shape(self):
         if self.prob_version == "gen":
