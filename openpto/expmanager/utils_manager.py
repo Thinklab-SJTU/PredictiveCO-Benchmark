@@ -8,6 +8,7 @@ def move_to_gpu(problem, device):
     for key, value in inspect.getmembers(problem, lambda a: not (inspect.isroutine(a))):
         if isinstance(value, torch.Tensor):
             problem.__dict__[key] = value.to(device)
+    problem.device = device
 
 
 def print_metrics(

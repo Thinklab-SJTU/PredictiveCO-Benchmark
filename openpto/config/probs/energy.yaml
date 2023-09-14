@@ -24,7 +24,7 @@ models:
     sampling: random
     quadrank: 20
     quadalpha: 0
-    serial: 1
+    serial: True
   mse:
     reduction: mean
   msesum:

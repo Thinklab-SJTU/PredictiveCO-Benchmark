@@ -10,6 +10,8 @@ class KPGrbSolver(optGrbSolver):
     def __init__(self, weights, capacity, modelSense):
         super().__init__(modelSense)
         self._model, self.z = self._getModel(weights, capacity)
+        # turn off output
+        self._model.Params.outputFlag = 0
 
     def _getModel(self, weights, capacity):
         num_items = len(weights)

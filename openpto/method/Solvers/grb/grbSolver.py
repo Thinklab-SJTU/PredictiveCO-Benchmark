@@ -19,8 +19,6 @@ class optGrbSolver(optSolver):
 
     def __init__(self, modelSense):
         super().__init__(modelSense)
-        # turn off output
-        self._model.Params.outputFlag = 0
 
     def __repr__(self):
         return "optGRBModel " + self.__class__.__name__

@@ -9,6 +9,7 @@ from functools import partial
 import numpy as np
 import torch
 
+from gurobipy import GRB
 from torch.multiprocessing import Pool
 
 from openpto.method.Models.abcOptModel import optModel
@@ -76,7 +77,11 @@ class LODL(optModel):
         #       Try to load sampled points
         master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
         problem_filename, _ = find_saved_problem(master_filename, problem.__dict__)
-        samples_filename_read = f"{problem_filename[:-4]}_{sampling}_{sampling_std}.pkl"
+        problem_filename_postfix = problem_filename.split("/")[-1]
+        os.makedirs(os.path.join(folder, "lodl"), exist_ok=True)
+        samples_filename_read = os.path.join(
+            folder, "lodl", f"{problem_filename[:-4]}_{sampling}_{sampling_std}.pkl"
+        )
 
         # Check if there are enough stored samples
         num_samples_needed = num_extra_samples = num_samples
@@ -137,14 +142,22 @@ class LODL(optModel):
                     sampled_points
                 ):
                     # turn to torch
-                    opt_objective, objectives = torch.from_numpy(
-                        opt_objective.astype("float")
-                    ), torch.from_numpy(objectives.astype("float"))
+                    if isinstance(opt_objective, np.ndarray):
+                        opt_objective = torch.from_numpy(
+                            opt_objective.astype("float")
+                        ).to(problem.device)
+                    if isinstance(objectives, np.ndarray):
+                        objectives = torch.from_numpy(objectives.astype("float")).to(
+                            problem.device
+                        )
                     SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
 
             # Save dataset
-            samples_filename_write = (
-                f"{problem_filename[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl"
+            print("folder1, ", folder)
+            samples_filename_write = os.path.join(
+                folder,
+                "lodl",
+                f"{problem_filename_postfix[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl",
             )
             with open(samples_filename_write, "wb") as filehandle:
                 pickle.dump((num_extra_samples, SL_dataset), filehandle)
@@ -368,10 +381,14 @@ class LODL(optModel):
                 isTrain=False,
                 **problem.init_API(),
             )
-            # opt_objective = obj(Y, Z_opt)
-
-            if best is None or opt_objective > best[1]:
-                best = (Z_opt, opt_objective)
+            if self.optSolver.modelSense == GRB.MAXIMIZE:
+                if best is None or opt_objective.mean() > best[1].mean():
+                    best = (Z_opt, opt_objective)
+            elif self.optSolver.modelSense == GRB.MINIMIZE:
+                if best is None or opt_objective.mean() < best[1].mean():
+                    best = (Z_opt, opt_objective)
+            else:
+                return NotImplementedError
         Z_opt, opt_objective = best
 
         #   Calculate for Yhats
@@ -442,9 +459,7 @@ class LODL(optModel):
             raise LookupError()
 
         # Use GPU if available
-        # if torch.cuda.is_available():
-        device = torch.device("cpu")  # TODO: enable cpu
-        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = problem.device
         Yhats_train, Yhats_val, Yhats_test = (
             Yhats_train.to(device),
             Yhats_val.to(device),

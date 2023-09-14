@@ -5,6 +5,7 @@ import pandas as pd
 import sklearn
 import torch
 
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -14,8 +15,6 @@ from openpto.method.Solvers.grb.grb_energy import (
     optimal_value,
 )
 from openpto.problems.PTOProblem import PTOProblem
-
-from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 BENCHMARK_SIZE = 48
 
@@ -148,7 +147,9 @@ class Energy(PTOProblem):
     def init_API(self):
         dirct = "openpto/data/SchedulingInstances"
         os.listdir(dirct)[0]
-        reading_dict = self.problem_data_reading("openpto/data/SchedulingInstances/load1/day01.txt" )
+        reading_dict = self.problem_data_reading(
+            "openpto/data/SchedulingInstances/load1/day01.txt"
+        )
         out_dict = {**reading_dict, **{"modelSense": GRB.MINIMIZE}}
         return out_dict
 

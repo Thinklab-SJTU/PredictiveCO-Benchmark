@@ -32,10 +32,9 @@ class ICONGrbSolver(optGrbSolver):
         verbose=False,
         warmstart=False,
         method=-1,
-        
-        **h
+        **h,
     ):
-        self.modelSense = GRB.MINIMIZE,
+        self._modelSense = (GRB.MINIMIZE,)
         self.nbMachines = nbMachines
         self.nbTasks = nbTasks
         self.n_vars = nbMachines * nbTasks
@@ -60,6 +59,8 @@ class ICONGrbSolver(optGrbSolver):
         self.warmstart = warmstart
         self._getModel()
         # -1 : no objective cut; 0: cut for predictions only 'true' solution; 1: use sol_hist
+        # turn off output
+        self._model.Params.outputFlag = 0
 
     def _getModel(self):
         Machines = range(self.nbMachines)
@@ -111,7 +112,7 @@ class ICONGrbSolver(optGrbSolver):
             M = M.presolve()
         else:
             M.update()
-        self.model = M
+        self._model = M
         self.z = dict()
         for var in M.getVars():
             name = var.varName
@@ -120,7 +121,7 @@ class ICONGrbSolver(optGrbSolver):
                 self.z[(f, m, t)] = var
 
     def solve(self, price, timelimit=None):
-        Model = self.model
+        Model = self._model
         D = self.D
         P = self.P
         q = self.q
