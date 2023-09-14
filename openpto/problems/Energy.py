@@ -288,15 +288,3 @@ class Energy(PTOProblem):
         }
 
 
-# def main():
-#     from get_energy import get_energy
-#     (X_1gtrain, y_train, X_1gtest, y_test) = get_energy()
-#     dirct = 'load1'
-#     fileList = sorted(os.listdir(dirct))
-#     day_cnt=0
-#     for file in fileList:
-#         nbMachines,nbTasks,nbResources,MC,U,D,E,L,P,idle,up,down,q = data_reading(dirct+"/"+file)
-#         price = y_train[(day_cnt*48):(1+(day_cnt+1)*48)]
-#         sch = ICON_scheduling(nbMachines,nbTasks,nbResources,MC,U,D,E,L,P,idle,up,down,q,price,verbose=False)
-#         print(optimal_value(nbMachines,nbTasks,nbResources,MC,U,D,E,L,P,idle,up,down,q,price,sch))
-#         day_cnt+=1

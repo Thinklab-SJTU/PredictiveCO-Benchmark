@@ -19,7 +19,6 @@ class optCPSolver(optSolver):
     def __init__(self):
         super().__init__()
         # model sense
-        self._model.update()
         self.modelSense = self._model.modelSense
-        # turn off output
-        self._model.Params.outputFlag = 0
+
+    

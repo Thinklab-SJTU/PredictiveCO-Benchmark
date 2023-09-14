@@ -581,7 +581,6 @@ def ICON_scheduling_relaxation(
 
     elif M.status == GRB.Status.INF_OR_UNBD:
         print("Model is infeasible or unbounded")
-
     elif M.status == GRB.Status.INFEASIBLE:
         print("Model is infeasible")
     elif M.status == GRB.Status.UNBOUNDED:

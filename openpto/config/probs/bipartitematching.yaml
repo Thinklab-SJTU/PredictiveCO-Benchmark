@@ -1,2 +1,7 @@
 dataset:
   num_nodes: 10
+  prob_version: bipartitematching
+
+models:
+  spo:
+    reduction: mean

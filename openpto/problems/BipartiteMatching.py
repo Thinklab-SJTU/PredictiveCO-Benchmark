@@ -23,15 +23,16 @@ class BipartiteMatching(PTOProblem):
         num_nodes=10,  # number of nodes in the LHS and RHS of the bipartite matching graphs
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        prob_version="bipartitematching",
+        data_dir="./openpto/data/",
     ):
         super(BipartiteMatching, self).__init__()
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
-
         # Load train and test labels
-        self.num_train_instances = num_train_instances
-        self.num_test_instances = num_test_instances
+        self.num_train_instances = 110
+        self.num_test_instances = 25
         self.num_nodes = num_nodes
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
@@ -77,18 +78,21 @@ class BipartiteMatching(PTOProblem):
         g = g.to_directed()  # remove directionality to make the problem easier
         nodes_before = [int(v) for v in g.nodes()]
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-
+        print(num_train_instances,num_test_instances)
         # Whittle the dataset down to the right size
         #   Initialise constants
         total_nodes = len(nodes_before)
         num_subsets = num_train_instances + num_test_instances
+        print(num_subsets,total_nodes,num_nodes)
         assert num_subsets <= total_nodes // (num_nodes * 2)
 
         #   Whittle (coarse-grained)
         # print("g: ", g)
         # TODO: check metis bug
-        _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
-        # _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=0)
+        #print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
+        adjs = nx.adjacency_matrix(g).toarray()
+        # _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
+        _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=adjs)
         g_part = [
             nx.Graph(nx.subgraph(g, list(np.where(np.array(mapping) == i)[0])))
             for i in range(num_subsets)
@@ -114,7 +118,7 @@ class BipartiteMatching(PTOProblem):
                 g_part[i].add_nodes_from(to_add)
 
         # Load the features dataset
-        features = np.loadtxt("data/cora.content")
+        features = np.loadtxt("openpto/data/cora.content")
         features_idx = features[:, 0]
         features = features[:, 1:]
 
@@ -248,9 +252,9 @@ class BipartiteMatching(PTOProblem):
         Y = cp.Parameter((self.num_nodes, self.num_nodes))
 
         # Objective
-        matching_obj = cp.sum(cp.multiply(Z, Y))
+        matching_obj = cp.sum( cp.multiply(Z, Y) )
         reg = cp.norm(Z) if isTrain else 0
-        objective = cp.Maximize(matching_obj - gamma * reg)
+        objective = cp.Maximize( matching_obj - gamma * reg )
 
         # Flow Constraints
         constraints = [cp.sum(Z, axis=0) == 1, cp.sum(Z, axis=1) == 1]
@@ -260,6 +264,9 @@ class BipartiteMatching(PTOProblem):
         assert problem.is_dpp()
 
         return CvxpyLayer(problem, parameters=[Y], variables=[Z])
+    
+    def init_API(self):
+        return { }
 
     # def _create_constraint_matrix(self):
     #     """
