@@ -1,59 +1,95 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""
-Abstract optimization model based on GurobiPy
-"""
 
 import torch
 
 from openpto.method.Solvers.abcOptSolver import optSolver
-from openpto.method.Solvers.neural.SubmodularOptimizer import SubmodularOptimizer
+from openpto.method.Solvers.neural.submodular import OptimiseSubmodular
 
 
 class budgetallocSolver(optSolver):
     """ """
 
-    def __init__(self, modelSense, n_vars):
+    def __init__(self, modelSense, n_vars, get_objective, num_iters, **kwargs):
         super().__init__(modelSense)
         self.n_vars = n_vars
+        self.opt = SubmodularOptimizer(get_obj=get_objective, num_iters=num_iters)
 
-    def _getModel(self):
-        return None, None
+    def solve(self, y, budget, Z_init=None):
+        return self.opt(y, budget, Z_init=Z_init)
 
-    def get_objective(self, Y, Z, w=None, **kwargs):
+
+class SubmodularOptimizer(torch.nn.Module):
+    """
+    Wrapper around OptimiseSubmodular that saves state information.
+    """
+
+    def __init__(
+        self,
+        get_obj,  # A function that returns the value of the objective we want to minimise
+        lr=0.1,  # learning rate for optimiser
+        momentum=0.9,  # momentum for optimiser
+        num_iters=100,  # number of optimisation steps
+        verbose=False,  # print intermediate solution statistics
+    ):
+        super(SubmodularOptimizer, self).__init__()
+        self.get_obj = get_obj
+        self.lr = lr
+        self.momentum = momentum
+        self.num_iters = num_iters
+        self.verbose = verbose
+
+    def forward(
+        self,
+        Yhat,
+        budget,
+        Z_init=None,  # value with which to warm start Z
+    ):
         """
-        For a given set of predictions/labels (Y), returns the decision quality.
-        The objective needs to be _maximised_.
+        Computes the optimal Z for the predicted Yhat using the supplied optimizer.
         """
-        # Sanity check inputs
-        assert Y.shape[-2] == Z.shape[-1]
-        assert len(Z.shape) + 1 == len(Y.shape)
+        Z = OptimiseSubmodular.apply(
+            Yhat,
+            self.get_obj,
+            budget,
+            self.lr,
+            self.momentum,
+            self.num_iters,
+            self.verbose,
+            Z_init,
+        )
+        return Z
 
-        # Initialise weights to default value
-        if w is None:
-            w = torch.ones(Y.shape[-1]).requires_grad_(False).to(Z.device)
-        else:
-            assert Y.shape[-1] == w.shape[0]
-            assert len(w.shape) == 1
 
-        # Calculate objective
-        p_fail = 1 - Z.unsqueeze(-1) * Y
-        p_all_fail = p_fail.prod(dim=-2)
-        obj = (w * (1 - p_all_fail)).sum(dim=-1)
+# Unit test for submodular optimiser
+if __name__ == "__main__":
+    # Unit Test
+    def get_obj(Y, Z):
+        # Function to be *maximised*
+        #   Sanity check inputs
+        assert Y.shape[0] == Z.shape[0]
+        assert len(Z.shape) == 1
+
+        #   Compute submodular objective from Wilder, et. al. (2019)
+        p_fail = 1 - Z.unsqueeze(1) * Y
+        p_all_fail = p_fail.prod(dim=0)
+        obj = (1 - p_all_fail).sum()
         return obj
 
-    def solve(self, Y, Z_init=None, **kwargs):
-        self.budget = 2
-        self.opt = SubmodularOptimizer(self.get_objective, self.budget)
-        if len(Y.shape) == 2:
-            Z = self.opt(Y, Z_init=Z_init)
-            obj = self.get_objective(Y, Z)
-            return Z, obj
-        # If it's not...
-        Y_shape = Y.shape
-        #   Break it down into individual instances and solve
-        Y_new = Y.view((-1, Y_shape[-2], Y_shape[-1]))
-        Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
-        #   Convert it back to the right shape
-        Z = Z.view((*Y_shape[:-2], -1))
-        return Z, obj
+    #   Load class
+    opt = SubmodularOptimizer(get_obj, budget=1)
+
+    #   Genereate data
+    torch.manual_seed(100)
+    Y = torch.rand((5, 10), requires_grad=True)
+
+    #   Perform forward pass
+    Z = opt(Y)
+    loss = get_obj(Y, Z)
+    print(loss)
+
+    # Perform backward pass
+    loss.backward()
+
+    # Use torch.gradcheck to double check gradients
+    torch.autograd.gradcheck(opt, Y)

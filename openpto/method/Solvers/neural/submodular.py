@@ -1,52 +1,5 @@
 import numpy as np
-
-# import scipy as sp
-# import scipy.sparse
-# import scipy.linalg
 import torch
-
-
-class SubmodularOptimizer(torch.nn.Module):
-    """
-    Wrapper around OptimiseSubmodular that saves state information.
-    """
-
-    def __init__(
-        self,
-        get_obj,  # A function that returns the value of the objective we want to minimise
-        budget,  # The maximum number of items we can select (in expectation)
-        lr=0.1,  # learning rate for optimiser
-        momentum=0.9,  # momentum for optimiser
-        num_iters=100,  # number of optimisation steps
-        verbose=False,  # print intermediate solution statistics
-    ):
-        super(SubmodularOptimizer, self).__init__()
-        self.get_obj = get_obj
-        self.budget = budget
-        self.lr = lr
-        self.momentum = momentum
-        self.num_iters = num_iters
-        self.verbose = verbose
-
-    def forward(
-        self,
-        Yhat,  # predicted labels
-        Z_init=None,  # value with which to warm start Z
-    ):
-        """
-        Computes the optimal Z for the predicted Yhat using the supplied optimizer.
-        """
-        Z = OptimiseSubmodular.apply(
-            Yhat,
-            self.get_obj,
-            self.budget,
-            self.lr,
-            self.momentum,
-            self.num_iters,
-            self.verbose,
-            Z_init,
-        )
-        return Z
 
 
 class OptimiseSubmodular(torch.autograd.Function):
@@ -294,37 +247,3 @@ class OptimiseSubmodular(torch.autograd.Function):
         # first num_var are derivatives of primal variables
         dZdYhat = derivatives[:num_var]
         return dZdYhat
-
-
-# Unit test for submodular optimiser
-if __name__ == "__main__":
-    # Unit Test
-    def get_obj(Y, Z):
-        # Function to be *maximised*
-        #   Sanity check inputs
-        assert Y.shape[0] == Z.shape[0]
-        assert len(Z.shape) == 1
-
-        #   Compute submodular objective from Wilder, et. al. (2019)
-        p_fail = 1 - Z.unsqueeze(1) * Y
-        p_all_fail = p_fail.prod(dim=0)
-        obj = (1 - p_all_fail).sum()
-        return obj
-
-    #   Load class
-    opt = SubmodularOptimizer(get_obj, budget=1)
-
-    #   Genereate data
-    torch.manual_seed(100)
-    Y = torch.rand((5, 10), requires_grad=True)
-
-    #   Perform forward pass
-    Z = opt(Y)
-    loss = get_obj(Y, Z)
-    print(loss)
-
-    # Perform backward pass
-    loss.backward()
-
-    # Use torch.gradcheck to double check gradients
-    torch.autograd.gradcheck(opt, Y)

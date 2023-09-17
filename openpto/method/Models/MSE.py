@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 from openpto.method.Models.abcOptModel import optModel
@@ -19,7 +20,7 @@ class MSE(optModel):
         Calculates the mean squared error between predictions
         Yhat and true lables Y.
         """
-        return (coeff_hat - coeff_true).square().mean()
+        return (coeff_hat - coeff_true).square()
 
 
 class MAE(optModel):
@@ -38,7 +39,7 @@ class MAE(optModel):
         Calculates the mean squared error between predictions
         Yhat and true lables Y.
         """
-        return (coeff_hat - coeff_true).abs().mean()
+        return (coeff_hat - coeff_true).abs()
 
 
 class CE(optModel):
@@ -80,7 +81,7 @@ class MSE_Sum(optModel):
         alpha = hyperparams["alpha"]
 
         # Calculate loss
-        sum_loss = (coeff_hat - coeff_true).sum(dim=-1).square().mean()
+        sum_loss = (coeff_hat - coeff_true).sum(dim=-1).square()  # .mean()
         loss_regularised = (1 - alpha) * sum_loss + alpha * MSE(coeff_hat, coeff_true)
         return loss_regularised
 
@@ -114,6 +115,8 @@ class DFL(optModel):
         objs = problem.get_objective(
             coeff_true.cpu().unsqueeze(0).numpy(), sol_hat, isTrain=True, **hyperparams
         )
-        obj = objs[0]
-        loss = -obj + self.dflalpha * twostageloss(problem, coeff_hat, coeff_true)
+        if isinstance(objs, np.ndarray):
+            objs = torch.from_numpy(objs.astype("float")).to(problem.device)
+        twostage_loss = twostageloss(problem, coeff_hat, coeff_true)
+        loss = -objs + self.dflalpha * twostage_loss
         return loss

@@ -49,7 +49,7 @@ class SPOPlus(optModel):
             coeff_true.cpu(),
             params,
             isTrain=False,
-            optSolver=None,
+            optSolver=self.optSolver,
             **problem.init_API(),
         )
         #

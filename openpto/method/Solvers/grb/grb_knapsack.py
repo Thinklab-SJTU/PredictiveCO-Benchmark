@@ -7,7 +7,7 @@ from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 
 # optimization model
 class KPGrbSolver(optGrbSolver):
-    def __init__(self, weights, capacity, modelSense):
+    def __init__(self, weights, capacity, modelSense, **kwargs):
         super().__init__(modelSense)
         self._model, self.z = self._getModel(weights, capacity)
         # turn off output

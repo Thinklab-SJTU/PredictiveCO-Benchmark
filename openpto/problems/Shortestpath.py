@@ -11,6 +11,7 @@ class Shortestpath(PTOProblem):
         num_items=100,  # number of targets to consider
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        **kwargs,
     ):
         super(Shortestpath, self).__init__()
         self._set_seed(rand_seed)

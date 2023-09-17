@@ -33,6 +33,7 @@ class RMAB(PTOProblem):
         noise_std=1,  # noise to be added to the features after scrambling
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        **kwargs,
     ):
         super(RMAB, self).__init__()
         # Do some random seed fu

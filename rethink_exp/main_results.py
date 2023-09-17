@@ -68,4 +68,4 @@ if __name__ == "__main__":
     logger.info(
         f" Start training [{args.pred_model}] model on [{args.opt_model}] loss..."
     )
-    exp.run(problem, loss_fn, optSolver, n_epochs=args.n_epochs)
+    exp.run(problem, loss_fn, optSolver, n_epochs=args.n_epochs, debug=args.do_debug)

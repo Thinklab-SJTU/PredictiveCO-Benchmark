@@ -23,6 +23,7 @@ class CubicTopK(PTOProblem):
         rand_seed=0,  # for reproducibility
         prob_version="gen",
         data_dir="./openpto/data/",
+        **kwargs,
     ):
         super(CubicTopK, self).__init__(data_dir)
         # Do some random seed fu
@@ -105,7 +106,7 @@ class CubicTopK(PTOProblem):
         return 1, 1
 
     def get_output_activation(self):
-        return None
+        return "relu"
 
     def get_twostageloss(self):
         return "mse"

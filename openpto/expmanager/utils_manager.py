@@ -65,9 +65,10 @@ def print_metrics(
                 "objective": objective_hat,
                 "loss": loss,
                 "time": test_time,
+                "preds": preds,
             }
             logger.info(
-                f"{prefix:<6} {partition:<6} Objective: {objective_hat.mean():.3f}, {'Loss':>5}: {loss:.3f}"
+                f"{prefix:<6} {partition:<6} Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f}"
             )
         logger.info("----\n")
     return metrics

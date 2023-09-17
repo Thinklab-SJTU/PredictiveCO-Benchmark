@@ -31,6 +31,7 @@ class Energy(PTOProblem):
         num_test_instances=0,
         rand_seed=0,
         data_dir="./openpto/data/",
+        **kwargs,
     ):
         super(Energy, self).__init__(data_dir)
         self.prob_version = prob_version
