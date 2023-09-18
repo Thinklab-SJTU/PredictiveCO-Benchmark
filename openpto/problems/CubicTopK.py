@@ -1,4 +1,3 @@
-import pdb
 import random
 
 import numpy as np
@@ -117,14 +116,21 @@ class CubicTopK(PTOProblem):
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+    # from openpto.problems.CubicTopK import CubicTopK
+    # problem = CubicTopK(num_train_instances=100,
+    #     num_test_instances=100,
+    #     num_items=50,
+    #     budget=5,
+    #     val_frac=0.2,
+    #     rand_seed=0,
+    #     prob_version="gen",
+    #     data_dir="./openpto/data/")
+    filename = "./saved_problems/CubicTopK_2.pkl"
+    import pickle
 
-    # Load An Example Instance
-    pdb.set_trace()
-    problem = CubicTopK()
+    with open(filename, "rb") as file:
+        problem = pickle.load(file)
 
     # Plot It
     Xs = problem.Xs_train.flatten().tolist()
     Ys = problem.Ys_train.flatten().tolist()
-    plt.scatter(Xs, Ys)
-    plt.show()

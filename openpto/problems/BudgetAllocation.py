@@ -226,7 +226,7 @@ class BudgetAllocation(PTOProblem):
 # Unit test for RandomTopK
 if __name__ == "__main__":
     # Load An Example Instance
-    problem = BudgetAllocation(
+    budget = BudgetAllocation(
         num_train_instances=100,
         num_test_instances=500,
         num_targets=10,
