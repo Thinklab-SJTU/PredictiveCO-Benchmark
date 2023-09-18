@@ -10,6 +10,7 @@ import tqdm
 from torch.utils.data import DataLoader, Dataset
 
 from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
+from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 
 
 class OptDataset(Dataset):
@@ -45,16 +46,7 @@ class ExpManager:
         )
         self.logger.info(f"--- Running on {self.device}")
         # prediction model
-        from openpto.method.pred_model import pred_model_wrapper_solver
-
-        model_builder = pred_model_wrapper_solver(args)
-        self.pred_model = model_builder(
-            num_features=pred_model_args["ipdim"],
-            num_targets=pred_model_args["opdim"],
-            num_layers=args.n_layers,
-            intermediate_size=args.n_hidden,
-            output_activation=pred_model_args["out_act"],
-        )
+        self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
         # optimizer:
@@ -63,6 +55,7 @@ class ExpManager:
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
         #   Move everything to device
         move_to_gpu(problem, self.device)
+        problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
         # Get data

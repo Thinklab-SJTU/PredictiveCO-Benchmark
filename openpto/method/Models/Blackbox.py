@@ -159,7 +159,6 @@ class blackboxOptFunc(torch.autograd.Function):
         else:
             cq = cp + lambd * dl
         # TODO: support batch=1 solution for now
-        # print("cp, cq: ", cp.shape, cq.shape)
         sols, _ = _solve_in_pass(cq, params, problem, optSolver, processes, pool)
         # solve
         # if rand_sigma <= solve_ratio:
@@ -174,7 +173,6 @@ class blackboxOptFunc(torch.autograd.Function):
         #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
 
-        # print("bb shape: ", sols.shape, cp.shape)
         grad = []
         for i in range(len(sols)):
             grad.append((sols[[i]] - wp[[i]]) / lambd)
@@ -183,7 +181,6 @@ class blackboxOptFunc(torch.autograd.Function):
         grad = torch.FloatTensor(grad).to(device)
         ##### work around #####
         cp = ctx.cp
-        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)

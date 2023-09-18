@@ -175,7 +175,6 @@ class SPOFunc(torch.autograd.Function):
             assert 0
         ##### work around #####
         cp = ctx.cp
-        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)
@@ -293,7 +292,6 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = 2 * (wq - w)
         ##### work around #####
         cp = ctx.cp
-        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)

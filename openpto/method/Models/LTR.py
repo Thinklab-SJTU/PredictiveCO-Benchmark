@@ -50,7 +50,6 @@ class listwiseLTR(optModel):
                 isTrain=False,
                 **problem.init_API(),
             )
-            print("self.solpool: ", self.solpool.shape)
         # convert tensor
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
@@ -217,14 +216,12 @@ class pointwiseLTR(optModel):
                 cp, params, problem, self.optSolver, self.processes, self.pool
             )
             # add into solpool
-            # print("shape: ", self.solpool.shape, sol.shape)
             self.solpool = np.concatenate((self.solpool, sol))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
-        # print("point ltr getting objective")
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
         # squared loss

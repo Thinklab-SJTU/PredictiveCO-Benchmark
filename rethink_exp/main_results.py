@@ -6,7 +6,7 @@ import torch
 
 from openpto.config import get_args, get_logger, load_conf, setup_seed
 from openpto.expmanager import ExpManager
-from openpto.method.Models.loss import get_loss_fn
+from openpto.method.Models.wrapper_loss import get_loss_fn
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
 from openpto.problems.wrapper_prob import problem_wrapper
 

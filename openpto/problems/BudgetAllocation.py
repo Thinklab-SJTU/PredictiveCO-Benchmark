@@ -172,6 +172,7 @@ class BudgetAllocation(PTOProblem):
             Y = torch.from_numpy(Y)
         if isinstance(Z, np.ndarray):
             Z = torch.from_numpy(Z)
+        # print("--- get obj:", Z.shape, Y.shape)
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)
@@ -193,9 +194,16 @@ class BudgetAllocation(PTOProblem):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
             assert 0
-            Z = optSolver.solve(Y, self.budget, Z_init=Z_init)
-            objective = self.get_objective(Y, Z).cpu().numpy()
-            return Z.cpu().numpy(), objective
+            # Z = optSolver.solve(Y, self.budget, Z_init=Z_init)
+            # objective = self.get_objective(Y, Z).cpu().numpy()
+            # return Z.cpu().numpy(), objective
+        if Z_init is None:
+            Z_init = torch.rand(Y.shape[1:-1]).to(self.device)
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y).to(self.device)
+        if isinstance(Z_init, np.ndarray):
+            Z_init = torch.from_numpy(Z_init).to(self.device)
+
         Y_shape = Y.shape
         Y_new = Y
         Z = torch.cat(
@@ -211,6 +219,7 @@ class BudgetAllocation(PTOProblem):
             "modelSense": GRB.MAXIMIZE,
             "n_vars": self.Ys_train.shape[1],
             "get_objective": self.get_objective,
+            # "sol_shape":torch.ones(self.Ys_train.shape[1]).shape,
         }
 
 
