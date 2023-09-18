@@ -202,7 +202,6 @@ class pointwiseLTR(optModel):
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
-            print("ltr shape: ", Y_train.shape)
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,

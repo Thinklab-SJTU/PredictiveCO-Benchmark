@@ -232,15 +232,13 @@ class ExpManager:
 
         # save to file
         np.save(
-            os.path.join(self.args.log_dir, "tensors", "results.npy"),
+            os.path.join(self.args.log_dir, "results.npy"),
             [objectives_opt, results["test"]["objective"], regret],
         )
+        np.save(os.path.join(self.args.log_dir, "solution.npy"), Z_test_opt)
         if torch.is_tensor(Z_test_opt):
             Z_test_opt = Z_test_opt.cpu().numpy()
         if debug:
-            np.save(
-                os.path.join(self.args.log_dir, "tensors", "solution.npy"), Z_test_opt
-            )
             torch.save(
                 results["test"]["preds"].cpu().detach(),
                 os.path.join(self.args.log_dir, "tensors", "preds.pt"),

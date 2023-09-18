@@ -1,8 +1,11 @@
 import argparse
 import ast
 import os
+import random
 
+import numpy as np
 import ruamel.yaml as yaml
+import torch
 
 ###################################### Args ###############################################
 
@@ -69,7 +72,7 @@ def get_args():
     parser.add_argument("--n_ptr_epochs", type=int, default=0)
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)
     parser.add_argument("--patience", type=int, default=100)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=2023)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--batchsize", type=int, default=1)
     parser.add_argument("--pred_bz", type=int, default=8192)
@@ -173,3 +176,12 @@ def get_logger(logger_fname):
     logger.addHandler(ch)
     logger.addHandler(fh)
     return logger
+
+
+################################### Seed ###################################
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True

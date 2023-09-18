@@ -168,6 +168,10 @@ class BudgetAllocation(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
+        if isinstance(Z, np.ndarray):
+            Z = torch.from_numpy(Z)
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)

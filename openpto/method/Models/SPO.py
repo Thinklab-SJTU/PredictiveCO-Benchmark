@@ -13,7 +13,7 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass  # , _cache_in_pass
 
 
-class SPOPlus(optModel):
+class SPO(optModel):
     """
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
@@ -139,7 +139,11 @@ class SPOFunc(torch.autograd.Function):
         loss = []
         # TODO: check sign of the loss
         for i in range(len(cp)):
-            loss.append(-obj_true[[i]] + problem.get_objective(cp[[i]], sol_hat[[i]]))
+            obj_hat = problem.get_objective(cp[[i]], sol_hat[[i]])
+            if torch.is_tensor(obj_hat):
+                obj_hat = obj_hat.cpu().numpy()
+            instance_loss = -obj_true[[i]] + obj_hat
+            loss.append(instance_loss)
             # loss.append(-obj[i] + np.dot(cp[i], w[i]) - z[i])
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
@@ -153,7 +157,8 @@ class SPOFunc(torch.autograd.Function):
         # save solutions
         ctx.save_for_backward(sol_true, sol)
         # add other objects to ctx
-        ctx.optSolver = optSolver
+        ctx.cp = cp
+        ctx.modelSense = optSolver.modelSense
         return loss
 
     @staticmethod
@@ -162,11 +167,22 @@ class SPOFunc(torch.autograd.Function):
         Backward pass for SPO
         """
         w, wq = ctx.saved_tensors
-        optSolver = ctx.optSolver
-        if optSolver.modelSense == GRB.MINIMIZE:
+        if ctx.modelSense == GRB.MINIMIZE:
             grad = w - wq
-        if optSolver.modelSense == GRB.MAXIMIZE:
+        elif ctx.modelSense == GRB.MAXIMIZE:
             grad = wq - w
+        else:
+            assert 0
+        ##### work around #####
+        cp = ctx.cp
+        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
+        if grad.shape != cp.shape:
+            if np.prod(grad.shape) == np.prod(cp.shape):
+                grad = grad.reshape(cp.shape)
+            else:
+                grad_shape = grad.shape
+                grad = grad.view(*grad_shape, 1).expand(*grad_shape, cp.shape[-1])
+        ##### end #####
         return (
             grad_output * grad,
             None,
@@ -243,7 +259,7 @@ class SPOPlusFunc(torch.autograd.Function):
         loss = -obj + 2 * problem.get_objective(cp, sol) - obj_true
         # loss = []
         # for i in range(len(cp)):
-        #     loss.append(-obj[[i]]+2*problem.get_objective(cp[[i]], sol[[i]]) - obj_true[[i]])
+        #     loss.append(-obj[[i]] + 2 * problem.get_objective(cp[[i]], sol[[i]]) - obj_true[[i]])
         #     loss.append(-obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
         # convert to tensor
         if isinstance(loss[0], np.ndarray):
@@ -277,11 +293,13 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = 2 * (wq - w)
         ##### work around #####
         cp = ctx.cp
+        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)
             else:
-                grad = torch.tile(grad, (*grad.shape, cp.shape[-1]))
+                grad_shape = grad.shape
+                grad = grad.view(*grad_shape, 1).expand(*grad_shape, cp.shape[-1])
         ##### end #####
         return (
             grad_output * grad,

@@ -41,6 +41,9 @@ class Energy(PTOProblem):
         if prob_version == "energy":
             self.get_energy_data()
 
+    def get_twostageloss(self):
+        return "mse"
+
     def get_energy_data(self):
         x_train, y_train, x_test, y_test = self.get_energy(
             fname="openpto/data/prices2013.dat"
@@ -86,6 +89,23 @@ class Energy(PTOProblem):
             [None for _ in range(len(self.test_idxs))],
         )
 
+    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
+        # determine solver
+        if optSolver is None:
+            optSolver = ICONGrbSolver(**kwargs)
+
+        if Y.ndim == 1:
+            Y = Y.reshape(1, -1)
+        ins_num = len(Y)
+        sol = []
+        obj = []
+        for i in range(ins_num):
+            # solve
+            solp, objp = optSolver.solve(Y[i])
+            sol.append(solp)
+            obj.append(objp)
+        return np.array(sol), np.array(obj)
+
     def get_objective(self, Y, Z, **kwargs):
         objectives = []
         num_instances = Y.shape[0]
@@ -127,23 +147,6 @@ class Energy(PTOProblem):
                 )
             )
         return np.array(objectives)
-
-    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
-        # determine solver
-        if optSolver is None:
-            optSolver = ICONGrbSolver(**kwargs)
-
-        if Y.ndim == 1:
-            Y = Y.reshape(1, -1)
-        ins_num = len(Y)
-        sol = []
-        obj = []
-        for i in range(ins_num):
-            # solve
-            solp, objp = optSolver.solve(Y[i])
-            sol.append(solp)
-            obj.append(objp)
-        return np.array(sol), np.array(obj)
 
     def init_API(self):
         dirct = "openpto/data/SchedulingInstances"

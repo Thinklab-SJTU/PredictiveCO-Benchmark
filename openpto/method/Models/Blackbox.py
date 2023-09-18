@@ -118,6 +118,7 @@ class blackboxOptFunc(torch.autograd.Function):
         ctx.solve_ratio = solve_ratio
         ctx.params = params
         ctx.problem = problem
+        ctx.cp = cp
         if solve_ratio < 1:
             ctx.module = module
         ctx.rand_sigma = rand_sigma
@@ -147,7 +148,7 @@ class blackboxOptFunc(torch.autograd.Function):
 
         ##### work around #####
         # if dl.shape != cp.shape:
-        #     dl = np.tile(dl, (1, cp.shape[-1]))
+        #     dl = np.expand(dl, (*dl.shape, cp.shape[-1]))
         ##### end #####
 
         # perturbed costs
@@ -179,12 +180,15 @@ class blackboxOptFunc(torch.autograd.Function):
             grad.append((sols[[i]] - wp[[i]]) / lambd)
         # convert to tensor
         grad = np.array(grad)
+        grad = torch.FloatTensor(grad).to(device)
         ##### work around #####
+        cp = ctx.cp
+        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)
             else:
-                grad = np.tile(grad, (*grad.shape, cp.shape[-1]))
+                grad_shape = grad.shape
+                grad = grad.view(*grad_shape, 1).expand(*grad_shape, cp.shape[-1])
         ##### end #####
-        grad = torch.FloatTensor(grad).to(device)
         return grad, None, None, None, None, None, None, None, None
