@@ -35,3 +35,5 @@ models:
     dflalpha: 0.1
 
 solver:
+  gurobi:
+    kwargs: none

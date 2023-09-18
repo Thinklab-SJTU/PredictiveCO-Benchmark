@@ -91,7 +91,8 @@ class CubicTopK(PTOProblem):
             Z = np.expand_dims(Z, -1)
         else:
             Z = Z.unsqueeze(-1)
-        return (Z * Y).sum(-1)
+        obj = (Z * Y).sum(-1).sum(-1)
+        return obj
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
@@ -106,7 +107,7 @@ class CubicTopK(PTOProblem):
         return 1, 1
 
     def get_output_activation(self):
-        return "relu"
+        return "none"
 
     def get_twostageloss(self):
         return "mse"

@@ -181,7 +181,7 @@ class ExpManager:
             time_since_best += 1
             total_train_time += time.time() - time_train_start
 
-        if best is not None and self.args.earlystopping:
+        if best[1] is not None and self.args.earlystopping:
             self.pred_model = best[1]
 
         # Document how well this trained model does
