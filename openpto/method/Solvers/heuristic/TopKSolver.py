@@ -12,7 +12,7 @@ from openpto.method.Solvers.abcOptSolver import optSolver
 class TopKSolver(optSolver):
     """ """
 
-    def __init__(self, modelSense, n_vars):
+    def __init__(self, modelSense, n_vars, **kwargs):
         super().__init__(modelSense)
         self.n_vars = n_vars
 
@@ -26,7 +26,7 @@ class TopKSolver(optSolver):
         Args:
             c (np.ndarray / list): cost of objective function
         """
-        self.budget = 1
+        self.budget = 5
         Y = torch.from_numpy(Y)
         _, indices = torch.topk(Y, k=self.budget, dim=-1)
         top_k_one_hot = torch.zeros_like(Y)

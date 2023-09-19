@@ -1,8 +1,11 @@
 import argparse
 import ast
 import os
+import random
 
+import numpy as np
 import ruamel.yaml as yaml
+import torch
 
 ###################################### Args ###############################################
 
@@ -65,14 +68,14 @@ def get_args():
 
     # training
     parser.add_argument("--loadnew", type=ast.literal_eval, default=False)
-    parser.add_argument("--n_epochs", type=int, default=1)
+    parser.add_argument("--n_epochs", type=int, default=0)
     parser.add_argument("--n_ptr_epochs", type=int, default=0)
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)
     parser.add_argument("--patience", type=int, default=100)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=2023)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--batchsize", type=int, default=1)
-    parser.add_argument("--pred_bz", type=int, default=64)
+    parser.add_argument("--pred_bz", type=int, default=8192)
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--do_debug", action="store_true")
@@ -83,7 +86,8 @@ def get_args():
     parser.add_argument("--valfreq", type=int, default=1)
     parser.add_argument("--prefix", type=str, default="default")
     # model
-    parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--n_layers", type=int, default=2)
+    parser.add_argument("--n_hidden", type=int, default=32)
     # solver
     parser.add_argument("--solve_ratio", type=float, default=1.0)
     parser.add_argument("--processes", type=int, default=1)
@@ -172,3 +176,12 @@ def get_logger(logger_fname):
     logger.addHandler(ch)
     logger.addHandler(fh)
     return logger
+
+
+################################### Seed ###################################
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True

@@ -30,6 +30,7 @@ class Energy(PTOProblem):
         num_test_instances=0,
         rand_seed=0,
         data_dir="./openpto/data/",
+        **kwargs,
     ):
         super(Energy, self).__init__(data_dir)
         self.prob_version = prob_version
@@ -38,6 +39,9 @@ class Energy(PTOProblem):
         # Obtain data
         if prob_version == "energy":
             self.get_energy_data()
+
+    def get_twostageloss(self):
+        return "mse"
 
     def get_energy_data(self):
         x_train, y_train, x_test, y_test = self.get_energy(
@@ -83,6 +87,23 @@ class Energy(PTOProblem):
             self.Ys[self.test_idxs],
             [None for _ in range(len(self.test_idxs))],
         )
+
+    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
+        # determine solver
+        if optSolver is None:
+            optSolver = ICONGrbSolver(**kwargs)
+
+        if Y.ndim == 1:
+            Y = Y.reshape(1, -1)
+        ins_num = len(Y)
+        sol = []
+        obj = []
+        for i in range(ins_num):
+            # solve
+            solp, objp = optSolver.solve(Y[i])
+            sol.append(solp)
+            obj.append(objp)
+        return np.array(sol), np.array(obj)
 
     def get_objective(self, Y, Z, **kwargs):
         ans=0

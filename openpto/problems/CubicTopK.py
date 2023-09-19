@@ -1,4 +1,3 @@
-import pdb
 import random
 
 import numpy as np
@@ -23,6 +22,7 @@ class CubicTopK(PTOProblem):
         rand_seed=0,  # for reproducibility
         prob_version="gen",
         data_dir="./openpto/data/",
+        **kwargs,
     ):
         super(CubicTopK, self).__init__(data_dir)
         # Do some random seed fu
@@ -90,7 +90,8 @@ class CubicTopK(PTOProblem):
             Z = np.expand_dims(Z, -1)
         else:
             Z = Z.unsqueeze(-1)
-        return (Z * Y).sum(-1)
+        obj = (Z * Y).sum(-1).sum(-1)
+        return obj
 
     def get_decision(self, Y, params, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
@@ -105,7 +106,7 @@ class CubicTopK(PTOProblem):
         return 1, 1
 
     def get_output_activation(self):
-        return None
+        return "none"
 
     def get_twostageloss(self):
         return "mse"
@@ -115,14 +116,21 @@ class CubicTopK(PTOProblem):
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+    # from openpto.problems.CubicTopK import CubicTopK
+    # problem = CubicTopK(num_train_instances=100,
+    #     num_test_instances=100,
+    #     num_items=50,
+    #     budget=5,
+    #     val_frac=0.2,
+    #     rand_seed=0,
+    #     prob_version="gen",
+    #     data_dir="./openpto/data/")
+    filename = "./saved_problems/CubicTopK_2.pkl"
+    import pickle
 
-    # Load An Example Instance
-    pdb.set_trace()
-    problem = CubicTopK()
+    with open(filename, "rb") as file:
+        problem = pickle.load(file)
 
     # Plot It
     Xs = problem.Xs_train.flatten().tolist()
     Ys = problem.Ys_train.flatten().tolist()
-    plt.scatter(Xs, Ys)
-    plt.show()

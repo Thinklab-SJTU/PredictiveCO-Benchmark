@@ -10,7 +10,7 @@ import torch
 class PTOProblem(ABC):
     """A class that defines an arbitrary predict-then-optimise problem."""
 
-    def __init__(self, data_dir="./openpto/data/"):
+    def __init__(self, data_dir="./openpto/data/", **kwargs):
         super(PTOProblem, self).__init__()
         self.data_dir = data_dir
 
@@ -30,11 +30,11 @@ class PTOProblem(ABC):
     def get_model_shape(self):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_output_activation(self):
         raise NotImplementedError()
 
-    # @abstractmethod
+    @abstractmethod
     def get_twostageloss(self):
         raise NotImplementedError()
 

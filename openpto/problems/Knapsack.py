@@ -35,6 +35,7 @@ class Knapsack(PTOProblem):
         noise_width=0,
         capacity=1,
         data_dir="./openpto/data/",
+        kwargs={},
     ):
         super(Knapsack, self).__init__(data_dir)
         self.capacity = capacity

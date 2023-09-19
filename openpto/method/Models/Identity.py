@@ -104,9 +104,9 @@ class negativeIdentityFunc(torch.autograd.Function):
         Backward pass for NID
         """
         # get device
-        device = grad_output.device
         # identity matrix
-        Ident = torch.eye(grad_output.shape[1]).to(device)
+        Ident = grad_output
+        # Ident = torch.eye(grad_output.shape[1]).to(device)
         # check the negative
         if ctx.modelSense == GRB.MINIMIZE:
             grad = -Ident
@@ -114,10 +114,12 @@ class negativeIdentityFunc(torch.autograd.Function):
             grad = Ident
         ##### work around #####
         cp = ctx.cp
+        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
         if grad.shape != cp.shape:
             if np.prod(grad.shape) == np.prod(cp.shape):
                 grad = grad.reshape(cp.shape)
             else:
-                grad = torch.tile(grad, (*grad.shape, cp.shape[-1]))
+                grad_shape = grad.shape
+                grad = grad.unsqueeze(-1).expand(*grad_shape, cp.shape[-1])
         ##### end #####
-        return grad_output @ grad, None, None, None, None, None, None, None
+        return grad, None, None, None, None, None, None, None

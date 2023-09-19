@@ -19,6 +19,7 @@ class RandomTopK(PTOProblem):
         num_fake_targets=5000,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        **kwargs,
     ):
         super(RandomTopK, self).__init__()
         self._set_seed(rand_seed)

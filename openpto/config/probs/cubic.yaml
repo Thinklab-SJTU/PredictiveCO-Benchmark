@@ -1,5 +1,5 @@
 dataset:
-  budget: 1
+  budget: 5
   num_items: 50
   prob_version: gen
 
@@ -35,3 +35,7 @@ models:
     reduction: mean
   dfl:
     dflalpha: 0.1
+
+solver:
+  heuristic:
+    kwargs: none

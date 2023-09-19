@@ -8,8 +8,8 @@ import torch
 from torch.distributions import Categorical
 from torch.nn.functional import one_hot
 
-from openpto.method.pred_model import dense_nn
-from openpto.method.Solvers import RMABSolver
+from openpto.method.Predicts.dense import dense_nn
+from openpto.method.Solvers.neural import RMABSolver
 from openpto.method.Solvers.utils_solver import gather_incomplete_left
 from openpto.problems.PTOProblem import PTOProblem
 
@@ -33,6 +33,7 @@ class RMAB(PTOProblem):
         noise_std=1,  # noise to be added to the features after scrambling
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        **kwargs,
     ):
         super(RMAB, self).__init__()
         # Do some random seed fu

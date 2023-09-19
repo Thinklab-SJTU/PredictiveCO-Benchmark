@@ -25,9 +25,9 @@ def get_loss_fn(name, problem, **kwargs):
 
         return DFL
     elif name == "spo":
-        from openpto.method.Models.SPO import SPOPlus
+        from openpto.method.Models.SPO import SPO
 
-        return SPOPlus
+        return SPO
     elif name == "pointLTR":
         from openpto.method.Models.LTR import pointwiseLTR
 

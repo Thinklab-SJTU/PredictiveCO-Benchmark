@@ -14,7 +14,7 @@ from torch.multiprocessing import Pool
 
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Models.MSE import MSE
-from openpto.method.pred_model import dense_nn
+from openpto.method.Predicts.dense import dense_nn
 from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
@@ -72,7 +72,7 @@ class LODL(optModel):
         #   Get Ys
         _, Y_train, Y_train_aux = problem.get_train_data()
         _, Y_val, Y_val_aux = problem.get_val_data()
-
+        print("---- lodl device", Y_train.device)
         #   Get points in the neighbourhood of the Ys
         #       Try to load sampled points
         master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
@@ -80,7 +80,10 @@ class LODL(optModel):
         problem_filename_postfix = problem_filename.split("/")[-1]
         os.makedirs(os.path.join(folder, "lodl"), exist_ok=True)
         samples_filename_read = os.path.join(
-            folder, "lodl", f"{problem_filename[:-4]}_{sampling}_{sampling_std}.pkl"
+            folder,
+            "lodl",
+            str(problem.__class__.__name__),
+            f"{problem_filename[:-4]}_{sampling}_{sampling_std}.pkl",
         )
 
         # Check if there are enough stored samples
@@ -111,12 +114,13 @@ class LODL(optModel):
                 # Get new sampled points
                 start_time = time.time()
                 if serial is True:
-                    sampled_points = [
-                        self._sample_points(
+                    sampled_points = []
+                    for Y, Y_aux in zip(Ys, Ys_aux):
+                        sampled = self._sample_points(
                             Y, problem, sampling, num_extra_samples, Y_aux, sampling_std
                         )
-                        for Y, Y_aux in zip(Ys, Ys_aux)
-                    ]
+                        sampled_points.append(sampled)
+
                 else:
                     with Pool(NUM_CPUS) as pool:
                         sampled_points = pool.starmap(
@@ -157,6 +161,7 @@ class LODL(optModel):
             samples_filename_write = os.path.join(
                 folder,
                 "lodl",
+                str(problem.__class__.__name__),
                 f"{problem_filename_postfix[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl",
             )
             with open(samples_filename_write, "wb") as filehandle:
@@ -368,14 +373,14 @@ class LODL(optModel):
 
         # Calculate decision-focused loss for points
         opt = partial(problem.get_decision, isTrain=False, aux_data=Y_aux)
-        partial(problem.get_objective, aux_data=Y_aux)
+        # partial(problem.get_objective, aux_data=Y_aux)
 
         #   Calculate for 'true label'
         best = None
         assert num_restarts > 0
         for _ in range(num_restarts):
             Z_opt, opt_objective = opt(
-                Y,
+                Y.unsqueeze(0),
                 params=Y_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
@@ -394,7 +399,7 @@ class LODL(optModel):
         #   Calculate for Yhats
         Zs, objectives = opt(
             Yhats,
-            Z_init=Z_opt,
+            # Z_init=Z_opt,
             params=Y_aux,
             optSolver=self.optSolver,
             isTrain=False,
@@ -483,7 +488,7 @@ class LODL(optModel):
                 pred = model(Yhats_train).flatten()
                 if not (pred >= -1e-3).all().item():
                     print(f"WARNING: Prediction value < 0: {pred.min()}")
-                loss = MSE()(problem, pred, objectives_train)
+                loss = MSE()(problem, pred, objectives_train).sum()
                 loss.backward()
                 return loss
 
@@ -498,8 +503,8 @@ class LODL(optModel):
                     print(f"Iter {iter_idx}, Train Loss MSE: {loss_closure().item()}")
                     print(f"Iter {iter_idx}, Val Loss MSE: {loss_val.item()}")
                 # Save model if it's the best one
-                if best[1] is None or loss_val.item() < best[0]:
-                    best = (loss_val.item(), deepcopy(model))
+                if best[1] is None or loss_val.mean().item() < best[0]:
+                    best = (loss_val.mean().item(), deepcopy(model))
                     time_since_best = 0
                 # Stop if model hasn't improved for patience steps
                 if time_since_best > patience:

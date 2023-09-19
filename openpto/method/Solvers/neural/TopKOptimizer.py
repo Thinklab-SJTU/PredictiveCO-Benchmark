@@ -1,6 +1,6 @@
 import torch
 
-from openpto.method.Solvers.neural.SubmodularOptimizer import OptimiseSubmodular
+from openpto.method.Solvers.neural.submodular import OptimiseSubmodular
 
 
 class TopKOptimizer(torch.nn.Module):

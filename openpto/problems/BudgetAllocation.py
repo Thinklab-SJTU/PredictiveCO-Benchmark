@@ -6,7 +6,6 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-from openpto.method.Solvers import SubmodularOptimizer
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -17,14 +16,15 @@ class BudgetAllocation(PTOProblem):
         self,
         num_train_instances=100,  # number of instances to use from the dataset to train
         num_test_instances=500,  # number of instances to use from the dataset to test
-        num_targets=10,  # number of items to choose from
-        num_items=5,  # number of targets to consider
-        budget=2,  # number of items that can be picked
-        num_fake_targets=0,  # number of random features added to make the task harder
+        num_targets=10,  # number of targets to consider
+        num_items=5,  # number of items to choose from
+        budget=1,  # number of items that can be picked
+        num_fake_targets=20,  # number of random features added to make the task harder
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         prob_version="real",
         data_dir="./openpto/data/",
+        **kwargs,
     ):
         super(BudgetAllocation, self).__init__()
         # Do some random seed fu
@@ -56,13 +56,9 @@ class BudgetAllocation(PTOProblem):
             self.num_fake_targets = num_fake_targets
             self.num_features = self.num_targets + self.num_fake_targets
             self.Xs_train, self.Xs_test = self._generate_features(
-                [self.Ys_train, self.Ys_test], self.num_fake_targets
-            )  # features
-            # Xs_train= Xs_train.reshape(400,50,10,1)
-            # Xs_test= Xs_test.reshape(200,50,10,1)
-
+                [self.Ys_train, self.Ys_test]
+            )
             # X_train:[400, 5, 10])     Ys_train: [400, 5, 10])  Z: torch.Size([5])
-            # assert Y.shape[-2] == Z.shape[-1]
             # assert len(Z.shape) + 1 == len(Y.shape)
             assert not (
                 torch.isnan(self.Xs_train).any() or torch.isnan(self.Xs_test).any()
@@ -82,7 +78,7 @@ class BudgetAllocation(PTOProblem):
         # Create functions for optimisation
         assert budget < num_items
         self.budget = budget
-        self.opt = SubmodularOptimizer(self.get_objective, self.budget, num_iters=1)
+        # self.opt = SubmodularOptimizer(self.get_objective, self.budget, num_iters=1)
 
         # Undo random seed setting
         self._set_seed()
@@ -94,7 +90,7 @@ class BudgetAllocation(PTOProblem):
         # Load the dataset
         with open("openpto/data/budget_allocation_data.pkl", "rb") as f:
             Yfull, _ = pickle.load(f, encoding="bytes")
-        Yfull = np.array(Yfull)
+        Yfull = np.array(Yfull)  # [2000,100, 500]
 
         # Whittle the dataset down to the right size
         def whittle(matrix, size, dim):
@@ -108,7 +104,7 @@ class BudgetAllocation(PTOProblem):
 
         return torch.from_numpy(Ys).float().detach()
 
-    def _generate_features(self, Ysets, num_fake_targets):
+    def _generate_features(self, Ysets):
         """
         Converts labels (Ys) + random noise, to features (Xs)
         """
@@ -128,10 +124,11 @@ class BudgetAllocation(PTOProblem):
 
             # Add noise to the data to complicate prediction
             fake_features = torch.normal(
-                mean=torch.zeros(Ys.shape[0], Ys.shape[1], num_fake_targets)
+                mean=torch.zeros(Ys.shape[0], Ys.shape[1], self.num_fake_targets)
             )
             Ys_augmented = torch.cat((Ys_standardised, fake_features), dim=2)
-
+            print("Ys_augmented: ", Ys_augmented.shape)
+            print("transform_nn: ", transform_nn)
             # Encode Ys as features by multiplying them with a random matrix
             Xs = transform_nn(Ys_augmented).detach().clone()
             Xsets.append(Xs)
@@ -156,8 +153,8 @@ class BudgetAllocation(PTOProblem):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
     def get_model_shape(self):
-        return self.num_features, self.num_targets
-        # return self.num_features, 1
+        # TODO: check this
+        return self.num_targets, self.num_targets
 
     def get_output_activation(self):
         return "relu"
@@ -171,12 +168,14 @@ class BudgetAllocation(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
+        if isinstance(Z, np.ndarray):
+            Z = torch.from_numpy(Z)
+        # print("--- get obj:", Z.shape, Y.shape)
         # TODO: check maximize or minimize
-        # print("shape in objective: ", Y.shape, Z.shape)
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)
-        # assert Y.shape[-2] == Z.shape[-2]
-        # assert len(Z.shape) == len(Y.shape)
 
         # Initialise weights to default value
         if w is None:
@@ -194,32 +193,45 @@ class BudgetAllocation(PTOProblem):
     def get_decision(self, Y, params, optSolver, Z_init=None, **kwargs):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
-            print("Y.shape: ", Y.shape)
             assert 0
-            Z = self.opt(Y, Z_init=Z_init)
-            objective = self.get_objective(Y, Z).cpu().numpy()
-            print("raw Z shape: ", Z.shape)
-            # Z = Z.unsqueeze(1)
-            return Z.cpu().numpy(), objective
+            # Z = optSolver.solve(Y, self.budget, Z_init=Z_init)
+            # objective = self.get_objective(Y, Z).cpu().numpy()
+            # return Z.cpu().numpy(), objective
+        if Z_init is None:
+            Z_init = torch.rand(Y.shape[1:-1]).to(self.device)
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y).to(self.device)
+        if isinstance(Z_init, np.ndarray):
+            Z_init = torch.from_numpy(Z_init).to(self.device)
 
         Y_shape = Y.shape
-        #   Break it down into individual instances and solve
         Y_new = Y
-        Z = torch.cat([self.opt(y, Z_init=Z_init) for y in Y_new], dim=0)
-        #   Convert it back to the right shape
+        Z = torch.cat(
+            [optSolver.solve(y, self.budget, Z_init=Z_init) for y in Y_new], dim=0
+        )
         Z = Z.view((*Y_shape[:-2], -1))
-        # print("multi-raw Z shape: ", Z.shape)
-        # Z = Z.unsqueeze(1)
         final_sol = Z.cpu().numpy()
-        # print("shape in get decision", Y.shape, Z.shape)
         final_obj = self.get_objective(Y, Z).cpu().numpy()
         return final_sol, final_obj
 
     def init_API(self):
-        return {"modelSense": GRB.MAXIMIZE, "n_vars": self.Ys_train.shape[1]}
+        return {
+            "modelSense": GRB.MAXIMIZE,
+            "n_vars": self.Ys_train.shape[1],
+            "get_objective": self.get_objective,
+            # "sol_shape":torch.ones(self.Ys_train.shape[1]).shape,
+        }
 
 
 # Unit test for RandomTopK
 if __name__ == "__main__":
     # Load An Example Instance
-    problem = BudgetAllocation()
+    budget = BudgetAllocation(
+        num_train_instances=100,
+        num_test_instances=500,
+        num_targets=10,
+        num_items=5,
+        budget=1,
+        prob_version="real",
+        data_dir="./openpto/data/",
+    )

@@ -10,6 +10,7 @@ import tqdm
 from torch.utils.data import DataLoader, Dataset
 
 from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
+from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 
 
 class OptDataset(Dataset):
@@ -45,30 +46,20 @@ class ExpManager:
         )
         self.logger.info(f"--- Running on {self.device}")
         # prediction model
-        from openpto.method.pred_model import pred_model_wrapper_solver
-
-        model_builder = pred_model_wrapper_solver(args)
-        self.pred_model = model_builder(
-            num_features=pred_model_args["ipdim"],
-            num_targets=pred_model_args["opdim"],
-            num_layers=args.layers,
-            intermediate_size=500,
-            output_activation=pred_model_args["out_act"],
-        )
+        self.pred_model = pred_model_wrapper(args, pred_model_args)
+        print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
-        #   Move everything to GPU, if available
-        #if torch.cuda.is_available():
+        #   Move everything to device
         move_to_gpu(problem, self.device)
+        problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
         # Get data
         X_train, Y_train, Y_train_aux = problem.get_train_data()
-        # torch.save(X_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_x.pt')
-        # torch.save(Y_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_y.pt')
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
@@ -89,18 +80,36 @@ class ExpManager:
 
             for ptr_epoch in range(self.args.n_ptr_epochs):
                 ptr_total_loss = 0
-                for batch in pred_dataloader:
-                    X_idx, Y_idx = batch
-                    preds = self.pred_model(X_idx)
-                    loss = criterion(preds, Y_idx.float())
+                ###### batch training
+                # for batch in pred_dataloader:
+                #     X_idx, Y_idx = batch
+                #     preds = self.pred_model(X_idx)
+                #     loss = criterion(preds, Y_idx.float())
 
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                    ptr_total_loss += loss.item()
+                #     self.optimizer.zero_grad()
+                #     loss.backward()
+                #     self.optimizer.step()
+                #     ptr_total_loss += loss.item()
                 avg_loss = ptr_total_loss / len(pred_dataloader)
+                ###### one-shot training
+                preds = self.pred_model(X_train)
+                loss = criterion(preds, Y_train.float())
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                avg_loss = loss.item()
+                if debug:
+                    os.makedirs(os.path.join(self.args.log_dir, "tensors"))
+                    torch.save(
+                        preds.detach().cpu(),
+                        os.path.join(
+                            self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+                        ),
+                    )
+
                 pbar.update(1)
-                pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.3f}"})
+                pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.6f}"})
                 # print(f"Epoch [{ptr_epoch + 1}/{self.args.n_ptr_epochs}] - Loss: {avg_loss:.4f}")
             pbar.close()
 
@@ -140,23 +149,23 @@ class ExpManager:
             # currently, only support individually train
             time_train_start = time.time()
             losses = []
-            # for i in random.sample(
-            #     range(len(X_train)), min(self.args.batchsize, len(X_train))
-            # ):
             preds = self.pred_model(X_train)
-            for idx in range(len(X_train)):
-                pred = preds[[idx]]
-                losses.append(
-                    loss_fn(
-                        problem,
-                        coeff_hat=pred,
-                        coeff_true=Y_train[[idx]],
-                        params=Y_train_aux[idx],
-                        partition="train",
-                        index=idx,
-                        **self.model_args,
-                    )
+            if debug:
+                torch.save(
+                    preds,
+                    os.path.join(self.args.log_dir, "tensors", f"preds-EP{iter_idx}.pt"),
                 )
+            for idx in range(len(X_train)):
+                loss_idx = loss_fn(
+                    problem,
+                    coeff_hat=preds[[idx]],
+                    coeff_true=Y_train[[idx]],
+                    params=Y_train_aux[idx],
+                    partition="train",
+                    index=idx,
+                    **self.model_args,
+                )
+                losses.append(loss_idx)
 
             loss = torch.stack(losses).mean()
             self.optimizer.zero_grad()
@@ -165,7 +174,7 @@ class ExpManager:
             time_since_best += 1
             total_train_time += time.time() - time_train_start
 
-        if self.args.earlystopping:
+        if best[1] is not None and self.args.earlystopping:
             self.pred_model = best[1]
 
         # Document how well this trained model does
@@ -219,13 +228,22 @@ class ExpManager:
             os.path.join(self.args.log_dir, "results.npy"),
             [objectives_opt, results["test"]["objective"], regret],
         )
+        np.save(os.path.join(self.args.log_dir, "solution.npy"), Z_test_opt)
+        if torch.is_tensor(Z_test_opt):
+            Z_test_opt = Z_test_opt.cpu().numpy()
+        if debug:
+            torch.save(
+                results["test"]["preds"].cpu().detach(),
+                os.path.join(self.args.log_dir, "tensors", "preds.pt"),
+            )
+
         # print
         self.logger.info(
-            f"[Random Obj]: {torch.stack(objs_rand).mean().item():.3f} "
-            f"[Optimal Obj]: {objectives_opt.mean().item():.3f} "
-            f"[Regret]: {regret.mean():.3f} "
-            f"[avg Train Time]: {total_train_time / n_epochs:.3f} "
-            f"[avg Test Time]: {total_test_time:.3f} "
+            f"[Random Obj]: {torch.stack(objs_rand).mean().item():.6f} "
+            f"[Optimal Obj]: {objectives_opt.mean().item():.6f} "
+            f"[Regret]: {regret.mean():.6f} "
+            f"[avg Train Time]: {total_train_time / (self.args.n_ptr_epochs+n_epochs):.6f} "
+            f"[avg Test Time]: {total_test_time:.6f} "
         )
 
         return True

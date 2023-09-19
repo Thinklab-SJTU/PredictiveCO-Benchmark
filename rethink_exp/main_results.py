@@ -4,9 +4,9 @@ import warnings
 
 import torch
 
-from openpto.config import get_args, get_logger, load_conf
+from openpto.config import get_args, get_logger, load_conf, setup_seed
 from openpto.expmanager import ExpManager
-from openpto.method.Models.loss import get_loss_fn
+from openpto.method.Models.wrapper_loss import get_loss_fn
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
 from openpto.problems.wrapper_prob import problem_wrapper
 
@@ -26,6 +26,8 @@ if __name__ == "__main__":
     args = get_args()
     conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # set seed
+    setup_seed(args.seed)
 
     log_dir = os.path.join(
         "saved_records",
@@ -68,4 +70,4 @@ if __name__ == "__main__":
     logger.info(
         f" Start training [{args.pred_model}] model on [{args.opt_model}] loss..."
     )
-    exp.run(problem, loss_fn, optSolver, n_epochs=args.n_epochs)
+    exp.run(problem, loss_fn, optSolver, n_epochs=args.n_epochs, debug=args.do_debug)
