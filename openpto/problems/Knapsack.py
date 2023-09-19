@@ -108,11 +108,22 @@ class Knapsack(PTOProblem):
         return self.Xs_test, self.Ys_test, self.params_test
 
     def get_objective(self, Y, Z, **kwargs):
-        objectives = []
-        num_instances = Y.shape[0]
-        for ins in range(num_instances):
-            objectives.append(sum(Y[ins] * Z[ins]))
-        return np.array(objectives)
+        if isinstance(Y, list):
+            objectives = []
+            num_instances = Y.shape[0]
+            for ins in range(num_instances):
+                objectives.append(sum(Y[ins] * Z[ins]))
+            return np.array(objectives)
+        elif isinstance(Y, np.ndarray):
+            assert Y.shape[0] == Z.shape[0]
+            assert Y.shape[1] == Z.shape[1]
+            return np.multiply(Y, Z).sum(1)
+        elif torch.is_tensor(Y):
+            assert Y.shape[0] == Z.shape[0]
+            assert Y.shape[1] == Z.shape[1]
+            return torch.mul(Y, Z).sum(1)
+        else:
+            raise ValueError("Y should be np.ndarray or torch.Tensor")
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
         # determine solver

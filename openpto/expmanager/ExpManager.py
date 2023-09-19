@@ -9,7 +9,7 @@ import tqdm
 
 from torch.utils.data import DataLoader, Dataset
 
-from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
+from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 
 
@@ -116,6 +116,8 @@ class ExpManager:
         # Train PTO
         best = (float("inf"), None)
         time_since_best = 0
+        train_logs = {"epoch": list(), "obj": list(), "loss": list()}
+        val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -134,9 +136,10 @@ class ExpManager:
                     self.logger,
                     **self.model_args,
                 )
-
+                add_log(train_logs, iter_idx, metrics, "train")
+                add_log(val_logs, iter_idx, metrics, "val")
                 # Save model if it's the best one
-                if best[1] is None or metrics["val"]["loss"] < best[0]:
+                if best[1] is None or metrics["val"]["loss"] <= best[0]:
                     best = (metrics["val"]["loss"], deepcopy(self.pred_model))
                     time_since_best = 0
 
@@ -224,6 +227,8 @@ class ExpManager:
         regret = np.abs(objectives_opt - results["test"]["objective"])
 
         # save to file
+        save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
+        save_pd(val_logs, os.path.join(self.args.log_dir, "val_logs.csv"))
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
             [objectives_opt, results["test"]["objective"], regret],
@@ -245,5 +250,4 @@ class ExpManager:
             f"[avg Train Time]: {total_train_time / (self.args.n_ptr_epochs+n_epochs):.6f} "
             f"[avg Test Time]: {total_test_time:.6f} "
         )
-
         return True
