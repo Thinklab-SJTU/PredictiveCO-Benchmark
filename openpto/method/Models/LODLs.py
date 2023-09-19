@@ -78,7 +78,9 @@ class LODL(optModel):
         master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
         problem_filename, _ = find_saved_problem(master_filename, problem.__dict__)
         problem_filename_postfix = problem_filename.split("/")[-1]
-        os.makedirs(os.path.join(folder, "lodl"), exist_ok=True)
+        os.makedirs(
+            os.path.join(folder, "lodl", str(problem.__class__.__name__)), exist_ok=True
+        )
         samples_filename_read = os.path.join(
             folder,
             "lodl",

@@ -1,6 +1,6 @@
 # CONFIG_PATH=shells/configs/knapsack/knapsack-${EPOCHS}0item.yaml
 CONFIG_PATH=""
-EPOCHS=30
+EPOCHS=100
 GPU=0
 
 # Prediction-focused learning

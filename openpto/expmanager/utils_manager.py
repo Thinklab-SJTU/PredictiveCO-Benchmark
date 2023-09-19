@@ -1,4 +1,5 @@
 import inspect
+import json
 import time
 
 import torch
@@ -8,6 +9,27 @@ def move_to_gpu(problem, device):
     for key, value in inspect.getmembers(problem, lambda a: not (inspect.isroutine(a))):
         if isinstance(value, torch.Tensor):
             problem.__dict__[key] = value.to(device)
+
+
+def add_log(_log, iter_idx, metric, mode):
+    _log["obj"].append(metric[mode]["objective"].mean().item())
+    _log["loss"].append(metric[mode]["loss"])
+    _log["epoch"].append(iter_idx)
+
+
+def save_dict(_dict, path):
+    info_json = json.dumps(_dict, sort_keys=False, indent=4, separators=(",", ": "))
+    with open(path, "w") as f:
+        f.write(info_json)
+
+
+def save_pd(_dict, path):
+    import pandas as pd
+
+    df = pd.DataFrame(_dict)
+    df["obj"] = df["obj"].round(6)
+    df["loss"] = df["loss"].round(6)
+    df.to_csv(path, index=False)
 
 
 def print_metrics(
