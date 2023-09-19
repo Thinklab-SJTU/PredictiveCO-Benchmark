@@ -17,22 +17,21 @@ class BmatchingSolver(optCPSolver):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self, modelSense=None):
-        super().__init__()
-        self.modelSense=modelSense
-        self._getModel()
+    def __init__(self, modelSense=None, isTrain=True, num_nodes=10):
+        super().__init__(modelSense)
     
-    def _getModel(self):
-        self._create_cvxpy_problem()
+    def _getModel(self,isTrain=True, num_nodes=10):
+        return self._create_cvxpy_problem(isTrain,num_nodes)
         
     def _create_cvxpy_problem(
         self,
         isTrain=True,
+        num_nodes=0,
         gamma=0.1,
     ):
         # Variables
-        Z = cp.Variable((self.num_nodes, self.num_nodes), nonneg=True)
-        Y = cp.Parameter((self.num_nodes, self.num_nodes))
+        Z = cp.Variable((num_nodes, num_nodes), nonneg=True)
+        Y = cp.Parameter((num_nodes, num_nodes))
 
         # Objective
         matching_obj = cp.sum( cp.multiply(Z, Y) )

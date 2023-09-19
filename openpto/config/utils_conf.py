@@ -59,7 +59,7 @@ def get_args():
         "--pred_model", type=str, choices=["LR", "dense"], default="dense"
     )
     parser.add_argument(
-        "--solver", type=str, choices=["gurobi","cvxpy","neural"], default="neural"
+        "--solver", type=str, choices=["gurobi", "neural", "heuristic", "cvxpy"], default="gurobi"
     )
     parser.add_argument("--gpu", type=str, default="0", help="Visible GPU")
 
@@ -118,11 +118,6 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
 
     """
     if path == "":
-        # method_names = ['spo','ltr','intopt','nce','blackbox']
-        # prob_names = ['knapsack', '']
-
-        # assert method in method_name
-        # assert prob_name in prob_names
         dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config/probs/"
         )
@@ -157,7 +152,7 @@ def save_conf(path, conf):
 def get_logger(logger_fname):
     import logging
 
-    logger = logging.getLogger()  # 不加名称设置root logger
+    logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
         "%(asctime)s-%(name)s-%(levelname)s:  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"

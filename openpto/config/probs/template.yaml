@@ -19,7 +19,7 @@
     samplingstd: 0.1
     quadrank: 20
     quadalpha: 0
-    serial: 1
+    serial: True
   dfl:
     dflalpha: 0.1
   

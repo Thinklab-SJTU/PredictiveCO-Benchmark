@@ -14,6 +14,7 @@ from openpto.expmanager.utils_manager import move_to_gpu, print_metrics
 
 class OptDataset(Dataset):
     def __init__(self, features, labels):
+        super().__init__()
         self.features = features
         self.labels = labels
 
@@ -32,7 +33,6 @@ class ExpManager:
 
     Parameters
     ----------
-
     """
 
     def __init__(self, pred_model_args, args, conf, logger):
@@ -44,9 +44,6 @@ class ExpManager:
             f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
         )
         self.logger.info(f"--- Running on {self.device}")
-        # you can change random seed here TODO: set seed
-        # self.train_seeds = [i for i in range(400)]
-        # self.split_seeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         # prediction model
         from openpto.method.pred_model import pred_model_wrapper_solver
 
@@ -64,16 +61,19 @@ class ExpManager:
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
         #   Move everything to GPU, if available
-        if torch.cuda.is_available():
-            move_to_gpu(problem, self.device)
-            self.pred_model = self.pred_model.to(self.device)
+        #if torch.cuda.is_available():
+        move_to_gpu(problem, self.device)
+        self.pred_model = self.pred_model.to(self.device)
 
         # Get data
         X_train, Y_train, Y_train_aux = problem.get_train_data()
+        # torch.save(X_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_x.pt')
+        # torch.save(Y_train[0], '/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/saved_y.pt')
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
         # Pretrain prediction model
+        total_train_time = 0
         if self.args.n_ptr_epochs > 0:
             pred_dataset = OptDataset(X_train, Y_train)
             pred_dataloader = DataLoader(
@@ -107,7 +107,6 @@ class ExpManager:
         # Train PTO
         best = (float("inf"), None)
         time_since_best = 0
-        total_train_time = 0
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -138,19 +137,20 @@ class ExpManager:
 
             # Learn
             # TODO: batch train or individually train?
+            # currently, only support individually train
             time_train_start = time.time()
             losses = []
             # for i in random.sample(
             #     range(len(X_train)), min(self.args.batchsize, len(X_train))
             # ):
-            for idx, X_idx in enumerate(X_train):
-                # TODO: currently, only support individually train
-                pred = self.pred_model(X_idx)  # .squeeze()
+            preds = self.pred_model(X_train)
+            for idx in range(len(X_train)):
+                pred = preds[[idx]]
                 losses.append(
                     loss_fn(
                         problem,
                         coeff_hat=pred,
-                        coeff_true=Y_train[idx],
+                        coeff_true=Y_train[[idx]],
                         params=Y_train_aux[idx],
                         partition="train",
                         index=idx,
@@ -187,7 +187,7 @@ class ExpManager:
             **self.model_args,
         )
         total_test_time = results["test"]["time"]
-
+        print("Y_test's shape=",Y_test.shape)
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
@@ -210,6 +210,8 @@ class ExpManager:
         )
 
         # regret
+        if torch.is_tensor(objectives_opt):
+            objectives_opt = objectives_opt.cpu()
         regret = np.abs(objectives_opt - results["test"]["objective"])
 
         # save to file

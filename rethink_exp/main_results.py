@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 import torch
 
@@ -8,6 +9,8 @@ from openpto.expmanager import ExpManager
 from openpto.method.Models.loss import get_loss_fn
 from openpto.method.Solvers.wrapper_solver import solver_wrapper
 from openpto.problems.wrapper_prob import problem_wrapper
+
+warnings.filterwarnings("ignore")
 
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)

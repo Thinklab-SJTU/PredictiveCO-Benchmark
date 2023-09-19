@@ -17,7 +17,7 @@ def str2solver(solver_str, prob_str, problem):
         # "bipartitematching": BipartiteMatching,
         # 'rmab':RMAB,
         # 'portfolio':PortfolioOpt,
-        "cubic": {"neural": TopKSolver},
+        "cubic": {"heuristic": TopKSolver},
         "energy": {"gurobi": ICONGrbSolver},
         "knapsack": {"gurobi": KPGrbSolver},
     }

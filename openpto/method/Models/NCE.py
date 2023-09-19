@@ -7,7 +7,7 @@ Noise contrastive estimation loss function
 import numpy as np
 import torch
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
@@ -38,21 +38,21 @@ class NCE(optModel):
         # get device
         device = coeff_hat.device
         # get true solution
-        true_sol, _ = problem.get_decision(
+        sol_true, _ = problem.get_decision(
             coeff_true,
             params=params,
             optSolver=self.optSolver,
             isTrain=False,
             **problem.init_API(),
         )
-        true_sol = torch.from_numpy(true_sol.astype(np.float32)).to(device)
+        sol_true = torch.from_numpy(sol_true.astype(np.float32)).to(device)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -69,12 +69,11 @@ class NCE(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-        # get current obj
-        # obj_cp = torch.einsum("bd,bd->b", coeff_hat, true_sol).unsqueeze(1)
-        obj_cp = torch.einsum("d,bd->b", coeff_hat, true_sol).unsqueeze(1)
-        # get obj for solpool
+        # get obj
+        obj_cp = problem.get_objective(coeff_hat, sol_true)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
+        # obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)
         # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
-        objpool_cp = torch.einsum("d,nd->n", coeff_hat, solpool)
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             # loss = (obj_cp - objpool_cp).mean(axis=1)
@@ -118,7 +117,7 @@ class NCE(optModel):
 #         # solution pool
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
-#     def forward(self, coeff_hat, true_sol, reduction="mean"):
+#     def forward(self, coeff_hat, sol_true, reduction="mean"):
 #         """
 #         Forward pass
 #         """
@@ -135,7 +134,7 @@ class NCE(optModel):
 #             self.solpool = np.unique(self.solpool, axis=0)
 #         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
 #         # get current obj
-#         obj_cp = torch.einsum("bd,bd->b", coeff_hat, true_sol).unsqueeze(1)
+#         obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)
 #         # get obj for solpool
 #         objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
 #         # get loss

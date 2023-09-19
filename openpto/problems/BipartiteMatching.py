@@ -9,7 +9,7 @@ import torch
 from cvxpylayers.torch import CvxpyLayer
 
 from openpto.problems.PTOProblem import PTOProblem
-
+from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
 # from SubmodularOptimizer import SubmodularOptimizer
 
 
@@ -56,8 +56,8 @@ class BipartiteMatching(PTOProblem):
         )
 
         # Create functions for optimisation
-        self.opt_train = self._create_cvxpy_problem(isTrain=True)
-        self.opt_test = self._create_cvxpy_problem(isTrain=False)
+        self.opt_train = BmatchingSolver()._getModel(isTrain=True,num_nodes=self.num_nodes)
+        self.opt_test = BmatchingSolver()._getModel(isTrain=False,num_nodes=self.num_nodes)
 
         # Undo random seed setting
         self._set_seed()
@@ -158,6 +158,7 @@ class BipartiteMatching(PTOProblem):
             sum_before = adj.sum()
             adj = adj[lhs_nodes_idx]
             adj = adj[:, rhs_nodes_idx]
+            a
             Ys.append(adj)
 
             #   Diagnostic/Sanity Check
@@ -181,7 +182,7 @@ class BipartiteMatching(PTOProblem):
                 for idx in feature_idxs_lhs
             ]
             Xs.append(feature_array)
-
+        print(np.array(Xs).shape,np.array(Ys).shape)
         return torch.Tensor(np.array(Xs)), torch.Tensor(np.array(Ys))
 
     def get_train_data(self):
@@ -224,12 +225,18 @@ class BipartiteMatching(PTOProblem):
 
         return torch.sum(Y * Z, dim=(-2, -1))
 
-    def get_decision(self, Y, isTrain=False, max_instances_per_batch=5000, **kwargs):
+    def get_decision(self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
+        if isinstance(Y, np.ndarray): print("Y is numpy!")
+        Y=Y.reshape(-1,10,10)
+        if isinstance(Y, np.ndarray): 
+            Y = torch.from_numpy(Y)
+            # print("Y is numpy")
         assert Y.ndim in [2, 3]
         if Y.ndim == 3:
             results = []
+            print(0, Y.shape[0], max_instances_per_batch)
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
                 result = (
@@ -238,32 +245,13 @@ class BipartiteMatching(PTOProblem):
                     else self.opt_test(Y[start:end])[0]
                 )
                 results.append(result)
-            return torch.cat(results, dim=0)
+            Z=torch.cat(results, dim=0)
+            obj=self.get_objective(Y,Z)
+            return Z.cpu().numpy(),obj
         else:
             return self.opt_train(Y)[0] if isTrain else self.opt_test(Y)[0]
 
-    def _create_cvxpy_problem(
-        self,
-        isTrain=True,
-        gamma=0.1,
-    ):
-        # Variables
-        Z = cp.Variable((self.num_nodes, self.num_nodes), nonneg=True)
-        Y = cp.Parameter((self.num_nodes, self.num_nodes))
-
-        # Objective
-        matching_obj = cp.sum( cp.multiply(Z, Y) )
-        reg = cp.norm(Z) if isTrain else 0
-        objective = cp.Maximize( matching_obj - gamma * reg )
-
-        # Flow Constraints
-        constraints = [cp.sum(Z, axis=0) == 1, cp.sum(Z, axis=1) == 1]
-
-        # Problem
-        problem = cp.Problem(objective, constraints)
-        assert problem.is_dpp()
-
-        return CvxpyLayer(problem, parameters=[Y], variables=[Z])
+    
     
     def init_API(self):
         return { }

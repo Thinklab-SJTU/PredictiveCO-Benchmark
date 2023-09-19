@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 from torch import nn
 
 from openpto.method.Models.abcOptModel import optModel
@@ -32,7 +32,7 @@ class listwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -42,15 +42,15 @@ class listwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
+            print("self.solpool: ", self.solpool.shape)
         # convert tensor
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
@@ -66,9 +66,8 @@ class listwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        # TODO: currently only support linear objective
-        objpool_c = coeff_true @ solpool.T  # true cost
-        objpool_cp = coeff_hat @ solpool.T  # pred cost
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # cross entropy loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
@@ -104,7 +103,7 @@ class pairwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -114,11 +113,10 @@ class pairwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -137,24 +135,22 @@ class pairwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        # TODO: currently only support linear objective
-        objpool_c = torch.einsum("d,nd->n", coeff_true, solpool)  # true cost
-        objpool_cp = torch.einsum("d,nd->n", coeff_hat, solpool)  # pred cost
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # objpool_c = torch.einsum("bd,nd->bn", coeff_true, solpool)  # true cost
         # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)  # pred cost
         # init relu as max(0,x)
         relu = nn.ReLU()
         # init loss
         loss = []
-        # for i in range(len(coeff_hat)):
-        for i in range(1):
+        for i in range(len(coeff_hat)):
             # best sol
             if self.optSolver.modelSense == GRB.MINIMIZE:
-                # best_ind = torch.argmin(objpool_c[i])
                 best_ind = torch.argmin(objpool_c)
+                # best_ind = torch.argmin(objpool_c[i])
             if self.optSolver.modelSense == GRB.MAXIMIZE:
-                # best_ind = torch.argmax(objpool_c[i])
                 best_ind = torch.argmax(objpool_c)
+                # best_ind = torch.argmax(objpool_c[i])
             # objpool_cp_best = objpool_cp[i, best_ind]
             objpool_cp_best = objpool_cp[best_ind]
             # rest sol
@@ -195,7 +191,7 @@ class pointwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars))
+        self.solpool = np.empty((0, n_vars), dtype=object)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -205,11 +201,11 @@ class pointwiseLTR(optModel):
         device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
-            _, Y_train, _ = problem.get_train_data()
+            _, Y_train, Y_train_aux = problem.get_train_data()
+            print("ltr shape: ", Y_train.shape)
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=params,
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -229,9 +225,9 @@ class pointwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
-        # TODO: currently only support linear objective
-        objpool_c = coeff_true @ solpool.T  # true cost
-        objpool_cp = coeff_hat @ solpool.T  # pred cost
+        # print("point ltr getting objective")
+        objpool_c = problem.get_objective(coeff_true, solpool)
+        objpool_cp = problem.get_objective(coeff_hat, solpool)
         # squared loss
         # loss = (objpool_c - objpool_cp).square().mean(axis=1)
         loss = (objpool_c - objpool_cp).square().mean(axis=0)

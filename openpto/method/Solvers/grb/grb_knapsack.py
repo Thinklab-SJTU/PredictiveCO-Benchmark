@@ -1,6 +1,6 @@
-import gurobipy as gp
+import gurobipy as gp  # pylint: disable=no-name-in-module
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 
@@ -8,9 +8,10 @@ from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 # optimization model
 class KPGrbSolver(optGrbSolver):
     def __init__(self, weights, capacity, modelSense):
-        # super().__init__() # do not use default __init__ func
+        super().__init__(modelSense)
         self._model, self.z = self._getModel(weights, capacity)
-        self.modelSense = modelSense
+        # turn off output
+        self._model.Params.outputFlag = 0
 
     def _getModel(self, weights, capacity):
         num_items = len(weights)

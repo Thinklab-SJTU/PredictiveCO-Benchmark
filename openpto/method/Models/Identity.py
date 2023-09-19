@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
@@ -94,9 +94,8 @@ class negativeIdentityFunc(torch.autograd.Function):
         # convert to tensor
         pred_sol = torch.FloatTensor(np.array(sol)).to(device)
         # add other objects to ctx
-        ctx.optSolver = optSolver
-        ctx.params = params
-        ctx.problem = problem
+        ctx.modelSense = optSolver.modelSense
+        ctx.cp = cp
         return pred_sol
 
     @staticmethod
@@ -104,14 +103,21 @@ class negativeIdentityFunc(torch.autograd.Function):
         """
         Backward pass for NID
         """
-        optSolver = ctx.optSolver
         # get device
         device = grad_output.device
         # identity matrix
         Ident = torch.eye(grad_output.shape[1]).to(device)
         # check the negative
-        if optSolver.modelSense == GRB.MINIMIZE:
+        if ctx.modelSense == GRB.MINIMIZE:
             grad = -Ident
-        if optSolver.modelSense == GRB.MAXIMIZE:
+        if ctx.modelSense == GRB.MAXIMIZE:
             grad = Ident
+        ##### work around #####
+        cp = ctx.cp
+        if grad.shape != cp.shape:
+            if np.prod(grad.shape) == np.prod(cp.shape):
+                grad = grad.reshape(cp.shape)
+            else:
+                grad = torch.tile(grad, (*grad.shape, cp.shape[-1]))
+        ##### end #####
         return grad_output @ grad, None, None, None, None, None, None, None

@@ -8,6 +8,7 @@ def move_to_gpu(problem, device):
     for key, value in inspect.getmembers(problem, lambda a: not (inspect.isroutine(a))):
         if isinstance(value, torch.Tensor):
             problem.__dict__[key] = value.to(device)
+    problem.device = device
 
 
 def print_metrics(
@@ -23,9 +24,10 @@ def print_metrics(
             if partition == "test":
                 time_test_start = time.time()
             # Decision Quality
-            pred = model(Xs).squeeze()
-            Zs_pred, objective_pred = problem.get_decision(
-                pred.cpu().numpy(),
+            preds = model(Xs)
+
+            Zs_hat, objective_hat = problem.get_decision(
+                preds.cpu().numpy(),
                 params=Ys_aux,
                 optSolver=optSolver,
                 isTrain=isTrain,
@@ -35,15 +37,16 @@ def print_metrics(
             # Loss and Error
             if partition != "test":
                 losses = []
-                for idx, X_idx in enumerate(Xs):
-                    pred = model(X_idx).squeeze()
+                preds = model(Xs)
+                for idx in range(len(Xs)):
+                    pred = preds[[idx]]
                     losses.append(
                         loss_fn(
                             problem,
                             coeff_hat=pred,
-                            coeff_true=Ys[idx],
+                            coeff_true=Ys[[idx]],
                             params=Ys_aux[idx],
-                            partition="train",
+                            partition=partition,
                             index=idx,
                             **model_args,
                         )
@@ -54,18 +57,18 @@ def print_metrics(
                 # timing
                 test_time = time.time() - time_test_start
                 # loss
-                losses = torch.zeros_like(torch.Tensor(objective_pred))
+                losses = torch.zeros_like(torch.Tensor(objective_hat))
 
             # Print
             loss = losses.mean().item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
-                "objective": objective_pred,
+                "objective": objective_hat,
                 "loss": loss,
                 "time": test_time,
             }
             logger.info(
-                f"{prefix:<6} {partition:<6} Objective: {objective_pred.mean():.3f}, {'Loss':>5}: {loss:.3f}"
+                f"{prefix:<6} {partition:<6} Objective: {objective_hat.mean():.3f}, {'Loss':>5}: {loss:.3f}"
             )
         logger.info("----\n")
     return metrics

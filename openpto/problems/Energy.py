@@ -2,16 +2,16 @@ import os
 
 import numpy as np
 import pandas as pd
+import gurobipy as gp 
 import sklearn
 import torch
 
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from openpto.method.Solvers.grb.grb_energy import (
-    ICON_scheduling,
     ICONGrbSolver,
-    optimal_value,
 )
 from openpto.problems.PTOProblem import PTOProblem
 
@@ -26,6 +26,8 @@ class Energy(PTOProblem):
     def __init__(
         self,
         prob_version="energy",
+        num_train_instances=0,
+        num_test_instances=0,
         rand_seed=0,
         data_dir="./openpto/data/",
     ):
@@ -82,48 +84,21 @@ class Energy(PTOProblem):
             [None for _ in range(len(self.test_idxs))],
         )
 
-    @staticmethod
     def get_objective(self, Y, Z, **kwargs):
-        objectives = []
-        num_instances = Y.shape[0]
-        for ins in range(num_instances):
-            sch = ICON_scheduling(
-                self.nbMachines,
-                self.nbTasks,
-                self.nbResources,
-                self.MC,
-                self.U,
-                self.D,
-                self.E,
-                self.L,
-                self.P,
-                self.idle,
-                self.up,
-                self.down,
-                self.q,
-                self.price,
-                verbose=False,
-            )
-            objectives.append(
-                optimal_value(
-                    self.nbMachines,
-                    self.nbTasks,
-                    self.nbResources,
-                    self.MC,
-                    self.U,
-                    self.D,
-                    self.E,
-                    self.L,
-                    self.P,
-                    self.idle,
-                    self.up,
-                    self.down,
-                    self.q,
-                    self.price,
-                    sch,
-                )
-            )
-        return np.array(objectives)
+        ans=0
+        N = 1440 // self.q
+        for f in range(self.nbTasks):
+            for t in range (N - self.D[f] + 1):
+                for m in range(self.nbMachines):
+                    if (f, m, t) in Z:ans=ans+Z[f, m, t] * np.sum(Y[t : t + self.D[f]]) * self.P[f] * self.q / 60
+        # ans = gp.quicksum(
+        #         Z[f, m, t] * np.sum(Y[t : t + self.D[f]]) * self.P[f] * self.q / 60
+        #         for f in self.nbTasks
+        #         for t in range (self.N - self.D[f] + 1)
+        #         for m in self.nbMachines
+        #         if (f, m, t) in Z
+        # )
+        return ans
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
         # determine solver
@@ -137,20 +112,20 @@ class Energy(PTOProblem):
         obj = []
         for i in range(ins_num):
             # solve
-            solp, objp = optSolver.solve(Y[i])
-            sol.append(solp)
+            sch = optSolver.solve(Y[i])
+            objp = self.get_objective(Y,sch)
+            sol.append(sch)
             obj.append(objp)
         return np.array(sol), np.array(obj)
 
     def init_API(self):
         dirct = "openpto/data/SchedulingInstances"
         os.listdir(dirct)[0]
-        return self.problem_data_reading(
+        reading_dict = self.problem_data_reading(
             "openpto/data/SchedulingInstances/load1/day01.txt"
         )
-
-    # def params_API(self):
-    #     return { "capacity": self.capacity}
+        out_dict = {**reading_dict, **{"modelSense": GRB.MINIMIZE}}
+        return out_dict
 
     def get_model_shape(self):
         if self.prob_version == "gen":
