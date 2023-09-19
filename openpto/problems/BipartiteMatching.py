@@ -1,15 +1,13 @@
 import random
 
-import cvxpy as cp
 import networkx as nx
 import numpy as np
 import pymetis as metis
 import torch
 
-from cvxpylayers.torch import CvxpyLayer
-
-from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
+from openpto.problems.PTOProblem import PTOProblem
+
 # from SubmodularOptimizer import SubmodularOptimizer
 
 
@@ -56,8 +54,12 @@ class BipartiteMatching(PTOProblem):
         )
 
         # Create functions for optimisation
-        self.opt_train = BmatchingSolver()._getModel(isTrain=True,num_nodes=self.num_nodes)
-        self.opt_test = BmatchingSolver()._getModel(isTrain=False,num_nodes=self.num_nodes)
+        self.opt_train = BmatchingSolver()._getModel(
+            isTrain=True, num_nodes=self.num_nodes
+        )
+        self.opt_test = BmatchingSolver()._getModel(
+            isTrain=False, num_nodes=self.num_nodes
+        )
 
         # Undo random seed setting
         self._set_seed()
@@ -78,21 +80,23 @@ class BipartiteMatching(PTOProblem):
         g = g.to_directed()  # remove directionality to make the problem easier
         nodes_before = [int(v) for v in g.nodes()]
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-        print(num_train_instances,num_test_instances)
+        print(num_train_instances, num_test_instances)
         # Whittle the dataset down to the right size
         #   Initialise constants
         total_nodes = len(nodes_before)
         num_subsets = num_train_instances + num_test_instances
-        print(num_subsets,total_nodes,num_nodes)
+        print(num_subsets, total_nodes, num_nodes)
         assert num_subsets <= total_nodes // (num_nodes * 2)
 
         #   Whittle (coarse-grained)
         # print("g: ", g)
         # TODO: check metis bug
-        #print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
+        # print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
         adjs = nx.adjacency_matrix(g).toarray()
         # _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
-        _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=adjs)
+        _, mapping = metis.part_graph(
+            nparts=total_nodes // (num_nodes * 2), adjacency=adjs
+        )
         g_part = [
             nx.Graph(nx.subgraph(g, list(np.where(np.array(mapping) == i)[0])))
             for i in range(num_subsets)
@@ -181,8 +185,10 @@ class BipartiteMatching(PTOProblem):
                 for idx in feature_idxs_lhs
             ]
             Xs.append(feature_array)
-        print(np.array(Xs).shape,np.array(Ys).shape)
-        return torch.Tensor(np.array(Xs).reshape(-1)), torch.Tensor(np.array(Ys).reshape(-1))
+        print(np.array(Xs).shape, np.array(Ys).shape)
+        return torch.Tensor(np.array(Xs).reshape(-1)), torch.Tensor(
+            np.array(Ys).reshape(-1)
+        )
 
     def get_train_data(self):
         return (
@@ -224,12 +230,15 @@ class BipartiteMatching(PTOProblem):
 
         return torch.sum(Y * Z, dim=(-2, -1))
 
-    def get_decision(self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs):
+    def get_decision(
+        self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs
+    ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
-        if isinstance(Y, np.ndarray): print("Y is numpy!")
-        Y=Y.reshape(-1,10,10)
-        if isinstance(Y, np.ndarray): 
+        if isinstance(Y, np.ndarray):
+            print("Y is numpy!")
+        Y = Y.reshape(-1, 10, 10)
+        if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
             # print("Y is numpy")
         assert Y.ndim in [2, 3]
@@ -244,16 +253,14 @@ class BipartiteMatching(PTOProblem):
                     else self.opt_test(Y[start:end])[0]
                 )
                 results.append(result)
-            Z=torch.cat(results, dim=0)
-            obj=self.get_objective(Y,Z)
-            return Z.cpu().numpy(),obj
+            Z = torch.cat(results, dim=0)
+            obj = self.get_objective(Y, Z)
+            return Z.cpu().numpy(), obj
         else:
             return self.opt_train(Y)[0] if isTrain else self.opt_test(Y)[0]
 
-    
-    
     def init_API(self):
-        return { }
+        return {}
 
     # def _create_constraint_matrix(self):
     #     """

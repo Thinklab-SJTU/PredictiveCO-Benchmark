@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import pandas as pd
-import gurobipy as gp 
 import sklearn
 import torch
 
@@ -10,9 +9,7 @@ from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from openpto.method.Solvers.grb.grb_energy import (
-    ICONGrbSolver,
-)
+from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.problems.PTOProblem import PTOProblem
 
 BENCHMARK_SIZE = 48
@@ -88,39 +85,29 @@ class Energy(PTOProblem):
             [None for _ in range(len(self.test_idxs))],
         )
 
-    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
-        # determine solver
-        if optSolver is None:
-            optSolver = ICONGrbSolver(**kwargs)
-
-        if Y.ndim == 1:
-            Y = Y.reshape(1, -1)
-        ins_num = len(Y)
-        sol = []
-        obj = []
-        for i in range(ins_num):
-            # solve
-            solp, objp = optSolver.solve(Y[i])
-            sol.append(solp)
-            obj.append(objp)
-        return np.array(sol), np.array(obj)
-
     def get_objective(self, Y, Z, **kwargs):
         N = 1440 // self.q
         Z = Z.reshape(-1, self.nbTasks, self.nbMachines, N)
         ins_num = len(Y)
         ans_list = []
         for i in range(ins_num):
-            ans=0
+            ans = 0
             for f in range(self.nbTasks):
-                for t in range (N - self.D[f] + 1):
+                for t in range(N - self.D[f] + 1):
                     for m in range(self.nbMachines):
-                        ans=ans+Z[i, f, m, t] * (Y[i ,t : int(t + self.D[f])]).sum() * self.P[f] * self.q/60
+                        ans = (
+                            ans
+                            + Z[i, f, m, t]
+                            * (Y[i, t : int(t + self.D[f])]).sum()
+                            * self.P[f]
+                            * self.q
+                            / 60
+                        )
             ans_list.append(float(ans))
-        if (isinstance(Y,np.ndarray)): 
-            ans_list=np.array(ans_list)
-        else: 
-            ans_list=torch.tensor(ans_list)
+        if isinstance(Y, np.ndarray):
+            ans_list = np.array(ans_list)
+        else:
+            ans_list = torch.tensor(ans_list)
         return ans_list
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
@@ -136,12 +123,12 @@ class Energy(PTOProblem):
             sch = optSolver.solve(Y[i])
             sol.append(sch)
             # obj.append(objp)
-        
-        if (isinstance(Y,np.ndarray)): 
-            sol=np.array(sol)
+
+        if isinstance(Y, np.ndarray):
+            sol = np.array(sol)
         else:
-            sol=torch.tensor(sol)
-            
+            sol = torch.tensor(sol)
+
         objs = self.get_objective(Y, sol)
         return sol, objs
 
@@ -288,5 +275,3 @@ class Energy(PTOProblem):
             "down": self.down,
             "q": self.q,
         }
-
-
