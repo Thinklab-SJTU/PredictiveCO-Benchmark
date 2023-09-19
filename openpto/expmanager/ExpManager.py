@@ -275,11 +275,17 @@ class ExpManager:
             )
 
         # print
+        avg_train_time = total_train_time / (self.args.n_ptr_epochs + n_epochs)
+        avg_test_time = total_test_time
         self.logger.info(
             f"[Random Obj]: {torch.stack(objs_rand).mean().item():.6f} "
             f"[Optimal Obj]: {objectives_opt.mean().item():.6f} "
             f"[Regret]: {regret.mean():.6f} "
-            f"[avg Train Time]: {total_train_time / (self.args.n_ptr_epochs+n_epochs):.6f} "
-            f"[avg Test Time]: {total_test_time:.6f} "
+            f"[avg Train Time]: {avg_train_time:.6f} "
+            f"[avg Test Time]: {avg_test_time:.6f} "
+        )
+        self.logger.info(
+            f"{results['test']['objective'].mean():.6f}  {regret.mean():.6f}  "
+            f"{avg_train_time:.6f}  {avg_test_time:.6f}"
         )
         return True

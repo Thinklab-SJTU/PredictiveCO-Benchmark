@@ -116,15 +116,6 @@ class CubicTopK(PTOProblem):
 
 
 if __name__ == "__main__":
-    # from openpto.problems.CubicTopK import CubicTopK
-    # problem = CubicTopK(num_train_instances=100,
-    #     num_test_instances=100,
-    #     num_items=50,
-    #     budget=5,
-    #     val_frac=0.2,
-    #     rand_seed=0,
-    #     prob_version="gen",
-    #     data_dir="./openpto/data/")
     filename = "./saved_problems/CubicTopK_2.pkl"
     import pickle
 

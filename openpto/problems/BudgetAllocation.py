@@ -225,13 +225,9 @@ class BudgetAllocation(PTOProblem):
 
 # Unit test for RandomTopK
 if __name__ == "__main__":
-    # Load An Example Instance
-    budget = BudgetAllocation(
-        num_train_instances=100,
-        num_test_instances=500,
-        num_targets=10,
-        num_items=5,
-        budget=1,
-        prob_version="real",
-        data_dir="./openpto/data/",
-    )
+    filename = "./saved_problems/budgetalloc_0.pkl"
+    with open(filename, "rb") as file:
+        problem = pickle.load(file)
+    X_train, Y_train, Y_train_aux = problem.get_train_data()
+    X_val, Y_val, Y_val_aux = problem.get_val_data()
+    X_test, Y_test, Y_test_aux = problem.get_test_data()
