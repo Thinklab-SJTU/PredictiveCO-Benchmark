@@ -17,7 +17,7 @@ class BmatchingSolver(optCPSolver):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self, modelSense=None, isTrain=True, num_nodes=10):
+    def __init__(self, modelSense=None, isTrain=True, num_nodes=10,**kwargs):
         super().__init__(modelSense)
     
     def _getModel(self,isTrain=True, num_nodes=10):

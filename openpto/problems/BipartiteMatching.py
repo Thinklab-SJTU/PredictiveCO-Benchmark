@@ -158,7 +158,6 @@ class BipartiteMatching(PTOProblem):
             sum_before = adj.sum()
             adj = adj[lhs_nodes_idx]
             adj = adj[:, rhs_nodes_idx]
-            a
             Ys.append(adj)
 
             #   Diagnostic/Sanity Check
@@ -183,7 +182,7 @@ class BipartiteMatching(PTOProblem):
             ]
             Xs.append(feature_array)
         print(np.array(Xs).shape,np.array(Ys).shape)
-        return torch.Tensor(np.array(Xs)), torch.Tensor(np.array(Ys))
+        return torch.Tensor(np.array(Xs).reshape(-1)), torch.Tensor(np.array(Ys).reshape(-1))
 
     def get_train_data(self):
         return (
