@@ -171,12 +171,14 @@ class ICONGrbSolver(optGrbSolver):
                     for m in Machines:
                         for t in range(N):
                             schedule[f, m, t] = task_on[(f, m, t)]
-                self._model.reset(0)  
+                self._model.reset(0) 
+                schedule = schedule.reshape(-1) 
                 return schedule
             except NameError:
                 print("\n__________Something wrong_______ \n ")
                 # make sure cut is removed! (modifies model)
                 self._model.reset(0)
+                schedule = schedule.reshape(-1) 
                 return schedule
 
         elif Model.status == GRB.Status.INF_OR_UNBD:
@@ -188,5 +190,6 @@ class ICONGrbSolver(optGrbSolver):
         else:
             print("Optimization ended with status %d" % Model.status)
         self.model.reset(0)
+        schedule = schedule.reshape(-1) 
         return schedule
 

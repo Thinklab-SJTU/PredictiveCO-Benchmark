@@ -106,43 +106,44 @@ class Energy(PTOProblem):
         return np.array(sol), np.array(obj)
 
     def get_objective(self, Y, Z, **kwargs):
-        ans=0
         N = 1440 // self.q
-        #print(self.nbTasks,self.nbMachines)
-        for f in range(self.nbTasks):
-            for t in range (N - self.D[f] + 1):
-                for m in range(self.nbMachines):
-                    # print(t,int(t + self.D[f]))
-                    # print("Z:", Z.shape)
-                    # print("Y ", Y.shape)
-                    # if int(t + self.D[f])<=Y.shape[0]: 
-                        # print(Z[f, m, t])
-                        # print(Y[t : int(t + self.D[f])])
-                        # print(torch.sum(Y[t : int(t + self.D[f])]))
-                        
-                    ans=ans+Z[f, m, t] * (Y[t : int(t + self.D[f])]).sum() * self.P[f] * self.q/60
-        return ans
+        Z = Z.reshape(-1, self.nbTasks, self.nbMachines, N)
+        ins_num = len(Y)
+        ans_list = []
+        for i in range(ins_num):
+            ans=0
+            for f in range(self.nbTasks):
+                for t in range (N - self.D[f] + 1):
+                    for m in range(self.nbMachines):
+                        ans=ans+Z[i, f, m, t] * (Y[i ,t : int(t + self.D[f])]).sum() * self.P[f] * self.q/60
+            ans_list.append(float(ans))
+        if (isinstance(Y,np.ndarray)): 
+            ans_list=np.array(ans_list)
+        else: 
+            ans_list=torch.tensor(ans_list)
+        return ans_list
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
         # determine solver
         if optSolver is None:
             optSolver = ICONGrbSolver(**kwargs)
-
         if Y.ndim == 1:
             Y = Y.reshape(1, -1)
         ins_num = len(Y)
         sol = []
-        obj = []
         for i in range(ins_num):
             # solve
             sch = optSolver.solve(Y[i])
-            objp = self.get_objective(Y[i],sch)
-            if torch.is_tensor(objp):
-                objp = objp.cpu().numpy()
             sol.append(sch)
-            obj.append(objp)
+            # obj.append(objp)
         
-        return np.array(sol), np.array(obj)
+        if (isinstance(Y,np.ndarray)): 
+            sol=np.array(sol)
+        else:
+            sol=torch.tensor(sol)
+            
+        objs = self.get_objective(Y, sol)
+        return sol, objs
 
     def init_API(self):
         dirct = "openpto/data/SchedulingInstances"
