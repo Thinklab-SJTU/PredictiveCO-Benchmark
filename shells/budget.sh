@@ -1,4 +1,3 @@
-# CONFIG_PATH=shells/configs/budgetalloc/budgetalloc-${EPOCHS}0item.yaml
 CONFIG_PATH=""
 EPOCHS=100
 GPU=0

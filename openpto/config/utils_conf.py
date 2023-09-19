@@ -64,7 +64,7 @@ def get_args():
     parser.add_argument(
         "--solver", type=str, choices=["gurobi", "neural", "heuristic"], default="gurobi"
     )
-    parser.add_argument("--gpu", type=str, default="0", help="Visible GPU")
+    parser.add_argument("--gpu", type=str, default="-1", help="Visible GPU")
 
     # training
     parser.add_argument("--loadnew", type=ast.literal_eval, default=False)

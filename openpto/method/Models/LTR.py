@@ -63,10 +63,9 @@ class listwiseLTR(optModel):
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-        if coeff_true.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_true = coeff_true.repeat(solpool.shape[0], 1)
-        if coeff_hat.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_hat = coeff_hat.repeat(solpool.shape[0], 1)
+        expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
+        coeff_hat = coeff_hat.expand(*expand_shape)
+        coeff_true = coeff_true.expand(*expand_shape)
         # obj for solpool
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
@@ -137,10 +136,9 @@ class pairwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool
-        if coeff_true.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_true = coeff_true.repeat(solpool.shape[0], 1)
-        if coeff_hat.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_hat = coeff_hat.repeat(solpool.shape[0], 1)
+        expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
+        coeff_hat = coeff_hat.expand(*expand_shape)
+        coeff_true = coeff_true.expand(*expand_shape)
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
         # objpool_c = torch.einsum("bd,nd->bn", coeff_true, solpool)  # true cost
@@ -228,10 +226,10 @@ class pointwiseLTR(optModel):
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
-        if coeff_true.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_true = coeff_true.repeat(solpool.shape[0], 1)
-        if coeff_hat.shape[0] == 1 and solpool.shape[0] > 1:
-            coeff_hat = coeff_hat.repeat(solpool.shape[0], 1)
+        expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
+        coeff_hat = coeff_hat.expand(*expand_shape)
+        coeff_true = coeff_true.expand(*expand_shape)
+        #
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
         # squared loss

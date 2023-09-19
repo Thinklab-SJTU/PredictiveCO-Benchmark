@@ -1,0 +1,26 @@
+  spo:
+    reduction: mean
+  blackbox:
+    reduction: mean
+  Identity:
+    reduction: mean
+  QPTL:
+    reduction: mean
+  listLTR:
+    reduction: mean
+  pairLTR:
+    reduction: mean
+  pointLTR:
+    reduction: mean
+  nce:
+    reduction: mean
+  LODL:
+    sampling: random, random_flip, random_uniform, numerical_jacobian, random_jacobian, random_hessian, random
+    samplingstd: 0.1
+    quadrank: 20
+    quadalpha: 0
+    serial: True
+  dfl:
+    dflalpha: 0.1
+  
+solver:

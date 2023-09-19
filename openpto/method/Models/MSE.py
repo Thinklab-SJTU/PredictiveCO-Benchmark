@@ -113,7 +113,7 @@ class DFL(optModel):
             **problem.init_API(),
         )
         objs = problem.get_objective(
-            coeff_true.cpu().unsqueeze(0).numpy(), sol_hat, isTrain=True, **hyperparams
+            coeff_true.cpu().numpy(), sol_hat, isTrain=True, **hyperparams
         )
         if isinstance(objs, np.ndarray):
             objs = torch.from_numpy(objs.astype("float")).to(problem.device)
