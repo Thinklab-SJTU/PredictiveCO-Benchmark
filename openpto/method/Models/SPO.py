@@ -261,8 +261,8 @@ class SPOPlusFunc(torch.autograd.Function):
         #     loss.append(-obj[[i]] + 2 * problem.get_objective(cp[[i]], sol[[i]]) - obj_true[[i]])
         #     loss.append(-obj[i] + 2 * np.dot(cp[i], w[i]) - z[i])
         # convert to tensor
-        if isinstance(loss[0], np.ndarray):
-            loss = torch.FloatTensor(np.array(loss))
+        if not torch.is_tensor(loss):
+            loss = torch.from_numpy(np.array(loss))
         loss = loss.to(device)
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:

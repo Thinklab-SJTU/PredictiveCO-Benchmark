@@ -29,6 +29,7 @@ models:
     quadrank: 20
     quadalpha: 0
     serial: True
+    reduction: mean
   mse:
     reduction: mean
     n_iters: 10

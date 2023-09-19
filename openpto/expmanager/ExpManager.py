@@ -5,11 +5,11 @@ from copy import deepcopy
 
 import numpy as np
 import torch
-import tqdm
 
 from torch.utils.data import DataLoader, Dataset
 
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
+from openpto.method.Models.MSE import MSE
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 
 
@@ -65,6 +65,11 @@ class ExpManager:
 
         # Pretrain prediction model
         total_train_time = 0
+        time_train_start = time.time()
+        best = (float("inf"), None)
+        time_since_best = 0
+        train_logs = {"epoch": list(), "obj": list(), "loss": list()}
+        val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         if self.args.n_ptr_epochs > 0:
             pred_dataset = OptDataset(X_train, Y_train)
             pred_dataloader = DataLoader(
@@ -74,11 +79,39 @@ class ExpManager:
                 num_workers=1,
                 drop_last=False,
             )
-            criterion = torch.nn.MSELoss()
+            # criterion = torch.nn.MSELoss()
+            criterion = MSE()
             self.logger.info("Pretraining Prediction Model...")
-            pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)
-
+            # pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)
             for ptr_epoch in range(self.args.n_ptr_epochs):
+                # Check metrics on val set
+                if ptr_epoch % self.args.valfreq == 0:
+                    # Compute metrics
+                    datasets = [
+                        (X_train, Y_train, Y_train_aux, "train"),
+                        (X_val, Y_val, Y_val_aux, "val"),
+                    ]
+                    metrics = print_metrics(
+                        datasets,
+                        self.pred_model,
+                        problem,
+                        criterion,
+                        optSolver,
+                        f"Ptr iter {ptr_epoch},",
+                        self.logger,
+                        **self.model_args,
+                    )
+                    add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                    add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
+                    # Save model if it's the best one
+                    if best[1] is None or metrics["val"]["loss"] <= best[0]:
+                        best = (metrics["val"]["loss"], deepcopy(self.pred_model))
+                        time_since_best = 0
+
+                    # Stop if model hasn't improved for patience steps
+                    if self.args.earlystopping and time_since_best > self.args.patience:
+                        break
+
                 ptr_total_loss = 0
                 ###### batch training
                 # for batch in pred_dataloader:
@@ -90,15 +123,15 @@ class ExpManager:
                 #     loss.backward()
                 #     self.optimizer.step()
                 #     ptr_total_loss += loss.item()
-                avg_loss = ptr_total_loss / len(pred_dataloader)
+                ptr_total_loss / len(pred_dataloader)
                 ###### one-shot training
                 preds = self.pred_model(X_train)
-                loss = criterion(preds, Y_train.float())
+                loss = criterion(problem, preds, Y_train.float(), **self.model_args)
 
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                avg_loss = loss.item()
+                loss.item()
                 if debug:
                     os.makedirs(os.path.join(self.args.log_dir, "tensors"))
                     torch.save(
@@ -108,16 +141,15 @@ class ExpManager:
                         ),
                     )
 
-                pbar.update(1)
-                pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.6f}"})
+                # pbar.update(1)
+                # pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.6f}"})
                 # print(f"Epoch [{ptr_epoch + 1}/{self.args.n_ptr_epochs}] - Loss: {avg_loss:.4f}")
-            pbar.close()
+            # pbar.close()
+        total_train_time += time.time() - time_train_start
 
+        if best[1] is not None and self.args.earlystopping:
+            self.pred_model = best[1]
         # Train PTO
-        best = (float("inf"), None)
-        time_since_best = 0
-        train_logs = {"epoch": list(), "obj": list(), "loss": list()}
-        val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -136,8 +168,8 @@ class ExpManager:
                     self.logger,
                     **self.model_args,
                 )
-                add_log(train_logs, iter_idx, metrics, "train")
-                add_log(val_logs, iter_idx, metrics, "val")
+                add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
+                add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
                 # Save model if it's the best one
                 if best[1] is None or metrics["val"]["loss"] <= best[0]:
                     best = (metrics["val"]["loss"], deepcopy(self.pred_model))
@@ -150,7 +182,6 @@ class ExpManager:
             # Learn
             # TODO: batch train or individually train?
             # currently, only support individually train
-            time_train_start = time.time()
             losses = []
             preds = self.pred_model(X_train)
             if debug:
@@ -158,6 +189,7 @@ class ExpManager:
                     preds,
                     os.path.join(self.args.log_dir, "tensors", f"preds-EP{iter_idx}.pt"),
                 )
+            time_train_start = time.time()
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,

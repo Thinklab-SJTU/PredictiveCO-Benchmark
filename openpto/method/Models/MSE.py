@@ -20,7 +20,16 @@ class MSE(optModel):
         Calculates the mean squared error between predictions
         Yhat and true lables Y.
         """
-        return (coeff_hat - coeff_true).square()
+        loss = (coeff_hat - coeff_true).square()
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(loss)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(loss)
+        elif hyperparams["reduction"] == "none":
+            loss = loss
+        else:
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        return loss
 
 
 class MAE(optModel):
@@ -39,7 +48,16 @@ class MAE(optModel):
         Calculates the mean squared error between predictions
         Yhat and true lables Y.
         """
-        return (coeff_hat - coeff_true).abs()
+        loss = (coeff_hat - coeff_true).abs()
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(loss)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(loss)
+        elif hyperparams["reduction"] == "none":
+            loss = loss
+        else:
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        return loss
 
 
 class CE(optModel):
