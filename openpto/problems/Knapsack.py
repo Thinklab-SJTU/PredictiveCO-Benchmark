@@ -491,3 +491,14 @@ def get_benchmarks(
         "benchmarks_weights": benchmarks_weights,
     }
     return dataset
+
+
+if __name__ == "__main__":
+    filename = "./saved_problems/Knapsack_0.pkl"
+    import pickle
+
+    with open(filename, "rb") as file:
+        problem = pickle.load(file)
+    X_train, Y_train, Y_train_aux = problem.get_train_data()
+    X_val, Y_val, Y_val_aux = problem.get_val_data()
+    X_test, Y_test, Y_test_aux = problem.get_test_data()

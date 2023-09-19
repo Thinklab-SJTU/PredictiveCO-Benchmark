@@ -72,7 +72,6 @@ class LODL(optModel):
         #   Get Ys
         _, Y_train, Y_train_aux = problem.get_train_data()
         _, Y_val, Y_val_aux = problem.get_val_data()
-        print("---- lodl device", Y_train.device)
         #   Get points in the neighbourhood of the Ys
         #       Try to load sampled points
         master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
@@ -490,7 +489,7 @@ class LODL(optModel):
                 pred = model(Yhats_train).flatten()
                 if not (pred >= -1e-3).all().item():
                     print(f"WARNING: Prediction value < 0: {pred.min()}")
-                loss = MSE()(problem, pred, objectives_train).sum()
+                loss = MSE()(problem, pred, objectives_train, **kwargs).sum()
                 loss.backward()
                 return loss
 
@@ -498,7 +497,7 @@ class LODL(optModel):
             if iter_idx % val_freq == 0:
                 # Get performance on val dataset
                 pred_val = model(Yhats_val).flatten()
-                loss_val = MSE()(problem, pred_val, objectives_val)
+                loss_val = MSE()(problem, pred_val, objectives_val, **kwargs)
 
                 # Print statistics
                 if verbose and iter_idx % (val_freq * print_freq) == 0:
