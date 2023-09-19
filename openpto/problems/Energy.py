@@ -108,17 +108,19 @@ class Energy(PTOProblem):
     def get_objective(self, Y, Z, **kwargs):
         ans=0
         N = 1440 // self.q
+        #print(self.nbTasks,self.nbMachines)
         for f in range(self.nbTasks):
             for t in range (N - self.D[f] + 1):
                 for m in range(self.nbMachines):
-                    if (f, m, t) in Z:ans=ans+Z[f, m, t] * np.sum(Y[t : t + self.D[f]]) * self.P[f] * self.q / 60
-        # ans = gp.quicksum(
-        #         Z[f, m, t] * np.sum(Y[t : t + self.D[f]]) * self.P[f] * self.q / 60
-        #         for f in self.nbTasks
-        #         for t in range (self.N - self.D[f] + 1)
-        #         for m in self.nbMachines
-        #         if (f, m, t) in Z
-        # )
+                    # print(t,int(t + self.D[f]))
+                    # print("Z:", Z.shape)
+                    # print("Y ", Y.shape)
+                    # if int(t + self.D[f])<=Y.shape[0]: 
+                        # print(Z[f, m, t])
+                        # print(Y[t : int(t + self.D[f])])
+                        # print(torch.sum(Y[t : int(t + self.D[f])]))
+                        
+                    ans=ans+Z[f, m, t] * (Y[t : int(t + self.D[f])]).sum() * self.P[f] * self.q/60
         return ans
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
@@ -134,9 +136,12 @@ class Energy(PTOProblem):
         for i in range(ins_num):
             # solve
             sch = optSolver.solve(Y[i])
-            objp = self.get_objective(Y,sch)
+            objp = self.get_objective(Y[i],sch)
+            if torch.is_tensor(objp):
+                objp = objp.cpu().numpy()
             sol.append(sch)
             obj.append(objp)
+        
         return np.array(sol), np.array(obj)
 
     def init_API(self):
