@@ -61,6 +61,7 @@ def print_metrics(
                 preds = model(Xs)
                 for idx in range(len(Xs)):
                     pred = preds[[idx]]
+                    
                     losses.append(
                         loss_fn(
                             problem,
@@ -72,6 +73,7 @@ def print_metrics(
                             **model_args,
                         )
                     )
+                    
                 losses = torch.stack(losses).flatten()
                 test_time = 0
             else:

@@ -10,6 +10,7 @@ from copy import deepcopy
 import cvxpy as cp
 from gurobipy import GRB
 
+
 class optSolver(object):
     """1
 

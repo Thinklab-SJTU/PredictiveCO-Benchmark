@@ -13,7 +13,7 @@ def solver_wrapper(args, conf, problem):
 def str2solver(args, conf, solver_str, prob_str, problem):
     prob_solver_dict = {
         "budgetalloc": {"neural": budgetallocSolver},
-        "bipartitematching":{"cvxpy":BmatchingSolver},
+        "bipartitematching": {"cvxpy": BmatchingSolver},
         # "bipartitematching": BipartiteMatching,
         # 'rmab':RMAB,
         # 'portfolio':PortfolioOpt,

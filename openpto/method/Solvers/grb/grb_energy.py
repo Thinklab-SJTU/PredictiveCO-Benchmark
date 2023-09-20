@@ -51,7 +51,7 @@ class ICONGrbSolver(optGrbSolver):
         self.relax = relax
         self.verbose = verbose
         self.method = method
-        
+
         self._getModel()
 
     def _getModel(self):
@@ -71,13 +71,20 @@ class ICONGrbSolver(optGrbSolver):
         if not self.verbose:
             M.setParam("OutputFlag", 0)
         if relax:
-            x = M.addVars(Tasks, Machines, range(N), lb=0.0, ub=1.0, vtype=GRB.CONTINUOUS, name="x")
+            x = M.addVars(
+                Tasks, Machines, range(N), lb=0.0, ub=1.0, vtype=GRB.CONTINUOUS, name="x"
+            )
         else:
             x = M.addVars(Tasks, Machines, range(N), vtype=GRB.BINARY, name="x")
 
         M.addConstrs(x.sum(f, "*", range(E[f])) == 0 for f in Tasks)
         M.addConstrs(x.sum(f, "*", range(L[f] - D[f] + 1, N)) == 0 for f in Tasks)
-        M.addConstrs(( gp.quicksum(x[(f, m, t)] for t in range(N) for m in Machines) == 1 for f in Tasks ) )
+        M.addConstrs(
+            (
+                gp.quicksum(x[(f, m, t)] for t in range(N) for m in Machines) == 1
+                for f in Tasks
+            )
+        )
 
         # capacity requirement
         for r in Resources:
@@ -87,12 +94,13 @@ class ICONGrbSolver(optGrbSolver):
                         gp.quicksum(
                             gp.quicksum(
                                 x[(f, m, t1)] for t1 in range(max(0, t - D[f] + 1), t + 1)
-                            )* U[f][r]
+                            )
+                            * U[f][r]
                             for f in Tasks
                         )
                         <= MC[m][r]
                     )
-        
+
         M.update()
         self._model = M
         self.z = dict()
@@ -116,8 +124,9 @@ class ICONGrbSolver(optGrbSolver):
         nbResources = self.nbResources
         Machines = range(nbMachines)
         Tasks = range(nbTasks)
-        Resources =range(nbResources)
-        if torch.is_tensor(price): price = price.cpu().numpy()
+        Resources = range(nbResources)
+        if torch.is_tensor(price):
+            price = price.cpu().numpy()
 
         # print( price.shape )
         obj_expr = gp.quicksum(
@@ -171,14 +180,14 @@ class ICONGrbSolver(optGrbSolver):
                     for m in Machines:
                         for t in range(N):
                             schedule[f, m, t] = task_on[(f, m, t)]
-                self._model.reset(0) 
-                schedule = schedule.reshape(-1) 
+                self._model.reset(0)
+                schedule = schedule.reshape(-1)
                 return schedule
             except NameError:
                 print("\n__________Something wrong_______ \n ")
                 # make sure cut is removed! (modifies model)
                 self._model.reset(0)
-                schedule = schedule.reshape(-1) 
+                schedule = schedule.reshape(-1)
                 return schedule
 
         elif Model.status == GRB.Status.INF_OR_UNBD:
@@ -190,6 +199,5 @@ class ICONGrbSolver(optGrbSolver):
         else:
             print("Optimization ended with status %d" % Model.status)
         self.model.reset(0)
-        schedule = schedule.reshape(-1) 
+        schedule = schedule.reshape(-1)
         return schedule
-

@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-import gurobipy as gp 
+import gurobipy as gp
 import sklearn
 import torch
 
@@ -111,16 +111,23 @@ class Energy(PTOProblem):
         ins_num = len(Y)
         ans_list = []
         for i in range(ins_num):
-            ans=0
+            ans = 0
             for f in range(self.nbTasks):
-                for t in range (N - self.D[f] + 1):
+                for t in range(N - self.D[f] + 1):
                     for m in range(self.nbMachines):
-                        ans=ans+Z[i, f, m, t] * (Y[i ,t : int(t + self.D[f])]).sum() * self.P[f] * self.q/60
+                        ans = (
+                            ans
+                            + Z[i, f, m, t]
+                            * (Y[i, t : int(t + self.D[f])]).sum()
+                            * self.P[f]
+                            * self.q
+                            / 60
+                        )
             ans_list.append(float(ans))
-        if (isinstance(Y,np.ndarray)): 
-            ans_list=np.array(ans_list)
-        else: 
-            ans_list=torch.tensor(ans_list)
+        if isinstance(Y, np.ndarray):
+            ans_list = np.array(ans_list)
+        else:
+            ans_list = torch.tensor(ans_list)
         return ans_list
 
     def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
@@ -136,12 +143,12 @@ class Energy(PTOProblem):
             sch = optSolver.solve(Y[i])
             sol.append(sch)
             # obj.append(objp)
-        
-        if (isinstance(Y,np.ndarray)): 
-            sol=np.array(sol)
+
+        if isinstance(Y, np.ndarray):
+            sol = np.array(sol)
         else:
-            sol=torch.tensor(sol)
-            
+            sol = torch.tensor(sol)
+
         objs = self.get_objective(Y, sol)
         return sol, objs
 
@@ -288,5 +295,3 @@ class Energy(PTOProblem):
             "down": self.down,
             "q": self.q,
         }
-
-

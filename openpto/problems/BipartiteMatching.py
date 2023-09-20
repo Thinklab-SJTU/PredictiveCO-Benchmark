@@ -10,6 +10,7 @@ from cvxpylayers.torch import CvxpyLayer
 
 from openpto.problems.PTOProblem import PTOProblem
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
+
 # from SubmodularOptimizer import SubmodularOptimizer
 
 
@@ -56,8 +57,12 @@ class BipartiteMatching(PTOProblem):
         )
 
         # Create functions for optimisation
-        self.opt_train = BmatchingSolver()._getModel(isTrain=True,num_nodes=self.num_nodes)
-        self.opt_test = BmatchingSolver()._getModel(isTrain=False,num_nodes=self.num_nodes)
+        self.opt_train = BmatchingSolver()._getModel(
+            isTrain=True, num_nodes=self.num_nodes
+        )
+        self.opt_test = BmatchingSolver()._getModel(
+            isTrain=False, num_nodes=self.num_nodes
+        )
 
         # Undo random seed setting
         self._set_seed()
@@ -78,21 +83,23 @@ class BipartiteMatching(PTOProblem):
         g = g.to_directed()  # remove directionality to make the problem easier
         nodes_before = [int(v) for v in g.nodes()]
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-        print(num_train_instances,num_test_instances)
+        #print(num_train_instances, num_test_instances)
         # Whittle the dataset down to the right size
         #   Initialise constants
         total_nodes = len(nodes_before)
         num_subsets = num_train_instances + num_test_instances
-        print(num_subsets,total_nodes,num_nodes)
+        #print(num_subsets, total_nodes, num_nodes)
         assert num_subsets <= total_nodes // (num_nodes * 2)
 
         #   Whittle (coarse-grained)
         # print("g: ", g)
         # TODO: check metis bug
-        #print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
+        # print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
         adjs = nx.adjacency_matrix(g).toarray()
         # _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
-        _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=adjs)
+        _, mapping = metis.part_graph(
+            nparts=total_nodes // (num_nodes * 2), adjacency=adjs
+        )
         g_part = [
             nx.Graph(nx.subgraph(g, list(np.where(np.array(mapping) == i)[0])))
             for i in range(num_subsets)
@@ -181,8 +188,9 @@ class BipartiteMatching(PTOProblem):
                 for idx in feature_idxs_lhs
             ]
             Xs.append(feature_array)
-        print(np.array(Xs).shape,np.array(Ys).shape)
-        return torch.Tensor(np.array(Xs).reshape(-1)), torch.Tensor(np.array(Ys).reshape(-1))
+        print("Xs",np.array(Xs).shape)
+        print("Ys",np.array(Ys).shape)
+        return torch.Tensor(np.array(Xs)), torch.Tensor(np.array(Ys))
 
     def get_train_data(self):
         return (
@@ -220,40 +228,68 @@ class BipartiteMatching(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        assert Y.shape[-2:] == Z.shape[-2:]
+        #print("Y:",Y.shape)
+        #print("Z:",Z.shape)
+        Z = Z.reshape(-1, self.num_nodes, self.num_nodes)
+        ins_num = len(Y)
+        ans_list = []
+        
+        for i in range(ins_num):
+            ans_list.append((Y[i] * Z[i]).sum())
+        if isinstance(Y, np.ndarray):
+             ans_list = np.array(ans_list)
+        else:
+             ans_list = torch.tensor(ans_list)
+        #print("ans_list",ans_list)
+        return ans_list
 
-        return torch.sum(Y * Z, dim=(-2, -1))
-
-    def get_decision(self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs):
+    def get_decision(
+        self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs
+    ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
-        if isinstance(Y, np.ndarray): print("Y is numpy!")
-        Y=Y.reshape(-1,10,10)
+        #if isinstance(Y, np.ndarray): print("Y is numpy!")
+        Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
+        flag_numpy=0
         if isinstance(Y, np.ndarray): 
             Y = torch.from_numpy(Y)
-            # print("Y is numpy")
-        assert Y.ndim in [2, 3]
-        if Y.ndim == 3:
-            results = []
-            print(0, Y.shape[0], max_instances_per_batch)
-            for start in range(0, Y.shape[0], max_instances_per_batch):
-                end = min(Y.shape[0], start + max_instances_per_batch)
-                result = (
-                    self.opt_train(Y[start:end])[0]
-                    if isTrain
-                    else self.opt_test(Y[start:end])[0]
-                )
-                results.append(result)
-            Z=torch.cat(results, dim=0)
-            obj=self.get_objective(Y,Z)
-            return Z.cpu().numpy(),obj
+            flag_numpy=1
+        ins_num = len(Y)
+        sols = []
+        for i in range(ins_num):
+            # solve
+            if isTrain: 
+                sol=self.opt_train(Y[i])
+            else: 
+                sol = self.opt_test(Y[i])
+            sol=sol[0].numpy()
+            sols.append(sol)
+        if flag_numpy==1:
+            sols = np.array(sols)
         else:
-            return self.opt_train(Y)[0] if isTrain else self.opt_test(Y)[0]
+            sols = torch.tensor(sols)
+            # results = []
+            # #print(0, Y.shape[0], max_instances_per_batch)
+            # for start in range(0, Y.shape[0], max_instances_per_batch):
+            #     end = min(Y.shape[0], start + max_instances_per_batch)
+            #     result = (
+            #         self.opt_train(Y[start:end])[0]
+            #         if isTrain
+            #         else self.opt_test(Y[start:end])[0]
+            #     )
+            #     results.append(result)
+        objs = self.get_objective(Y, sols)
+        if flag_numpy==1:
+            objs = np.array(objs)
+        else:
+            objs = torch.tensor(objs)
+        #print("sols",sols)
+        #print("objs",objs)
+        return sols, objs
+        
 
-    
-    
     def init_API(self):
-        return { }
+        return {}
 
     # def _create_constraint_matrix(self):
     #     """
