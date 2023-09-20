@@ -7,7 +7,7 @@ dataset:
 
 models:
   spo:
-    is_plus: False
+    is_plus: True
     reduction: mean
   blackbox:
     reduction: mean

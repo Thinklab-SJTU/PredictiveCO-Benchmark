@@ -47,5 +47,4 @@ class BmatchingSolver(optCPSolver):
         # Problem
         problem = cp.Problem(objective, constraints)
         assert problem.is_dpp()
-
         return CvxpyLayer(problem, parameters=[Y], variables=[Z])
