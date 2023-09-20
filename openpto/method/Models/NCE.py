@@ -72,7 +72,6 @@ class NCE(optModel):
         # get obj
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
-        # coeff_hat_pool = coeff_hat.repeat(solpool.shape[0], *coeff_hat.shape[1:])
         obj_cp = problem.get_objective(coeff_hat, sol_true)
         objpool_cp = problem.get_objective(coeff_hat_pool, solpool)
         # obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)

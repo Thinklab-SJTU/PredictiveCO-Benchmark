@@ -231,7 +231,7 @@ class ExpManager:
             **self.model_args,
         )
         total_test_time = results["test"]["time"]
-        print("Y_test's shape=", Y_test.shape)
+
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
