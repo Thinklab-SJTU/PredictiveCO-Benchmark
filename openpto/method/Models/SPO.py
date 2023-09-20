@@ -105,7 +105,7 @@ class SPOPlusFunc(torch.autograd.Function):
         coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
         coeff_true_array = coeff_true.detach().to("cpu").numpy()
         # solve
-        sol_proxy, obj_proxy = problem.get_decision(
+        sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_array - coeff_true_array,
             params,
             optSolver,
@@ -120,18 +120,17 @@ class SPOPlusFunc(torch.autograd.Function):
             loss = torch.from_numpy(loss)
         loss = loss.to(device)
         # save solutions
-        if not torch.is_tensor(sol_proxy):
-            sol_proxy = torch.from_numpy(sol_proxy)
-        sol_proxy = sol_proxy.to(device)
+        if not torch.is_tensor(sols_proxy):
+            sols_proxy = torch.from_numpy(sols_proxy)
+        sols_proxy = sols_proxy.to(device)
         if not torch.is_tensor(sols_true):
             sols_true = torch.from_numpy(sols_true)
         sols_true = sols_true.to(device)
-        ctx.save_for_backward(sols_true, sol_proxy)
+        ctx.save_for_backward(sols_true, sols_proxy)
         # add other objects to ctx
         ctx.modelSense = optSolver.modelSense
         ctx.coeff_hat_array = coeff_hat_array
-        # TODO: check
-        # sense
+        # model sense
         if optSolver.modelSense == GRB.MINIMIZE:
             pass
         elif optSolver.modelSense == GRB.MAXIMIZE:
@@ -145,8 +144,12 @@ class SPOPlusFunc(torch.autograd.Function):
         """
         Backward pass for SPO+
         """
-        sols_true, sol_proxy = ctx.saved_tensors
-        grad = 2 * (sols_true - sol_proxy)
+        sols_true, sols_proxy = ctx.saved_tensors
+        # grad = 2 * (sols_true - sols_proxy)
+        if ctx.modelSense == GRB.MINIMIZE:
+            grad = 2 * (sols_true - sols_proxy)
+        elif ctx.modelSense == GRB.MAXIMIZE:
+            grad = -2 * (sols_true - sols_proxy)
         ##### work around #####
         coeff_hat_array = ctx.coeff_hat_array
         if grad.shape != coeff_hat_array.shape:
