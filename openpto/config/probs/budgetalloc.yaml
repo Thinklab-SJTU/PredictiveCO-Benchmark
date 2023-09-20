@@ -39,7 +39,8 @@ models:
     reduction: mean
   dfl:
     dflalpha: 0.1
-
+    reduction: sum
+    
 solver:
   neural: 
     num_iters: 100

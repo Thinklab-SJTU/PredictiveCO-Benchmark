@@ -11,7 +11,7 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
-class blackboxOpt(optModel):
+class blackbox(optModel):
     """
     Reference: <https://arxiv.org/abs/1912.02175>
     """
@@ -30,7 +30,7 @@ class blackboxOpt(optModel):
             raise ValueError("lambda is not positive.")
         self.lambd = kwargs["lambd"]
         # build blackbox optimizer
-        self.dbb = blackboxOptFunc()
+        self.dbb = blackboxFunc()
 
     def forward(
         self,
@@ -42,7 +42,7 @@ class blackboxOpt(optModel):
         """
         Forward pass
         """
-        loss = self.dbb.apply(
+        sol_hat = self.dbb.apply(
             coeff_hat,
             problem,
             params,
@@ -53,10 +53,11 @@ class blackboxOpt(optModel):
             self.lambd,
             self,
         )
+        loss = problem.get_objective(sol_hat, coeff_hat)
         return loss
 
 
-class blackboxOptFunc(torch.autograd.Function):
+class blackboxFunc(torch.autograd.Function):
     """ """
 
     @staticmethod
@@ -82,7 +83,7 @@ class blackboxOptFunc(torch.autograd.Function):
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             solve_ratio (float): the ratio of new solutions computed during training
-            module (optModule): blackboxOpt module
+            module (optModule): blackbox module
 
         Returns:
             torch.tensor: predicted solutions

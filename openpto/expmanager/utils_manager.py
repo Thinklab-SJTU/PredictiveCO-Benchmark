@@ -46,6 +46,7 @@ def print_metrics(
                 time_test_start = time.time()
             # Decision Quality
             preds = model(Xs)
+
             Zs_hat, objective_hat = problem.get_decision(
                 preds.cpu().numpy(),
                 params=Ys_aux,

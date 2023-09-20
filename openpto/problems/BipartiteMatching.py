@@ -1,13 +1,11 @@
 import random
 
-import cvxpy as cp
 import networkx as nx
 import numpy as np
 import pymetis as metis
 import torch
 
-from cvxpylayers.torch import CvxpyLayer
-
+from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
 from openpto.problems.PTOProblem import PTOProblem
 
 # from SubmodularOptimizer import SubmodularOptimizer
@@ -23,15 +21,16 @@ class BipartiteMatching(PTOProblem):
         num_nodes=10,  # number of nodes in the LHS and RHS of the bipartite matching graphs
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
+        prob_version="bipartitematching",
+        data_dir="./openpto/data/",
     ):
         super(BipartiteMatching, self).__init__()
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
-
         # Load train and test labels
-        self.num_train_instances = num_train_instances
-        self.num_test_instances = num_test_instances
+        self.num_train_instances = 110
+        self.num_test_instances = 25
         self.num_nodes = num_nodes
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
@@ -55,8 +54,12 @@ class BipartiteMatching(PTOProblem):
         )
 
         # Create functions for optimisation
-        self.opt_train = self._create_cvxpy_problem(isTrain=True)
-        self.opt_test = self._create_cvxpy_problem(isTrain=False)
+        self.opt_train = BmatchingSolver()._getModel(
+            isTrain=True, num_nodes=self.num_nodes
+        )
+        self.opt_test = BmatchingSolver()._getModel(
+            isTrain=False, num_nodes=self.num_nodes
+        )
 
         # Undo random seed setting
         self._set_seed()
@@ -77,18 +80,23 @@ class BipartiteMatching(PTOProblem):
         g = g.to_directed()  # remove directionality to make the problem easier
         nodes_before = [int(v) for v in g.nodes()]
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-
+        print(num_train_instances, num_test_instances)
         # Whittle the dataset down to the right size
         #   Initialise constants
         total_nodes = len(nodes_before)
         num_subsets = num_train_instances + num_test_instances
+        print(num_subsets, total_nodes, num_nodes)
         assert num_subsets <= total_nodes // (num_nodes * 2)
 
         #   Whittle (coarse-grained)
         # print("g: ", g)
         # TODO: check metis bug
-        _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
-        # _, mapping = metis.part_graph(nparts=total_nodes // (num_nodes * 2), adjacency=0)
+        # print(total_nodes,num_nodes,total_nodes // (num_nodes * 2))
+        adjs = nx.adjacency_matrix(g).toarray()
+        # _, mapping = metis.part_graph(g, nparts=total_nodes // (num_nodes * 2))
+        _, mapping = metis.part_graph(
+            nparts=total_nodes // (num_nodes * 2), adjacency=adjs
+        )
         g_part = [
             nx.Graph(nx.subgraph(g, list(np.where(np.array(mapping) == i)[0])))
             for i in range(num_subsets)
@@ -114,7 +122,7 @@ class BipartiteMatching(PTOProblem):
                 g_part[i].add_nodes_from(to_add)
 
         # Load the features dataset
-        features = np.loadtxt("data/cora.content")
+        features = np.loadtxt("openpto/data/cora.content")
         features_idx = features[:, 0]
         features = features[:, 1:]
 
@@ -177,8 +185,10 @@ class BipartiteMatching(PTOProblem):
                 for idx in feature_idxs_lhs
             ]
             Xs.append(feature_array)
-
-        return torch.Tensor(np.array(Xs)), torch.Tensor(np.array(Ys))
+        print(np.array(Xs).shape, np.array(Ys).shape)
+        return torch.Tensor(np.array(Xs).reshape(-1)), torch.Tensor(
+            np.array(Ys).reshape(-1)
+        )
 
     def get_train_data(self):
         return (
@@ -220,12 +230,21 @@ class BipartiteMatching(PTOProblem):
 
         return torch.sum(Y * Z, dim=(-2, -1))
 
-    def get_decision(self, Y, isTrain=False, max_instances_per_batch=5000, **kwargs):
+    def get_decision(
+        self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs
+    ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
+        if isinstance(Y, np.ndarray):
+            print("Y is numpy!")
+        Y = Y.reshape(-1, 10, 10)
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
+            # print("Y is numpy")
         assert Y.ndim in [2, 3]
         if Y.ndim == 3:
             results = []
+            print(0, Y.shape[0], max_instances_per_batch)
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
                 result = (
@@ -234,32 +253,14 @@ class BipartiteMatching(PTOProblem):
                     else self.opt_test(Y[start:end])[0]
                 )
                 results.append(result)
-            return torch.cat(results, dim=0)
+            Z = torch.cat(results, dim=0)
+            obj = self.get_objective(Y, Z)
+            return Z.cpu().numpy(), obj
         else:
             return self.opt_train(Y)[0] if isTrain else self.opt_test(Y)[0]
 
-    def _create_cvxpy_problem(
-        self,
-        isTrain=True,
-        gamma=0.1,
-    ):
-        # Variables
-        Z = cp.Variable((self.num_nodes, self.num_nodes), nonneg=True)
-        Y = cp.Parameter((self.num_nodes, self.num_nodes))
-
-        # Objective
-        matching_obj = cp.sum(cp.multiply(Z, Y))
-        reg = cp.norm(Z) if isTrain else 0
-        objective = cp.Maximize(matching_obj - gamma * reg)
-
-        # Flow Constraints
-        constraints = [cp.sum(Z, axis=0) == 1, cp.sum(Z, axis=1) == 1]
-
-        # Problem
-        problem = cp.Problem(objective, constraints)
-        assert problem.is_dpp()
-
-        return CvxpyLayer(problem, parameters=[Y], variables=[Z])
+    def init_API(self):
+        return {}
 
     # def _create_constraint_matrix(self):
     #     """

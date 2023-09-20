@@ -19,7 +19,6 @@ class optSolver(object):
         # default sense
         self.modelSense = modelSense
         self.z = None
-        # self._model, self.z = self._getModel()
 
     def __repr__(self):
         return "optSolver " + self.__class__.__name__

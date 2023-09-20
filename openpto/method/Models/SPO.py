@@ -155,7 +155,7 @@ class SPOFunc(torch.autograd.Function):
             loss = -loss
         # convert to tensor
         sol = torch.FloatTensor(sol_hat).to(device)
-        sol_true = torch.FloatTensor(sol_true).to(device)
+        sol_true = torch.FloatTensor(sol_true.float()).to(device)
         # save solutions
         ctx.save_for_backward(sol_true, sol)
         # add other objects to ctx
