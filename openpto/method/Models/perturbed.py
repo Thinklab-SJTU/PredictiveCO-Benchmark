@@ -216,7 +216,7 @@
 # #         elif reduction == "sum":
 # #             loss = torch.sum(loss)
 # #         elif reduction == "none":
-# #             loss = loss
+# #             pass
 # #         else:
 # #             raise ValueError("No reduction '{}'.".format(reduction))
 # #         return loss

@@ -72,7 +72,7 @@ class SPO(optModel):
         elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
         elif hyperparams["reduction"] == "none":
-            loss = loss
+            pass
         else:
             raise ValueError("No reduction {}".format(hyperparams["reduction"]))
         return loss
@@ -138,20 +138,22 @@ class SPOFunc(torch.autograd.Function):
         # calculate loss
         loss = []
         # TODO: check sign of the loss
-        for i in range(len(cp)):
-            obj_hat = problem.get_objective(cp[[i]], sol_hat[[i]])
-            if torch.is_tensor(obj_hat):
-                obj_hat = obj_hat.cpu().numpy()
-            instance_loss = -obj_true[[i]] + obj_hat
-            loss.append(instance_loss)
-            # loss.append(-obj[i] + np.dot(cp[i], w[i]) - z[i])
+        obj_hats = problem.get_objective(cp, sol_hat)
+        loss = -obj_true + obj_hats
+        # for i in range(len(cp)):
+        #     obj_hat = problem.get_objective(cp[[i]], sol_hat[[i]])
+        #     if torch.is_tensor(obj_hat):
+        #         obj_hat = obj_hat.cpu().numpy()
+        #     instance_loss = -obj_true[[i]] + obj_hat
+        #     loss.append(instance_loss)
+        # loss.append(-obj[i] + np.dot(cp[i], w[i]) - z[i])
+        # loss = torch.from_numpy(np.array(loss)).to(device)
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
-            loss = np.array(loss)
-        if optSolver.modelSense == GRB.MAXIMIZE:
-            loss = -np.array(loss)
+            pass
+        elif optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -loss
         # convert to tensor
-        loss = torch.FloatTensor(loss).to(device)
         sol = torch.FloatTensor(sol_hat).to(device)
         sol_true = torch.FloatTensor(sol_true).to(device)
         # save solutions
@@ -266,9 +268,11 @@ class SPOPlusFunc(torch.autograd.Function):
         loss = loss.to(device)
         # sense
         if optSolver.modelSense == GRB.MINIMIZE:
-            loss = loss
-        if optSolver.modelSense == GRB.MAXIMIZE:
+            pass
+        elif optSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
+        else:
+            assert 0
 
         sol = np.array(sol)
         sol = torch.FloatTensor(sol).to(device)

@@ -90,7 +90,7 @@ class NCE(optModel):
         elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
         elif hyperparams["reduction"] == "none":
-            loss = loss
+            pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss
@@ -151,7 +151,7 @@ class NCE(optModel):
 #         elif hyperparams["reduction"] == "sum":
 #             loss = torch.sum(loss)
 #         elif hyperparams["reduction"] == "none":
-#             loss = loss
+#             pass
 #         else:
 #             raise ValueError("No reduction '{}'.".format(reduction))
 #         return loss

@@ -172,10 +172,10 @@ class blackboxOptFunc(torch.autograd.Function):
         # else:
         #   sol, _ = _cache_in_pass(cq, optSolver, module.solpool)
         # get gradient
-
-        grad = []
-        for i in range(len(sols)):
-            grad.append((sols[[i]] - wp[[i]]) / lambd)
+        # grad = []
+        # for i in range(len(sols)):
+        #     grad.append((sols[[i]] - wp[[i]]) / lambd)
+        grad = (sols - wp) / lambd
         # convert to tensor
         grad = np.array(grad)
         grad = torch.FloatTensor(grad).to(device)

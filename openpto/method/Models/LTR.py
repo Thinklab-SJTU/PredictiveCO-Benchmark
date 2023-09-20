@@ -52,8 +52,7 @@ class listwiseLTR(optModel):
         # convert tensor
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
-        if True:
-            # if np.random.uniform() <= self.solve_ratio:
+        if np.random.uniform() <= self.solve_ratio:
             sol, _ = _solve_in_pass(
                 cp, params, problem, self.optSolver, self.processes, self.pool
             )
@@ -82,7 +81,7 @@ class listwiseLTR(optModel):
         elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
         elif hyperparams["reduction"] == "none":
-            loss = loss
+            pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss
@@ -173,7 +172,7 @@ class pairwiseLTR(optModel):
         elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
         elif hyperparams["reduction"] == "none":
-            loss = loss
+            pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss
@@ -240,7 +239,7 @@ class pointwiseLTR(optModel):
         elif hyperparams["reduction"] == "sum":
             loss = torch.sum(loss)
         elif hyperparams["reduction"] == "none":
-            loss = loss
+            pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss
