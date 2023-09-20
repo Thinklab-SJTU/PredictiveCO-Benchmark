@@ -1,3 +1,7 @@
+dataset:
+  prob_version: real
+
+models:
   spo:
     reduction: mean
   blackbox:

@@ -132,6 +132,5 @@ dmypy.json
 saved_*/*
 openpto/data/
 shs/
-cfgs/
 
 *.pyc

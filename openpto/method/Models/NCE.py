@@ -10,7 +10,6 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
 class NCE(optModel):
@@ -48,24 +47,23 @@ class NCE(optModel):
         sol_true = torch.from_numpy(sol_true.astype(np.float32)).to(device)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
-            # TODO: all problems
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,
                 optSolver=self.optSolver,
-                isTrain=False,
+                isTrain=True,
                 **problem.init_API(),
             )
         # convert tensor
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = _solve_in_pass(
-                cp, params, problem, self.optSolver, self.processes, self.pool
+            sols_hat, _ = problem.get_decision(
+                cp, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol))
+            self.solpool = np.concatenate((self.solpool, sols_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
@@ -73,16 +71,19 @@ class NCE(optModel):
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
         obj_cp = problem.get_objective(coeff_hat, sol_true)
+        # print("obj shape: ", coeff_hat.shape, sol_true.shape, obj_cp.shape)
         objpool_cp = problem.get_objective(coeff_hat_pool, solpool)
-        # obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)
-        # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
+        # print("pool shape: ", coeff_hat_pool.shape, solpool.shape, objpool_cp.shape)
+        # print(obj_cp)
+        # print(objpool_cp)
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
-            # loss = (obj_cp - objpool_cp).mean(axis=1)
-            loss = (obj_cp - objpool_cp).mean(axis=0)
-        if self.optSolver.modelSense == GRB.MAXIMIZE:
-            # loss = (objpool_cp - obj_cp).mean(axis=1)
-            loss = (objpool_cp - obj_cp).mean(axis=0)
+            loss = obj_cp - objpool_cp
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = objpool_cp - obj_cp
+        else:
+            raise NotImplementedError
+        # print("loss: ", loss.shape, loss)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
@@ -92,6 +93,7 @@ class NCE(optModel):
             pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        # assert 0
         return loss
 
 
@@ -129,9 +131,9 @@ class NCE(optModel):
 #         cp = coeff_hat.detach().to("cpu").numpy()
 #         # solve
 #         if np.random.uniform() <= self.solve_ratio:
-#             sol, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
+#             sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
 #             # add into solpool
-#             self.solpool = np.concatenate((self.solpool, sol))
+#             self.solpool = np.concatenate((self.solpool, sols_hat))
 #             # remove duplicate
 #             self.solpool = np.unique(self.solpool, axis=0)
 #         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)

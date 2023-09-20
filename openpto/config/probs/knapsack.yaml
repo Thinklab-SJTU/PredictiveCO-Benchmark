@@ -13,7 +13,6 @@ dataset:
 
 models:
   spo:
-    is_plus: True
     reduction: mean
   blackbox:
     reduction: mean
@@ -29,7 +28,7 @@ models:
   pointLTR:
     reduction: mean
   nce:
-    reduction: mean
+    reduction: sum
   lodl:
     sampling: random
     quadrank: 20
