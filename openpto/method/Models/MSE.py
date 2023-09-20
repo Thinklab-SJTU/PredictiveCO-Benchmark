@@ -123,15 +123,12 @@ class DFL(optModel):
             twostageloss = CE()
         else:
             raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
-        sol_hat, _ = problem.get_decision(
+        sol_hat, objs = problem.get_decision(
             coeff_hat,
             params=params,
             optSolver=self.optSolver,
             isTrain=True,
             **problem.init_API(),
-        )
-        objs = problem.get_objective(
-            coeff_true.cpu().numpy(), sol_hat, isTrain=True, **hyperparams
         )
         if isinstance(objs, np.ndarray):
             objs = torch.from_numpy(objs.astype("float")).to(problem.device)

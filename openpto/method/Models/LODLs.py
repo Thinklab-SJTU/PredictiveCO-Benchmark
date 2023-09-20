@@ -9,7 +9,7 @@ from functools import partial
 import numpy as np
 import torch
 
-from gurobipy import GRB
+from gurobipy import GRB  # pylint: disable=no-name-in-module
 from torch.multiprocessing import Pool
 
 from openpto.method.Models.abcOptModel import optModel

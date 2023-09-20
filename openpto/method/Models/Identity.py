@@ -4,7 +4,6 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
 class negativeIdentity(optModel):
@@ -32,16 +31,27 @@ class negativeIdentity(optModel):
         """
         Forward pass
         """
-        loss = self.nid.apply(
+        sols_hat = self.nid.apply(
             coeff_hat,
             problem,
             params,
             self.optSolver,
-            self.processes,
-            self.pool,
-            self.solve_ratio,
-            self,
         )
+        objs_hat = problem.get_objective(coeff_hat, sols_hat)
+        # reduction
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(objs_hat)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(objs_hat)
+        elif hyperparams["reduction"] == "none":
+            loss = objs_hat
+        else:
+            raise ValueError(f"No reduction {hyperparams['reduction']}.")
+
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            pass
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -loss
         return loss
 
 
@@ -57,10 +67,6 @@ class negativeIdentityFunc(torch.autograd.Function):
         problem,
         params,
         optSolver,
-        processes,
-        pool,
-        solve_ratio,
-        module,
     ):
         """
         Forward pass for NID
@@ -68,10 +74,6 @@ class negativeIdentityFunc(torch.autograd.Function):
         Args:
             pred_cost (torch.tensor): a batch of predicted values of the cost
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-            pool (ProcessPool): process pool object
-            solve_ratio (float): the ratio of new solutions computed during training
-            module (optModule):  module
 
         Returns:
             torch.tensor: predicted solutions
@@ -79,24 +81,18 @@ class negativeIdentityFunc(torch.autograd.Function):
         # get device
         device = coeff_hat.device
         # convert tenstor
-        cp = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
         # solve
-        rand_sigma = np.random.uniform()
-        if rand_sigma <= solve_ratio:
-            sol, _ = _solve_in_pass(cp, params, problem, optSolver, processes, pool)
-            if solve_ratio < 1:
-                # add into solpool
-                module.solpool = np.concatenate((module.solpool, sol))
-                # remove duplicates
-                module.solpool = np.unique(module.solpool, axis=0)
-        # else:
-        # sol, _ = _cache_in_pass(cp, optSolver, module.solpool)
-        # convert to tensor
-        pred_sol = torch.FloatTensor(np.array(sol)).to(device)
+        sols_hat, _ = problem.get_decision(
+            coeff_hat_array, params, optSolver, **problem.init_API()
+        )
+        if isinstance(sols_hat, np.ndarray):
+            sols_hat = torch.from_numpy(sols_hat.astype(np.float32))
+        sols_hat = sols_hat.to(device)
         # add other objects to ctx
         ctx.modelSense = optSolver.modelSense
-        ctx.cp = cp
-        return pred_sol
+        ctx.coeff_hat_array = coeff_hat_array
+        return sols_hat
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -113,13 +109,13 @@ class negativeIdentityFunc(torch.autograd.Function):
         if ctx.modelSense == GRB.MAXIMIZE:
             grad = Ident
         ##### work around #####
-        cp = ctx.cp
-        # print("cp.shape: ", cp.shape, "grad.shape: ", grad.shape)
-        if grad.shape != cp.shape:
-            if np.prod(grad.shape) == np.prod(cp.shape):
-                grad = grad.reshape(cp.shape)
+        coeff_hat_array = ctx.coeff_hat_array
+        # print("coeff_hat_array.shape: ", coeff_hat_array.shape, "grad.shape: ", grad.shape)
+        if grad.shape != coeff_hat_array.shape:
+            if np.prod(grad.shape) == np.prod(coeff_hat_array.shape):
+                grad = grad.reshape(coeff_hat_array.shape)
             else:
                 grad_shape = grad.shape
-                grad = grad.unsqueeze(-1).expand(*grad_shape, cp.shape[-1])
+                grad = grad.unsqueeze(-1).expand(*grad_shape, coeff_hat_array.shape[-1])
         ##### end #####
-        return grad, None, None, None, None, None, None, None
+        return grad, None, None, None
