@@ -117,7 +117,7 @@ class Knapsack(PTOProblem):
         else:
             raise ValueError("Y should be np.ndarray or torch.Tensor")
 
-    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         # determine solver
         if optSolver is None:
             if params.ndim > 1:

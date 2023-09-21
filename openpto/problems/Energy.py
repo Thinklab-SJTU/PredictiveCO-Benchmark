@@ -110,7 +110,7 @@ class Energy(PTOProblem):
             ans_list = torch.tensor(ans_list)
         return ans_list
 
-    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         # determine solver
         if optSolver is None:
             optSolver = ICONGrbSolver(**kwargs)

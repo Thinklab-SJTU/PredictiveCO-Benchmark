@@ -71,11 +71,7 @@ class NCE(optModel):
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
         obj_cp = problem.get_objective(coeff_hat, sol_true)
-        # print("obj shape: ", coeff_hat.shape, sol_true.shape, obj_cp.shape)
         objpool_cp = problem.get_objective(coeff_hat_pool, solpool)
-        # print("pool shape: ", coeff_hat_pool.shape, solpool.shape, objpool_cp.shape)
-        # print(obj_cp)
-        # print(objpool_cp)
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = obj_cp - objpool_cp

@@ -56,9 +56,7 @@ def print_metrics(
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            objective_hat = problem.get_objective(
-                Zs_hat, preds.cpu().numpy(), **problem.init_API()
-            )
+            objective_hat = problem.get_objective(Zs_hat, Ys, **problem.init_API())
             # Loss and Error
             losses = []
             preds = model(Xs)
