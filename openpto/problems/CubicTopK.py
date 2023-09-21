@@ -93,7 +93,7 @@ class CubicTopK(PTOProblem):
         obj = (Z * Y).sum(-1).sum(-1)
         return obj
 
-    def get_decision(self, Y, params, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget, dim=1)

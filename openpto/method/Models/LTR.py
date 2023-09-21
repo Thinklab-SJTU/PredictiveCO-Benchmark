@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
 class pointwiseLTR(optModel):
@@ -119,8 +118,8 @@ class pairwiseLTR(optModel):
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = _solve_in_pass(
-                cp, params, problem, self.optSolver, self.processes, self.pool
+            sol, _ = problem.get_decision(
+                cp, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol))
@@ -210,8 +209,8 @@ class listwiseLTR(optModel):
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = _solve_in_pass(
-                cp, params, problem, self.optSolver, self.processes, self.pool
+            sol, _ = problem.get_decision(
+                cp, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol))

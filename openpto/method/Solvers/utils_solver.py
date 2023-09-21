@@ -52,31 +52,3 @@ def solve_lineqn(A, b, eps=1e-5):
         print("WARNING: The matrix was singular")
         result = torch.linalg.solve(A + eps * torch.eye(A.shape[-1]), b)
     return result
-
-
-############################### Solve ##################################
-
-
-def _solve_in_pass(cp, params, problem, optSolver, processes, pool):
-    """
-    A function to solve optimization in the forward/backward pass
-    """
-    # number of instance
-
-    # single-core
-    if processes == 1:
-        sol, obj = problem.get_decision(cp, params, optSolver, **problem.init_API())
-    # multi-core
-    else:
-        raise NotImplementedError("Parallel computing is not supported yet.")
-        # # get class
-        # model_type = type(optmodel)
-        # # get args
-        # args = getArgs(optmodel)
-        # # parallel computing
-        # res = pool.amap(_solveWithObj4Par, cp, [args] * ins_num,
-        #                 [model_type] * ins_num).get()
-        # # get res
-        # sol = np.array(list(map(lambda x: x[0], res)))
-        # obj = np.array(list(map(lambda x: x[1], res)))
-    return sol, obj

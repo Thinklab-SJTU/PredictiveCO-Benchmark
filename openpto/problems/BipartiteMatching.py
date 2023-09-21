@@ -241,7 +241,13 @@ class BipartiteMatching(PTOProblem):
         return ans_list
 
     def get_decision(
-        self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs
+        self,
+        Y,
+        params,
+        optSolver=None,
+        isTrain=False,
+        max_instances_per_batch=5000,
+        **kwargs,
     ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
