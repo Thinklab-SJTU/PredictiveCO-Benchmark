@@ -56,7 +56,17 @@ def print_metrics(
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            objective_hat = problem.get_objective(Zs_hat, Ys, **problem.init_API())
+            if torch.is_tensor(Ys):
+                Ys_array = Ys.cpu().numpy()
+            else:
+                Ys_array = Ys
+            if torch.is_tensor(Zs_hat):
+                Zs_hat_array = Zs_hat.cpu().numpy()
+            else:
+                Zs_hat_array = Zs_hat
+            objective_hat = problem.get_objective(
+                Ys_array, Zs_hat_array, **problem.init_API()
+            )
             # Loss and Error
             losses = []
             preds = model(Xs)
