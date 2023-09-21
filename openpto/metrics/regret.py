@@ -1,5 +1,7 @@
 import torch
 
+from openpto.method.utils_method import move_to_array
+
 
 def regret_func(problem, coeff_true, sols_true, sols_hat):
     if torch.is_tensor(coeff_true):
@@ -7,6 +9,5 @@ def regret_func(problem, coeff_true, sols_true, sols_hat):
     objs_hat = problem.get_objective(coeff_true, sols_hat)
     objs_true = problem.get_objective(coeff_true, sols_true)
     regret = abs(objs_hat - objs_true)
-    if torch.is_tensor(regret):  # convert to tensor
-        regret = regret.cpu().numpy()
+    regret = move_to_array(regret)
     return regret

@@ -4,6 +4,7 @@ import time
 
 import torch
 
+from openpto.method.utils_method import move_to_array
 from openpto.metrics.regret import regret_func
 
 
@@ -56,14 +57,10 @@ def print_metrics(
                 isTrain=isTrain,
                 **problem.init_API(),
             )
-            if torch.is_tensor(Ys):
-                Ys_array = Ys.cpu().numpy()
-            else:
-                Ys_array = Ys
-            if torch.is_tensor(Zs_hat):
-                Zs_hat_array = Zs_hat.cpu().numpy()
-            else:
-                Zs_hat_array = Zs_hat
+
+            Ys_array = move_to_array(Ys)
+            Zs_hat_array = move_to_array(Zs_hat)
+
             objective_hat = problem.get_objective(
                 Ys_array, Zs_hat_array, **problem.init_API()
             )

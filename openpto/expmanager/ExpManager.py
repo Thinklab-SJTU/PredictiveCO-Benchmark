@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Models.MSE import MSE
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
+from openpto.method.utils_method import move_to_array
 
 
 class OptDataset(Dataset):
@@ -73,10 +74,10 @@ class ExpManager:
             isTrain=False,
             **problem.init_API(),
         )
-        if torch.is_tensor(Z_val_opt):
-            Z_val_opt = Z_val_opt.cpu().numpy()
-        if torch.is_tensor(Objs_val_opt):
-            Objs_val_opt = Objs_val_opt.cpu().numpy()
+
+        Z_val_opt = move_to_array(Z_val_opt)
+        Objs_val_opt = move_to_array(Objs_val_opt)
+        #
         Z_test_opt, Objs_test_opt = problem.get_decision(
             Y_test,
             params=Y_test_aux,
@@ -84,10 +85,8 @@ class ExpManager:
             isTrain=False,
             **problem.init_API(),
         )
-        if torch.is_tensor(Z_test_opt):
-            Z_test_opt = Z_test_opt.cpu().numpy()
-        if torch.is_tensor(Objs_test_opt):
-            Objs_test_opt = Objs_test_opt.cpu().numpy()
+        Z_test_opt = move_to_array(Z_test_opt)
+        Objs_test_opt = move_to_array(Objs_test_opt)
         # save
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt

@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import move_to_array, move_to_tensor
 
 
 class pointwiseLTR(optModel):
@@ -47,16 +48,21 @@ class pointwiseLTR(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        cp = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = problem.get_decision(
-                cp, params, self.optSolver, **problem.init_API()
+            sol_hat, _ = problem.get_decision(
+                coeff_hat_array, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol))
+            self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
+        # get sol_true:
+        coeff_true_array = move_to_array(coeff_true)
+        sol_true, _ = problem.get_decision(
+            coeff_true_array, params, self.optSolver, **problem.init_API()
+        )
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
         # obj for solpool as score
@@ -65,9 +71,9 @@ class pointwiseLTR(optModel):
         coeff_true = coeff_true.expand(*expand_shape)
         #
         objpool_c = problem.get_objective(coeff_true, solpool)
-        objpool_cp = problem.get_objective(coeff_hat, solpool)
+        objpool_c_hat = problem.get_objective(coeff_hat, solpool)
         # squared loss
-        loss = (objpool_c - objpool_cp).square().mean(axis=0)
+        loss = (objpool_c - objpool_c_hat).square().mean(axis=0)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
@@ -103,61 +109,68 @@ class pairwiseLTR(optModel):
         Forward pass
         """
         # get device
-        device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train,
-                params=Y_train_aux,
+                Y_train[:3],
+                params=Y_train_aux[:3],
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
         # convert tensor
-        cp = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = problem.get_decision(
-                cp, params, self.optSolver, **problem.init_API()
+            sol_hat, _ = problem.get_decision(
+                coeff_hat_array, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol))
+            self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
-        # convert tensor
-        solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-        # obj for solpool
+        sol_true, _ = problem.get_decision(
+            coeff_true, params, self.optSolver, **problem.init_API()
+        )
+        solpool = self.solpool
+        # transform to tensor
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
-        coeff_hat = coeff_hat.expand(*expand_shape)
-        coeff_true = coeff_true.expand(*expand_shape)
-        objpool_c = problem.get_objective(coeff_true, solpool)
-        objpool_cp = problem.get_objective(coeff_hat, solpool)
-        # objpool_c = torch.einsum("bd,nd->bn", coeff_true, solpool)  # true cost
-        # objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)  # pred cost
-        # init relu as max(0,x)
+        coeff_hat_pool = coeff_hat.expand(*expand_shape)
+        coeff_true_pool = coeff_true.expand(*expand_shape)
+        #
+        move_to_tensor(sol_true).to(problem.device)
+        solpool_tensor = move_to_tensor(solpool).to(problem.device)
+        # obj for solpool
+        objpool_c_true = problem.get_objective(coeff_true_pool, solpool_tensor)
+        objpool_c_hat_pool = problem.get_objective(coeff_hat_pool, solpool_tensor)
+        # TODO: currently, only support batch-1 training
         # init loss
         loss = []
         for i in range(len(coeff_hat)):
             # best sol
             if self.optSolver.modelSense == GRB.MINIMIZE:
-                best_ind = torch.argmin(objpool_c)
-                # best_ind = torch.argmin(objpool_c[i])
-            if self.optSolver.modelSense == GRB.MAXIMIZE:
-                best_ind = torch.argmax(objpool_c)
-                # best_ind = torch.argmax(objpool_c[i])
-            # objpool_cp_best = objpool_cp[i, best_ind]
-            objpool_cp_best = objpool_cp[best_ind]
+                # best_ind = torch.argmin(objpool_c_true[i])
+                best_ind = torch.argmin(objpool_c_true)
+            elif self.optSolver.modelSense == GRB.MAXIMIZE:
+                # best_ind = torch.argmax(objpool_c_true[i])
+                best_ind = torch.argmax(objpool_c_true)
+            else:
+                raise NotImplementedError
+            objpool_cp_best = objpool_c_hat_pool[best_ind]
+            # objpool_cp_best = objpool_c_hat_pool[i, best_ind]
             # rest sol
-            # rest_ind = [j for j in range(len(objpool_cp[i])) if j != best_ind]
-            # objpool_cp_rest = objpool_cp[i, rest_ind]
-            rest_ind = [j for j in range(len(objpool_cp)) if j != best_ind]
-            objpool_cp_rest = objpool_cp[rest_ind]
+            rest_ind = [j for j in range(len(objpool_c_hat_pool)) if j != best_ind]
+            # rest_ind = [j for j in range(len(objpool_c_hat_pool[i])) if j != best_ind]
+            objpool_cp_rest = objpool_c_hat_pool[rest_ind]
+            # objpool_cp_rest = objpool_c_hat_pool[i, rest_ind]
             # best vs rest loss
             if self.optSolver.modelSense == GRB.MINIMIZE:
-                loss.append(F.relu(objpool_cp_best - objpool_cp_rest).mean())
-            if self.optSolver.modelSense == GRB.MAXIMIZE:
-                loss.append(F.relu(objpool_cp_rest - objpool_cp_best).mean())
+                loss.append(F.relu(objpool_cp_best - objpool_cp_rest))
+            elif self.optSolver.modelSense == GRB.MAXIMIZE:
+                loss.append(F.relu(objpool_cp_rest - objpool_cp_best))
+            else:
+                raise NotImplementedError
         loss = torch.stack(loss)
         # reduction
         if hyperparams["reduction"] == "mean":
@@ -177,7 +190,7 @@ class listwiseLTR(optModel):
     Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, tau=1.0, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
@@ -185,6 +198,10 @@ class listwiseLTR(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
         """
         super().__init__(optSolver, processes, solve_ratio)
+
+        if tau <= 0:
+            raise ValueError("tau is not positive.")
+        self.tau = tau
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=object)
@@ -194,7 +211,6 @@ class listwiseLTR(optModel):
         Forward pass
         """
         # get device
-        device = coeff_hat.device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
@@ -206,31 +222,34 @@ class listwiseLTR(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        cp = coeff_hat.detach().to("cpu").numpy()
-        # solve
+        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        # solve $TODO: if sol pool reasonable?
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = problem.get_decision(
-                cp, params, self.optSolver, **problem.init_API()
+            sol_hat, _ = problem.get_decision(
+                coeff_hat_array, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol))
+            self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
-        solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
+        solpool = move_to_tensor(self.solpool).to(problem.device)
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
         # obj for solpool
         objpool_c = problem.get_objective(coeff_true, solpool)
-        objpool_cp = problem.get_objective(coeff_hat, solpool)
+        objpool_c_hat = problem.get_objective(coeff_hat, solpool)
         # cross entropy loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
-            # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
-            loss = -(F.log_softmax(objpool_cp, dim=0) * F.softmax(objpool_c, dim=0))
-        if self.optSolver.modelSense == GRB.MAXIMIZE:
-            # loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
-            loss = -(F.log_softmax(-objpool_cp, dim=0) * F.softmax(-objpool_c, dim=0))
+            loss = -(
+                F.log_softmax(-objpool_c_hat / self.tau, dim=0)
+                * F.softmax(-objpool_c / self.tau, dim=0)
+            )
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -(F.log_softmax(objpool_c_hat, dim=0) * F.softmax(objpool_c, dim=0))
+        else:
+            raise NotImplementedError
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
