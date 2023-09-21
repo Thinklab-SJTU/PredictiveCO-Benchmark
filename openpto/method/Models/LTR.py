@@ -14,11 +14,9 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Solvers.utils_solver import _solve_in_pass
 
 
-# TODO: currently only support single-instance batch
-class listwiseLTR(optModel):
+class pointwiseLTR(optModel):
     """
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
-    Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
     def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
@@ -53,8 +51,8 @@ class listwiseLTR(optModel):
         cp = coeff_hat.detach().to("cpu").numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
-            sol, _ = _solve_in_pass(
-                cp, params, problem, self.optSolver, self.processes, self.pool
+            sol, _ = problem.get_decision(
+                cp, params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol))
@@ -62,19 +60,15 @@ class listwiseLTR(optModel):
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
+        # obj for solpool as score
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
-        # obj for solpool
+        #
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
-        # cross entropy loss
-        if self.optSolver.modelSense == GRB.MINIMIZE:
-            # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
-            loss = -(F.log_softmax(objpool_cp, dim=0) * F.softmax(objpool_c, dim=0))
-        if self.optSolver.modelSense == GRB.MAXIMIZE:
-            # loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
-            loss = -(F.log_softmax(-objpool_cp, dim=0) * F.softmax(-objpool_c, dim=0))
+        # squared loss
+        loss = (objpool_c - objpool_cp).square().mean(axis=0)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
@@ -178,9 +172,10 @@ class pairwiseLTR(optModel):
         return loss
 
 
-class pointwiseLTR(optModel):
+class listwiseLTR(optModel):
     """
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
+    Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
     def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
@@ -224,15 +219,19 @@ class pointwiseLTR(optModel):
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-        # obj for solpool as score
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
-        #
+        # obj for solpool
         objpool_c = problem.get_objective(coeff_true, solpool)
         objpool_cp = problem.get_objective(coeff_hat, solpool)
-        # squared loss
-        loss = (objpool_c - objpool_cp).square().mean(axis=0)
+        # cross entropy loss
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            # loss = -(F.log_softmax(objpool_cp, dim=1) * F.softmax(objpool_c, dim=1))
+            loss = -(F.log_softmax(objpool_cp, dim=0) * F.softmax(objpool_c, dim=0))
+        if self.optSolver.modelSense == GRB.MAXIMIZE:
+            # loss = -(F.log_softmax(-objpool_cp, dim=1) * F.softmax(-objpool_c, dim=1))
+            loss = -(F.log_softmax(-objpool_cp, dim=0) * F.softmax(-objpool_c, dim=0))
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
