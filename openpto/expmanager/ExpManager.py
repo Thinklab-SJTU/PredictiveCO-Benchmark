@@ -150,6 +150,13 @@ class ExpManager:
                     ):
                         best = (metrics["val"]["regret"], deepcopy(self.pred_model))
                         time_since_best = 0
+                        # save
+                        torch.save(
+                            self.pred_model.state_dict(),
+                            os.path.join(
+                                self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
+                            ),
+                        )
 
                     # Stop if model hasn't improved for patience steps
                     if self.args.earlystopping and time_since_best > self.args.patience:
@@ -164,7 +171,6 @@ class ExpManager:
                 self.optimizer.step()
                 loss.item()
                 if debug:
-                    os.makedirs(os.path.join(self.args.log_dir, "tensors"))
                     torch.save(
                         preds.detach().cpu(),
                         os.path.join(
@@ -201,6 +207,13 @@ class ExpManager:
                 if best[1] is None or metrics["val"]["regret"].mean() <= best[0].mean():
                     best = (metrics["val"]["regret"], deepcopy(self.pred_model))
                     time_since_best = 0
+                    # save
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(
+                            self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
+                        ),
+                    )
 
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
@@ -211,11 +224,6 @@ class ExpManager:
             # currently, only support individually train
             losses = []
             preds = self.pred_model(X_train)
-            if debug:
-                torch.save(
-                    preds,
-                    os.path.join(self.args.log_dir, "tensors", f"preds-EP{iter_idx}.pt"),
-                )
             time_train_start = time.time()
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
