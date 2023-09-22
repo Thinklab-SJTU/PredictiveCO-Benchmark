@@ -29,8 +29,6 @@ models:
     reduction: sum
   mse:
     reduction: sum
-  msesum:
-    alpha: 0.1
   ce:
     reduction: sum
   dfl:
