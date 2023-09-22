@@ -16,7 +16,12 @@ python rethink_exp/main_results.py --problem=cubic --opt_model pairLTR  --solver
 python rethink_exp/main_results.py --problem=cubic --opt_model lodl     --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 
 # prediction + decision
+<<<<<<< HEAD
 python rethink_exp/main_results.py --problem=cubic --opt_model blackbox --solver heuristic --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU}
 python rethink_exp/main_results.py --problem=cubic --opt_model identity --solver heuristic --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU}
 
+=======
+python rethink_exp/main_results.py --problem=cubic --opt_model blackbox --solver heuristic --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU} --lr 5e-2
+python rethink_exp/main_results.py --problem=cubic --opt_model identity --solver heuristic --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU} --lr 5e-2
+>>>>>>> 70034ca7253cd9f31e8b36877e4671f54c26a8ea
 
