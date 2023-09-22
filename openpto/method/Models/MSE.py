@@ -132,6 +132,6 @@ class DFL(optModel):
         )
         if isinstance(objs, np.ndarray):
             objs = torch.from_numpy(objs.astype("float")).to(problem.device)
-        twostage_loss = twostageloss(problem, coeff_hat, coeff_true)
+        twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
         loss = -objs + self.dflalpha * twostage_loss
         return loss

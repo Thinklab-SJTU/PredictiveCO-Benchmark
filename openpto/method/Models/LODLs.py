@@ -275,6 +275,9 @@ class LODL(optModel):
 
         # Return the loss function in the expected form
         def surrogate_decision_quality(coeff_hat, coeff_true, partition, index, **kwargs):
+            if partition == "test":
+                partition = "train"
+            # during testing, loss is evaluated on the training samples
             return (
                 losses[partition][index](coeff_hat).flatten()
                 - SL_dataset[partition][index][1]
