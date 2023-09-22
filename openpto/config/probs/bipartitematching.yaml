@@ -1,5 +1,5 @@
 dataset:
-  num_nodes: 10
+  num_nodes: 50
   prob_version: bipartitematching
 
 models:

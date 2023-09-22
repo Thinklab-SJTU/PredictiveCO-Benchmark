@@ -5,9 +5,11 @@ Abstract optimization model based on GurobiPy
 """
 
 
-from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
-from cvxpylayers.torch import CvxpyLayer
 import cvxpy as cp
+
+from cvxpylayers.torch import CvxpyLayer
+
+from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
 
 
 class BmatchingSolver(optCPSolver):
@@ -18,16 +20,16 @@ class BmatchingSolver(optCPSolver):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self, modelSense=None, isTrain=True, num_nodes=10, **kwargs):
+    def __init__(self, modelSense=None, isTrain=True, num_nodes=50, **kwargs):
         super().__init__(modelSense)
 
-    def _getModel(self, isTrain=True, num_nodes=10):
+    def _getModel(self, isTrain=True, num_nodes=50):
         return self._create_cvxpy_problem(isTrain, num_nodes)
 
     def _create_cvxpy_problem(
         self,
         isTrain=True,
-        num_nodes=0,
+        num_nodes=50,
         gamma=0.1,
     ):
         # Variables

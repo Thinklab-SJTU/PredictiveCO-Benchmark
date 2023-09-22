@@ -44,6 +44,7 @@ models:
     reduction: mean
   dfl:
     dflalpha: 0.1
+    reduction: sum
 
 solver:
   gurobi:

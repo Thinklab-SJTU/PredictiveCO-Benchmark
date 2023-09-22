@@ -232,6 +232,7 @@ class ExpManager:
         )
         total_test_time = results["test"]["time"]
         print("Y_test's shape=", Y_test.shape)
+        #print(Y_test)
         #   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
@@ -243,7 +244,6 @@ class ExpManager:
                 **problem.init_API(),
             )
             objs_rand.append(torch.Tensor(objectives_rand))
-
         #   Document the optimal value
         Z_test_opt, objectives_opt = problem.get_decision(
             Y_test,

@@ -5,9 +5,6 @@ Abstract optimization model based on GurobiPy
 """
 
 
-from openpto.method.Solvers.abcOptSolver import optSolver
-
-
 class optCPSolver:
     """
     This is an abstract class for Gurobi-based optimization model

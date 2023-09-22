@@ -1,8 +1,8 @@
+from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
 from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.heuristic.TopKSolver import TopKSolver
 from openpto.method.Solvers.neural.BudgetallocSolver import budgetallocSolver
-from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
 
 
 ################################# Wrappers ################################################

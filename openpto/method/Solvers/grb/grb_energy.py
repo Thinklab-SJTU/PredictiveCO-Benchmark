@@ -1,5 +1,3 @@
-import math
-
 import gurobipy as gp  # pylint: disable=no-name-in-module
 import numpy as np
 import torch
@@ -116,7 +114,6 @@ class ICONGrbSolver(optGrbSolver):
         P = self.P
         q = self.q
         N = 1440 // q
-        newcut = None
         verbose = self.verbose
         x = self.z
         nbMachines = self.nbMachines
@@ -124,7 +121,7 @@ class ICONGrbSolver(optGrbSolver):
         nbResources = self.nbResources
         Machines = range(nbMachines)
         Tasks = range(nbTasks)
-        Resources = range(nbResources)
+        range(nbResources)
         if torch.is_tensor(price):
             price = price.cpu().numpy()
 

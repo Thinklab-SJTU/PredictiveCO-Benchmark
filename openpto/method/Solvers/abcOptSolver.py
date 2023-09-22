@@ -7,8 +7,6 @@ Abstract optimization model
 from abc import abstractmethod
 from copy import deepcopy
 
-import cvxpy as cp
-from gurobipy import GRB
 
 
 class optSolver(object):
@@ -21,7 +19,6 @@ class optSolver(object):
     def __init__(self, modelSense):
         # default sense
         self.modelSense = modelSense
-        self._model, self.z = self._getModel()
         self.z = None
 
     def __repr__(self):

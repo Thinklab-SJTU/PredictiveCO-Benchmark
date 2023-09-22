@@ -10,9 +10,7 @@ from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from openpto.method.Solvers.grb.grb_energy import (
-    ICONGrbSolver,
-)
+from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.problems.PTOProblem import PTOProblem
 
 BENCHMARK_SIZE = 48
@@ -87,23 +85,6 @@ class Energy(PTOProblem):
             self.Ys[self.test_idxs],
             [None for _ in range(len(self.test_idxs))],
         )
-
-    def get_decision(self, Y, params, isTrain=True, optSolver=None, **kwargs):
-        # determine solver
-        if optSolver is None:
-            optSolver = ICONGrbSolver(**kwargs)
-
-        if Y.ndim == 1:
-            Y = Y.reshape(1, -1)
-        ins_num = len(Y)
-        sol = []
-        obj = []
-        for i in range(ins_num):
-            # solve
-            solp, objp = optSolver.solve(Y[i])
-            sol.append(solp)
-            obj.append(objp)
-        return np.array(sol), np.array(obj)
 
     def get_objective(self, Y, Z, **kwargs):
         N = 1440 // self.q
