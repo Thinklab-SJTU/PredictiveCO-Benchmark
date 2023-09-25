@@ -3,7 +3,6 @@ dataset:
   # generate knapsack data
   generate_weight: True
   unit_weight: False
-  # kfold: 5
   noise_level: 0
   noise_width: 0.5
   poly_deg: 4
@@ -13,35 +12,35 @@ dataset:
 
 models:
   spo:
-    is_plus: False
-    reduction: mean
+    reduction: sum
   blackbox:
-    reduction: mean
+    reduction: sum
     lambd: 0.1
   identity:
-    reduction: mean
+    reduction: sum
   qptl:
-    reduction: mean
+    reduction: sum
   listLTR:
-    reduction: mean
+    reduction: sum
+    tau: 1
   pairLTR:
-    reduction: mean
+    reduction: sum
   pointLTR:
-    reduction: mean
+    reduction: sum
   nce:
-    reduction: mean
+    reduction: sum
   lodl:
     sampling: random
     quadrank: 20
     quadalpha: 0
     serial: True
-    reduction: mean
+    reduction: sum
   mse:
-    reduction: mean
+    reduction: sum
   msesum:
     alpha: 0.1
   ce:
-    reduction: mean
+    reduction: sum
   dfl:
     dflalpha: 0.1
     reduction: sum

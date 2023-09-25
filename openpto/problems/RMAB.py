@@ -377,7 +377,7 @@ class RMAB(PTOProblem):
             raise AssertionError("Invalid eval_method")
         return obj(T, Pi, **kwargs)
 
-    def get_decision(self, Y, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
         return self.opt_train(Y, self.gamma) if isTrain else self.opt_test(Y, self.gamma)
 
 

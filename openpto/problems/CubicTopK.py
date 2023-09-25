@@ -86,6 +86,8 @@ class CubicTopK(PTOProblem):
         return Z
 
     def get_objective(self, Y, Z, **kwargs):
+        assert Y.shape == Z.shape
+        print("shape: ", Y.shape, Z.shape)
         if isinstance(Z, np.ndarray):
             Z = np.expand_dims(Z, -1)
         else:
@@ -93,7 +95,7 @@ class CubicTopK(PTOProblem):
         obj = (Z * Y).sum(-1).sum(-1)
         return obj
 
-    def get_decision(self, Y, params, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         _, idxs = torch.topk(Y, self.budget, dim=1)

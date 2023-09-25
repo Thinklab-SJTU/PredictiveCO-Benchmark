@@ -8,7 +8,7 @@ Abstract optimization model based on GurobiPy
 import cvxpy as cp
 
 from cvxpylayers.torch import CvxpyLayer
-
+from gurobipy import GRB 
 from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
 
 

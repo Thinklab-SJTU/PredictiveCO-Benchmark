@@ -190,7 +190,7 @@ class BudgetAllocation(PTOProblem):
         obj = (w * (1 - p_all_fail)).sum(dim=-1)
         return obj
 
-    def get_decision(self, Y, params, optSolver, Z_init=None, **kwargs):
+    def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 2:
             assert 0

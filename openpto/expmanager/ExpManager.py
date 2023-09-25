@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Models.MSE import MSE
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
+from openpto.method.utils_method import move_to_array
 
 
 class OptDataset(Dataset):
@@ -58,11 +59,51 @@ class ExpManager:
         problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
+        ############################## Data ##############################
         # Get data
         X_train, Y_train, Y_train_aux = problem.get_train_data()
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
+        ############################## Preliminary Optimization ##############################
+        ###   Document the optimal value
+        Z_val_opt, Objs_val_opt = problem.get_decision(
+            Y_val,
+            params=Y_val_aux,
+            optSolver=optSolver,
+            isTrain=False,
+            **problem.init_API(),
+        )
+
+        Z_val_opt = move_to_array(Z_val_opt)
+        Objs_val_opt = move_to_array(Objs_val_opt)
+        #
+        Z_test_opt, Objs_test_opt = problem.get_decision(
+            Y_test,
+            params=Y_test_aux,
+            optSolver=optSolver,
+            isTrain=False,
+            **problem.init_API(),
+        )
+        Z_test_opt = move_to_array(Z_test_opt)
+        Objs_test_opt = move_to_array(Objs_test_opt)
+        # save
+        problem.z_val_opt = Z_val_opt
+        problem.z_test_opt = Z_test_opt
+        ###   Document the value of a random guess
+        objs_rand = []
+        for _ in range(10):
+            Z_test_rand, objectives_rand = problem.get_decision(
+                torch.rand_like(Y_test),
+                params=Y_test_aux,
+                optSolver=optSolver,
+                isTrain=False,
+                **problem.init_API(),
+            )
+            objs_rand.append(torch.Tensor(objectives_rand))
+        objs_rand = torch.stack(objs_rand)
+
+        ############################# Pretrain #############################
         # Pretrain prediction model
         total_train_time = 0
         time_train_start = time.time()
@@ -72,14 +113,13 @@ class ExpManager:
         val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         if self.args.n_ptr_epochs > 0:
             pred_dataset = OptDataset(X_train, Y_train)
-            pred_dataloader = DataLoader(
+            DataLoader(
                 pred_dataset,
                 batch_size=self.args.pred_bz,
                 shuffle=True,
                 num_workers=1,
                 drop_last=False,
             )
-            # criterion = torch.nn.MSELoss()
             criterion = MSE()
             self.logger.info("Pretraining Prediction Model...")
             # pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)
@@ -104,26 +144,24 @@ class ExpManager:
                     add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
                     add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
                     # Save model if it's the best one
-                    if best[1] is None or metrics["val"]["loss"] <= best[0]:
-                        best = (metrics["val"]["loss"], deepcopy(self.pred_model))
+                    if (
+                        best[1] is None
+                        or metrics["val"]["regret"].mean() <= best[0].mean()
+                    ):
+                        best = (metrics["val"]["regret"], deepcopy(self.pred_model))
                         time_since_best = 0
+                        # save
+                        torch.save(
+                            self.pred_model.state_dict(),
+                            os.path.join(
+                                self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
+                            ),
+                        )
 
                     # Stop if model hasn't improved for patience steps
                     if self.args.earlystopping and time_since_best > self.args.patience:
                         break
 
-                ptr_total_loss = 0
-                ###### batch training
-                # for batch in pred_dataloader:
-                #     X_idx, Y_idx = batch
-                #     preds = self.pred_model(X_idx)
-                #     loss = criterion(preds, Y_idx.float())
-
-                #     self.optimizer.zero_grad()
-                #     loss.backward()
-                #     self.optimizer.step()
-                #     ptr_total_loss += loss.item()
-                ptr_total_loss / len(pred_dataloader)
                 ###### one-shot training
                 preds = self.pred_model(X_train)
                 loss = criterion(problem, preds, Y_train.float(), **self.model_args)
@@ -133,22 +171,17 @@ class ExpManager:
                 self.optimizer.step()
                 loss.item()
                 if debug:
-                    os.makedirs(os.path.join(self.args.log_dir, "tensors"))
                     torch.save(
                         preds.detach().cpu(),
                         os.path.join(
                             self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
                         ),
                     )
-
-                # pbar.update(1)
-                # pbar.set_postfix({"epoch": ptr_epoch, "loss": f"{avg_loss:.6f}"})
-                # print(f"Epoch [{ptr_epoch + 1}/{self.args.n_ptr_epochs}] - Loss: {avg_loss:.4f}")
-            # pbar.close()
         total_train_time += time.time() - time_train_start
-
         if best[1] is not None and self.args.earlystopping:
             self.pred_model = best[1]
+
+        ############################# Train #############################
         # Train PTO
         for iter_idx in range(n_epochs):
             # Check metrics on val set
@@ -171,9 +204,16 @@ class ExpManager:
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
                 add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
                 # Save model if it's the best one
-                if best[1] is None or metrics["val"]["loss"] <= best[0]:
-                    best = (metrics["val"]["loss"], deepcopy(self.pred_model))
+                if best[1] is None or metrics["val"]["regret"].mean() <= best[0].mean():
+                    best = (metrics["val"]["regret"], deepcopy(self.pred_model))
                     time_since_best = 0
+                    # save
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(
+                            self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
+                        ),
+                    )
 
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
@@ -184,11 +224,6 @@ class ExpManager:
             # currently, only support individually train
             losses = []
             preds = self.pred_model(X_train)
-            if debug:
-                torch.save(
-                    preds,
-                    os.path.join(self.args.log_dir, "tensors", f"preds-EP{iter_idx}.pt"),
-                )
             time_train_start = time.time()
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
@@ -212,6 +247,7 @@ class ExpManager:
         if best[1] is not None and self.args.earlystopping:
             self.pred_model = best[1]
 
+        ############################# Evaluate final model #############################
         # Document how well this trained model does
         self.logger.info("Benchmarking Model...")
         # Print final metrics
@@ -231,55 +267,30 @@ class ExpManager:
             **self.model_args,
         )
         total_test_time = results["test"]["time"]
-        print("Y_test's shape=", Y_test.shape)
-        #print(Y_test)
-        #   Document the value of a random guess
-        objs_rand = []
-        for _ in range(10):
-            Z_test_rand, objectives_rand = problem.get_decision(
-                torch.rand_like(Y_test),
-                params=Y_test_aux,
-                optSolver=optSolver,
-                isTrain=False,
-                **problem.init_API(),
-            )
-            objs_rand.append(torch.Tensor(objectives_rand))
-        #   Document the optimal value
-        Z_test_opt, objectives_opt = problem.get_decision(
-            Y_test,
-            params=Y_test_aux,
-            optSolver=optSolver,
-            isTrain=False,
-            **problem.init_API(),
-        )
-
-        # regret
-        if torch.is_tensor(objectives_opt):
-            objectives_opt = objectives_opt.cpu()
-        regret = np.abs(objectives_opt - results["test"]["objective"])
-
-        # save to file
+        regret = results["test"]["regret"]
+        ############################ Save to file ############################
+        # save logs
         save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
         save_pd(val_logs, os.path.join(self.args.log_dir, "val_logs.csv"))
+        # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
-            [objectives_opt, results["test"]["objective"], regret],
+            [Objs_test_opt, results["test"]["objective"], regret],
         )
+        # save solutions
         np.save(os.path.join(self.args.log_dir, "solution.npy"), Z_test_opt)
-        if torch.is_tensor(Z_test_opt):
-            Z_test_opt = Z_test_opt.cpu().numpy()
         if debug:
             torch.save(
                 results["test"]["preds"].cpu().detach(),
                 os.path.join(self.args.log_dir, "tensors", "preds.pt"),
             )
 
-        # print
+        ############################ Logging ############################
         avg_train_time = total_train_time / (self.args.n_ptr_epochs + n_epochs)
         avg_test_time = total_test_time
         self.logger.info(
-            f"[Random Obj]: {torch.stack(objs_rand).mean().item():.6f} "
-            f"[Optimal Obj]: {objectives_opt.mean().item():.6f} "
+            f"[Random Obj]: {objs_rand.mean().item():.6f} "
+            f"[Optimal Obj]: {Objs_test_opt.mean().item():.6f} "
             f"[Regret]: {regret.mean():.6f} "
             f"[avg Train Time]: {avg_train_time:.6f} "
             f"[avg Test Time]: {avg_test_time:.6f} "

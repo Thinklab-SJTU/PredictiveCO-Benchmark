@@ -8,7 +8,6 @@ from abc import abstractmethod
 from copy import deepcopy
 
 
-
 class optSolver(object):
     """1
 

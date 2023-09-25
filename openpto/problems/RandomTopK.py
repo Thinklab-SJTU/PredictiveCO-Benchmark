@@ -135,7 +135,7 @@ class RandomTopK(PTOProblem):
         obj = (Z * Y).sum(dim=-1) + alpha * Z.square().mean()
         return obj
 
-    def get_decision(self, Y):
+    def get_decision(self, Y, params, optSolver=None):
         # If this is a single instance of a decision problem
         if len(Y.shape) == 1:
             return self.opt(Y)

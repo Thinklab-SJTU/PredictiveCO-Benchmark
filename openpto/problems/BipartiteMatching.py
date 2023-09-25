@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import pymetis as metis
 import torch
-
+from gurobipy import GRB
 import pickle
 
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
@@ -272,7 +272,7 @@ class BipartiteMatching(PTOProblem):
             adj = adj[lhs_nodes_idx]
             adj = adj[:, rhs_nodes_idx]
             edges_before = sum_before/2
-            print(sum_before/2, adj.sum())
+            #print(sum_before/2, adj.sum())
             percent_removed.append((edges_before - adj.sum())/edges_before)
             Ps[i] = adj.flatten()
             msubs[i] = M[lhs_nodes_idx][:,rhs_nodes_idx].flatten()
@@ -290,9 +290,12 @@ class BipartiteMatching(PTOProblem):
         # with open('cora_data.pickle', 'wb') as f:
         #     pickle.dump((Ps, data, msubs), f)
         # print("->Done.")
-        print(Ps.shape)
-        print(data.shape)
-        return torch.Tensor(np.array(data)), torch.Tensor(np.array(Ps))
+        #print(Ps.shape)
+        #print(data.shape)
+        data_tensor=torch.Tensor(np.array(data))
+        Ps_tensor=torch.Tensor(np.array(Ps)).reshape(-1,2500)
+        #print(data_tensor.shape,Ps_tensor.shape)
+        return data_tensor,  Ps_tensor
 
     def get_train_data(self):
         return (
@@ -330,43 +333,52 @@ class BipartiteMatching(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        #print("Y:",Y.shape)
-        #print("Z:",Z.shape)
+        # print("Y:",Y.shape)
+        # print("Z:",Z.shape)
+        Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
         Z = Z.reshape(-1, self.num_nodes, self.num_nodes)
+        if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor): Z= np.array(Z)
+        if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray): Z= torch.tensor(Z)
         ins_num = len(Y)
         ans_list = []
-        
+
         for i in range(ins_num):
             ans_list.append((Y[i] * Z[i]).sum())
         if isinstance(Y, np.ndarray):
-             ans_list = np.array(ans_list)
+            ans_list = np.array(ans_list)
         else:
-             ans_list = torch.tensor(ans_list)
-        #print("ans_list",ans_list)
+            ans_list = torch.tensor(ans_list)
+        # print("ans_list",ans_list)
         return ans_list
 
     def get_decision(
-        self, Y, params, optSolver, isTrain=False, max_instances_per_batch=5000, **kwargs
+        self,
+        Y,
+        params,
+        optSolver=None,
+        isTrain=False,
+        max_instances_per_batch=5000,
+        **kwargs,
     ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
         #if isinstance(Y, np.ndarray): print("Y is numpy!")
         Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
-        flag_numpy=0
-        if isinstance(Y, np.ndarray): 
+        flag_numpy = 0
+        if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
-            flag_numpy=1
+            flag_numpy = 1
         ins_num = len(Y)
         sols = []
         for i in range(ins_num):
             # solve
-            if isTrain: 
-                sol=self.opt_train(Y[i])
-            else: 
+            if isTrain:
+                sol = self.opt_train(Y[i])
+            else:
                 sol = self.opt_test(Y[i])
-            sol=sol[0].numpy()
+            sol = sol[0].numpy()
             sols.append(sol)
-        if flag_numpy==1:
+        if flag_numpy == 1:
             sols = np.array(sols)
         else:
             sols = torch.tensor(sols)
@@ -381,17 +393,18 @@ class BipartiteMatching(PTOProblem):
             #     )
             #     results.append(result)
         objs = self.get_objective(Y, sols)
-        if flag_numpy==1:
-            objs = np.array(objs)
-        else:
-            objs = torch.tensor(objs)
-        #print("sols",sols)
-        #print("objs",objs)
+        # if flag_numpy == 1:
+        #     objs = np.array(objs)
+        # else:
+        #     objs = torch.tensor(objs)
+        # print("sols",sols)
+        # print("objs",objs)
         return sols, objs
-        
 
     def init_API(self):
-        return {}
+        return {
+            "modelSense": GRB.MAXIMIZE,
+        }
 
     # def _create_constraint_matrix(self):
     #     """

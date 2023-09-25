@@ -52,9 +52,9 @@ def get_loss_fn(name, problem, **kwargs):
 
         return NCE
     elif name == "blackbox":
-        from openpto.method.Models.Blackbox import blackboxOpt
+        from openpto.method.Models.Blackbox import blackbox
 
-        return blackboxOpt
+        return blackbox
     elif name == "identity":
         from openpto.method.Models.Identity import negativeIdentity
 

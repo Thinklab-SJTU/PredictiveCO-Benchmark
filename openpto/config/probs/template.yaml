@@ -1,19 +1,24 @@
+dataset:
+  prob_version: real
+
+models:
   spo:
-    reduction: mean
+    reduction: sum
   blackbox:
-    reduction: mean
+    reduction: sum
   Identity:
-    reduction: mean
+    reduction: sum
   QPTL:
-    reduction: mean
+    reduction: sum
   listLTR:
-    reduction: mean
+    reduction: sum
+    tau: 1.0
   pairLTR:
-    reduction: mean
+    reduction: sum
   pointLTR:
-    reduction: mean
+    reduction: sum
   nce:
-    reduction: mean
+    reduction: sum
   LODL:
     sampling: random, random_flip, random_uniform, numerical_jacobian, random_jacobian, random_hessian, random
     samplingstd: 0.1
