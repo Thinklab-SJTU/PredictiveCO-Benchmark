@@ -40,6 +40,8 @@ models:
   dfl:
     dflalpha: 0.1
     reduction: sum
+  perturb: 
+    reduction: sum
     
 solver:
   neural: 

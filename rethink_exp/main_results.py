@@ -36,7 +36,7 @@ if __name__ == "__main__":
         args.prefix,
     )
     args.log_dir = log_dir
-    os.makedirs(os.path.join(log_dir, "checkpoints"))
+    os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
     logger = get_logger(log_dir)
     logger.info(f" args: {args} \n")
 

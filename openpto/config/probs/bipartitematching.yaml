@@ -35,6 +35,8 @@ models:
     reduction: sum
   dfl:
     dflalpha: 0.1
+  perturb: 
+    reduction: sum
 
 solver:
   cvxpy:

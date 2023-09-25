@@ -12,8 +12,6 @@ from sklearn.preprocessing import StandardScaler
 from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.problems.PTOProblem import PTOProblem
 
-BENCHMARK_SIZE = 48
-
 
 class Energy(PTOProblem):
     """

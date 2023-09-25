@@ -29,7 +29,7 @@ class pointwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars), dtype=object)
+        self.solpool = np.empty((0, n_vars), dtype=np.float)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -102,7 +102,7 @@ class pairwiseLTR(optModel):
         super().__init__(optSolver, processes, solve_ratio)
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars), dtype=object)
+        self.solpool = np.empty((0, n_vars), dtype=np.float)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """
@@ -204,7 +204,7 @@ class listwiseLTR(optModel):
         self.tau = tau
         # solution pool
         n_vars = optSolver.num_vars
-        self.solpool = np.empty((0, n_vars), dtype=object)
+        self.solpool = np.empty((0, n_vars), dtype=np.float)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
         """

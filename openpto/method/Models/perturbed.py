@@ -1,20 +1,191 @@
-# #!/usr/bin/env python
-# # coding: utf-8
-# """
-# Perturbed optimization function
-# """
+#!/usr/bin/env python
+# coding: utf-8
+"""
+Perturbed optimization function
+"""
 
-# import numpy as np
-# import torch
+import numpy as np
+import torch
 
-# # from .func.abcmodule import optModule
-# # from .utlis import getArgs
-# from openpto.method.Models.abcOptModel import optModel
-# from openpto.method.Solvers.utils_solver import _solve_in_pass
+from gurobipy import GRB  # pylint: disable=no-name-in-module
+
+# from .utlis import getArgs
+from openpto.method.Models.abcOptModel import optModel
 
 
-# class perturbedOpt(optModel):
+class perturbed(optModel):
+    """
+
+    Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
+    """
+
+    def __init__(
+        self,
+        optSolver,
+        processes=1,
+        solve_ratio=1,
+        n_samples=10,
+        sigma=1.0,
+        seed=135,
+        **hyperparams,
+    ):
+        """
+        Args:
+            optSolver (optModel): an  optimization model
+            n_samples (int): number of Monte-Carlo samples
+            sigma (float): the amplitude of the perturbation
+            processes (int): number of processors, 1 for single-core, 0 for all of cores
+            seed (int): random state seed
+            solve_ratio (float): the ratio of new solutions computed during training
+        """
+        super().__init__(optSolver, processes, solve_ratio)
+        # number of samples
+        self.n_samples = n_samples
+        # perturbation amplitude
+        self.sigma = sigma
+        # random state
+        self.rnd = np.random.RandomState(seed)
+        # build optimizer
+        self.ptb = perturbedOptFunc()
+        # solution pool
+        n_vars = optSolver.num_vars
+        self.solpool = np.empty((0, n_vars), dtype=np.float)
+
+    def forward(
+        self,
+        problem,
+        coeff_hat,
+        params,
+        **hyperparams,
+    ):
+        """
+        Forward pass
+        """
+        sols_hat = self.ptb.apply(
+            coeff_hat,
+            self.optSolver,
+            problem,
+            params,
+            self.n_samples,
+            self.sigma,
+            self.processes,
+            self.pool,
+            self.rnd,
+            self.solve_ratio,
+            self,
+        )
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, **hyperparams)
+        # reduction
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(objs_hat)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(objs_hat)
+        elif hyperparams["reduction"] == "none":
+            loss = objs_hat
+        else:
+            raise ValueError(f"No reduction {hyperparams['reduction']}.")
+
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            pass
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -loss
+        return loss
+
+
+class perturbedOptFunc(torch.autograd.Function):
+    """
+    A autograd function for perturbed optimizer
+    """
+
+    @staticmethod
+    def forward(
+        ctx,
+        coeff_hat,
+        optSolver,
+        problem,
+        params,
+        n_samples,
+        sigma,
+        processes,
+        pool,
+        rnd,
+        solve_ratio,
+        module,
+    ):
+        """
+        Forward pass for perturbed
+
+        Args:
+            coeff_hat (torch.tensor): a batch of predicted values of the cost
+            optSolver (optModel): an  optimization model
+            n_samples (int): number of Monte-Carlo samples
+            sigma (float): the amplitude of the perturbation
+            processes (int): number of processors, 1 for single-core, 0 for all of cores
+            pool (ProcessPool): process pool object
+            rnd (RondomState): numpy random state
+            solve_ratio (float): the ratio of new solutions computed during training
+            module (optModel): perturbedOpt module
+
+        Returns:
+            torch.tensor: solution expectations with perturbation
+        """
+        # get device
+        device = coeff_hat.device
+        # convert tenstor
+        cp = coeff_hat.detach().to("cpu").numpy()
+        # sample perturbations
+        noises = rnd.normal(0, 1, size=(n_samples, *cp.shape[1:]))
+        coeff_perturb = cp + sigma * noises
+        # solve with perturbation
+        ptb_sols, _ = problem.get_decision(
+            coeff_perturb, params, optSolver, **problem.init_API()
+        )
+        # add into solpool
+        module.solpool = np.concatenate((module.solpool, ptb_sols))
+        # remove duplicate
+        module.solpool = np.unique(module.solpool, axis=0)
+        # rand_sigma = np.random.uniform()
+        # solution expectation
+        e_sol = ptb_sols.mean(axis=1, keepdims=True)
+        # convert to tensor
+        noises = torch.from_numpy(noises).to(device)
+        ptb_sols = torch.from_numpy(ptb_sols).to(device)
+        e_sol = torch.from_numpy(e_sol).to(device)
+        # save solutions
+        ctx.save_for_backward(ptb_sols, noises)
+        # add other objects to ctx
+        ctx.optSolver = optSolver
+        ctx.n_samples = n_samples
+        ctx.sigma = sigma
+        return e_sol
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        Backward pass for perturbed
+        """
+        ptb_sols, noises = ctx.saved_tensors
+        n_samples = ctx.n_samples
+        sigma = ctx.sigma
+        grad = torch.einsum(
+            "nbd,bn->bd", noises, torch.einsum("bnd,bd->bn", ptb_sols, grad_output)
+        )
+        grad /= n_samples * sigma
+        return grad, None, None, None, None, None, None, None, None
+
+
+# class perturbedFenchelYoung(optModel):
 #     """
+#     An autograd module for Fenchel-Young loss using perturbation techniques. The
+#     use of the loss improves the algorithmic by the specific expression of the
+#     gradients of the loss.
+
+#     For the perturbed optimizer, the cost vector need to be predicted from
+#     contextual data and are perturbed with Gaussian noise.
+
+#     The Fenchel-Young loss allows to directly optimize a loss between the features
+#     and solutions with less computation. Thus, allows us to design an algorithm
+#     based on stochastic gradient descent.
 
 #     Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
 #     """
@@ -22,11 +193,12 @@
 #     def __init__(
 #         self,
 #         optSolver,
-#         processes=1,
-#         solve_ratio=1,
 #         n_samples=10,
 #         sigma=1.0,
+#         processes=1,
 #         seed=135,
+#         solve_ratio=1,
+#         dataset=None,
 #     ):
 #         """
 #         Args:
@@ -36,6 +208,7 @@
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             seed (int): random state seed
 #             solve_ratio (float): the ratio of new solutions computed during training
+#             dataset (None/optDataset): the training data
 #         """
 #         super().__init__(optSolver, processes, solve_ratio)
 #         # number of samples
@@ -45,14 +218,15 @@
 #         # random state
 #         self.rnd = np.random.RandomState(seed)
 #         # build optimizer
-#         self.ptb = perturbedOptFunc()
+#         self.pfy = perturbedFenchelYoungFunc()
 
-#     def forward(self, pred_cost):
+#     def forward(self, coeff_hat, true_sol, reduction="mean"):
 #         """
 #         Forward pass
 #         """
-#         sols = self.ptb.apply(
-#             pred_cost,
+#         loss = self.pfy.apply(
+#             coeff_hat,
+#             true_sol,
 #             self.optSolver,
 #             self.n_samples,
 #             self.sigma,
@@ -62,18 +236,28 @@
 #             self.solve_ratio,
 #             self,
 #         )
-#         return sols
+#         # reduction
+#         if reduction == "mean":
+#             loss = torch.mean(loss)
+#         elif reduction == "sum":
+#             loss = torch.sum(loss)
+#         elif reduction == "none":
+#             pass
+#         else:
+#             raise ValueError("No reduction '{}'.".format(reduction))
+#         return loss
 
 
-# class perturbedOptFunc(torch.autograd.Function):
+# class perturbedFenchelYoungFunc(torch.autograd.Function):
 #     """
-#     A autograd function for perturbed optimizer
+#     A autograd function for Fenchel-Young loss using perturbation techniques.
 #     """
 
 #     @staticmethod
 #     def forward(
 #         ctx,
-#         pred_cost,
+#         coeff_hat,
+#         true_sol,
 #         optSolver,
 #         n_samples,
 #         sigma,
@@ -84,10 +268,11 @@
 #         module,
 #     ):
 #         """
-#         Forward pass for perturbed
+#         Forward pass for perturbed Fenchel-Young loss
 
 #         Args:
-#             pred_cost (torch.tensor): a batch of predicted values of the cost
+#             coeff_hat (torch.tensor): a batch of predicted values of the cost
+#             true_sol (torch.tensor): a batch of true optimal solutions
 #             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
@@ -95,15 +280,16 @@
 #             pool (ProcessPool): process pool object
 #             rnd (RondomState): numpy random state
 #             solve_ratio (float): the ratio of new solutions computed during training
-#             module (optModule): perturbedOpt module
+#             module (optModel): perturbedFenchelYoung module
 
 #         Returns:
 #             torch.tensor: solution expectations with perturbation
 #         """
 #         # get device
-#         device = pred_cost.device
+#         device = coeff_hat.device
 #         # convert tenstor
-#         cp = pred_cost.detach().to("cpu").numpy()
+#         cp = coeff_hat.detach().to("cpu").numpy()
+#         w = true_sol.detach().to("cpu").numpy()
 #         # sample perturbations
 #         noises = rnd.normal(0, 1, size=(n_samples, *cp.shape))
 #         ptb_c = cp + sigma * noises
@@ -121,263 +307,103 @@
 #             ptb_sols = _cache_in_pass(ptb_c, optSolver, module.solpool)
 #         # solution expectation
 #         e_sol = ptb_sols.mean(axis=1)
+#         # difference
+#         if optSolver.modelSense == GRB.MINIMIZE:
+#             diff = w - e_sol
+#         if optSolver.modelSense == GRB.MAXIMIZE:
+#             diff = e_sol - w
+#         # loss
+#         loss = np.sum(diff**2, axis=1)
 #         # convert to tensor
-#         noises = torch.FloatTensor(noises).to(device)
-#         ptb_sols = torch.FloatTensor(ptb_sols).to(device)
-#         e_sol = torch.FloatTensor(e_sol).to(device)
+#         diff = torch.FloatTensor(diff).to(device)
+#         loss = torch.FloatTensor(loss).to(device)
 #         # save solutions
-#         ctx.save_for_backward(ptb_sols, noises)
-#         # add other objects to ctx
-#         ctx.optSolver = optSolver
-#         ctx.n_samples = n_samples
-#         ctx.sigma = sigma
-#         return e_sol
+#         ctx.save_for_backward(diff)
+#         return loss
 
 #     @staticmethod
 #     def backward(ctx, grad_output):
 #         """
-#         Backward pass for perturbed
+#         Backward pass for perturbed Fenchel-Young loss
 #         """
-#         ptb_sols, noises = ctx.saved_tensors
-#         n_samples = ctx.n_samples
-#         sigma = ctx.sigma
-#         grad = torch.einsum(
-#             "nbd,bn->bd", noises, torch.einsum("bnd,bd->bn", ptb_sols, grad_output)
-#         )
-#         grad /= n_samples * sigma
-#         return grad, None, None, None, None, None, None, None, None
+#         (grad,) = ctx.saved_tensors
+#         grad_output = torch.unsqueeze(grad_output, dim=-1)
+#         return grad * grad_output, None, None, None, None, None, None, None, None, None
 
 
-# # class perturbedFenchelYoung(optModule):
-# #     """
-# #     An autograd module for Fenchel-Young loss using perturbation techniques. The
-# #     use of the loss improves the algorithmic by the specific expression of the
-# #     gradients of the loss.
-
-# #     For the perturbed optimizer, the cost vector need to be predicted from
-# #     contextual data and are perturbed with Gaussian noise.
-
-# #     The Fenchel-Young loss allows to directly optimize a loss between the features
-# #     and solutions with less computation. Thus, allows us to design an algorithm
-# #     based on stochastic gradient descent.
-
-# #     Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
-# #     """
-
-# #     def __init__(
-# #         self,
-# #         optSolver,
-# #         n_samples=10,
-# #         sigma=1.0,
-# #         processes=1,
-# #         seed=135,
-# #         solve_ratio=1,
-# #         dataset=None,
-# #     ):
-# #         """
-# #         Args:
-# #             optSolver (optModel): an  optimization model
-# #             n_samples (int): number of Monte-Carlo samples
-# #             sigma (float): the amplitude of the perturbation
-# #             processes (int): number of processors, 1 for single-core, 0 for all of cores
-# #             seed (int): random state seed
-# #             solve_ratio (float): the ratio of new solutions computed during training
-# #             dataset (None/optDataset): the training data
-# #         """
-# #         super().__init__(optSolver, processes, solve_ratio)
-# #         # number of samples
-# #         self.n_samples = n_samples
-# #         # perturbation amplitude
-# #         self.sigma = sigma
-# #         # random state
-# #         self.rnd = np.random.RandomState(seed)
-# #         # build optimizer
-# #         self.pfy = perturbedFenchelYoungFunc()
-
-# #     def forward(self, pred_cost, true_sol, reduction="mean"):
-# #         """
-# #         Forward pass
-# #         """
-# #         loss = self.pfy.apply(
-# #             pred_cost,
-# #             true_sol,
-# #             self.optSolver,
-# #             self.n_samples,
-# #             self.sigma,
-# #             self.processes,
-# #             self.pool,
-# #             self.rnd,
-# #             self.solve_ratio,
-# #             self,
-# #         )
-# #         # reduction
-# #         if reduction == "mean":
-# #             loss = torch.mean(loss)
-# #         elif reduction == "sum":
-# #             loss = torch.sum(loss)
-# #         elif reduction == "none":
-# #             pass
-# #         else:
-# #             raise ValueError("No reduction '{}'.".format(reduction))
-# #         return loss
+# def _solve_in_pass(ptb_c, optSolver, processes, pool):
+#     """
+#     A function to solve optimization in the forward pass
+#     """
+#     # number of instance
+#     n_samples, ins_num = ptb_c.shape[0], ptb_c.shape[1]
+#     # single-core
+#     if processes == 1:
+#         ptb_sols = []
+#         for i in range(ins_num):
+#             sols = []
+#             # per sample
+#             for j in range(n_samples):
+#                 # solve
+#                 optSolver.setObj(ptb_c[j, i])
+#                 sol, _ = optSolver.solve()
+#                 sols.append(sol)
+#             ptb_sols.append(sols)
+#     # multi-core
+#     else:
+#         # get class
+#         model_type = type(optSolver)
+#         # get args
+#         args = getArgs(optSolver)
+#         # parallel computing
+#         ptb_sols = pool.amap(
+#             _solveWithObj4Par,
+#             ptb_c.transpose(1, 0, 2),
+#             [args] * ins_num,
+#             [model_type] * ins_num,
+#         ).get()
+#     return np.array(ptb_sols)
 
 
-# # class perturbedFenchelYoungFunc(torch.autograd.Function):
-# #     """
-# #     A autograd function for Fenchel-Young loss using perturbation techniques.
-# #     """
-
-# #     @staticmethod
-# #     def forward(
-# #         ctx,
-# #         pred_cost,
-# #         true_sol,
-# #         optSolver,
-# #         n_samples,
-# #         sigma,
-# #         processes,
-# #         pool,
-# #         rnd,
-# #         solve_ratio,
-# #         module,
-# #     ):
-# #         """
-# #         Forward pass for perturbed Fenchel-Young loss
-
-# #         Args:
-# #             pred_cost (torch.tensor): a batch of predicted values of the cost
-# #             true_sol (torch.tensor): a batch of true optimal solutions
-# #             optSolver (optModel): an  optimization model
-# #             n_samples (int): number of Monte-Carlo samples
-# #             sigma (float): the amplitude of the perturbation
-# #             processes (int): number of processors, 1 for single-core, 0 for all of cores
-# #             pool (ProcessPool): process pool object
-# #             rnd (RondomState): numpy random state
-# #             solve_ratio (float): the ratio of new solutions computed during training
-# #             module (optModule): perturbedFenchelYoung module
-
-# #         Returns:
-# #             torch.tensor: solution expectations with perturbation
-# #         """
-# #         # get device
-# #         device = pred_cost.device
-# #         # convert tenstor
-# #         cp = pred_cost.detach().to("cpu").numpy()
-# #         w = true_sol.detach().to("cpu").numpy()
-# #         # sample perturbations
-# #         noises = rnd.normal(0, 1, size=(n_samples, *cp.shape))
-# #         ptb_c = cp + sigma * noises
-# #         # solve with perturbation
-# #         rand_sigma = np.random.uniform()
-# #         if rand_sigma <= solve_ratio:
-# #             ptb_sols = _solve_in_pass(ptb_c, optSolver, processes, pool)
-# #             if solve_ratio < 1:
-# #                 sols = ptb_sols.reshape(-1, cp.shape[1])
-# #                 # add into solpool
-# #                 module.solpool = np.concatenate((module.solpool, sols))
-# #                 # remove duplicate
-# #                 module.solpool = np.unique(module.solpool, axis=0)
-# #         else:
-# #             ptb_sols = _cache_in_pass(ptb_c, optSolver, module.solpool)
-# #         # solution expectation
-# #         e_sol = ptb_sols.mean(axis=1)
-# #         # difference
-# #         if optSolver.modelSense == GRB.MINIMIZE:
-# #             diff = w - e_sol
-# #         if optSolver.modelSense == GRB.MAXIMIZE:
-# #             diff = e_sol - w
-# #         # loss
-# #         loss = np.sum(diff**2, axis=1)
-# #         # convert to tensor
-# #         diff = torch.FloatTensor(diff).to(device)
-# #         loss = torch.FloatTensor(loss).to(device)
-# #         # save solutions
-# #         ctx.save_for_backward(diff)
-# #         return loss
-
-# #     @staticmethod
-# #     def backward(ctx, grad_output):
-# #         """
-# #         Backward pass for perturbed Fenchel-Young loss
-# #         """
-# #         (grad,) = ctx.saved_tensors
-# #         grad_output = torch.unsqueeze(grad_output, dim=-1)
-# #         return grad * grad_output, None, None, None, None, None, None, None, None, None
+# def _cache_in_pass(ptb_c, optSolver, solpool):
+#     """
+#     A function to use solution pool in the forward/backward pass
+#     """
+#     # number of samples & instance
+#     n_samples, ins_num, _ = ptb_c.shape
+#     # init sols
+#     ptb_sols = []
+#     for j in range(n_samples):
+#         # best solution in pool
+#         solpool_obj = ptb_c[j] @ solpool.T
+#         if optSolver.modelSense == GRB.MINIMIZE:
+#             ind = np.argmin(solpool_obj, axis=1)
+#         if optSolver.modelSense == GRB.MAXIMIZE:
+#             ind = np.argmax(solpool_obj, axis=1)
+#         ptb_sols.append(solpool[ind])
+#     return np.array(ptb_sols).transpose(1, 0, 2)
 
 
-# # def _solve_in_pass(ptb_c, optSolver, processes, pool):
-# #     """
-# #     A function to solve optimization in the forward pass
-# #     """
-# #     # number of instance
-# #     n_samples, ins_num = ptb_c.shape[0], ptb_c.shape[1]
-# #     # single-core
-# #     if processes == 1:
-# #         ptb_sols = []
-# #         for i in range(ins_num):
-# #             sols = []
-# #             # per sample
-# #             for j in range(n_samples):
-# #                 # solve
-# #                 optSolver.setObj(ptb_c[j, i])
-# #                 sol, _ = optSolver.solve()
-# #                 sols.append(sol)
-# #             ptb_sols.append(sols)
-# #     # multi-core
-# #     else:
-# #         # get class
-# #         model_type = type(optSolver)
-# #         # get args
-# #         args = getArgs(optSolver)
-# #         # parallel computing
-# #         ptb_sols = pool.amap(
-# #             _solveWithObj4Par,
-# #             ptb_c.transpose(1, 0, 2),
-# #             [args] * ins_num,
-# #             [model_type] * ins_num,
-# #         ).get()
-# #     return np.array(ptb_sols)
+# def _solveWithObj4Par(perturbed_costs, args, model_type):
+#     """
+#     A global function to solve function in parallel processors
 
+#     Args:
+#         perturbed_costs (np.ndarray): costsof objective function with perturbation
+#         args (dict): optModel args
+#         model_type (ABCMeta): optModel class type
 
-# # def _cache_in_pass(ptb_c, optSolver, solpool):
-# #     """
-# #     A function to use solution pool in the forward/backward pass
-# #     """
-# #     # number of samples & instance
-# #     n_samples, ins_num, _ = ptb_c.shape
-# #     # init sols
-# #     ptb_sols = []
-# #     for j in range(n_samples):
-# #         # best solution in pool
-# #         solpool_obj = ptb_c[j] @ solpool.T
-# #         if optSolver.modelSense == GRB.MINIMIZE:
-# #             ind = np.argmin(solpool_obj, axis=1)
-# #         if optSolver.modelSense == GRB.MAXIMIZE:
-# #             ind = np.argmax(solpool_obj, axis=1)
-# #         ptb_sols.append(solpool[ind])
-# #     return np.array(ptb_sols).transpose(1, 0, 2)
-
-
-# # def _solveWithObj4Par(perturbed_costs, args, model_type):
-# #     """
-# #     A global function to solve function in parallel processors
-
-# #     Args:
-# #         perturbed_costs (np.ndarray): costsof objective function with perturbation
-# #         args (dict): optModel args
-# #         model_type (ABCMeta): optModel class type
-
-# #     Returns:
-# #         list: optimal solution
-# #     """
-# #     # rebuild model
-# #     optSolver = model_type(**args)
-# #     # per sample
-# #     sols = []
-# #     for cost in perturbed_costs:
-# #         # set obj
-# #         optSolver.setObj(cost)
-# #         # solve
-# #         sol, _ = optSolver.solve()
-# #         sols.append(sol)
-# #     return sols
+#     Returns:
+#         list: optimal solution
+#     """
+#     # rebuild model
+#     optSolver = model_type(**args)
+#     # per sample
+#     sols = []
+#     for cost in perturbed_costs:
+#         # set obj
+#         optSolver.setObj(cost)
+#         # solve
+#         sol, _ = optSolver.solve()
+#         sols.append(sol)
+#     return sols

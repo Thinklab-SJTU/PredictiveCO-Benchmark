@@ -86,8 +86,8 @@ class CubicTopK(PTOProblem):
         return Z
 
     def get_objective(self, Y, Z, **kwargs):
-        assert Y.shape == Z.shape
-        print("shape: ", Y.shape, Z.shape)
+        assert len(Y.shape) == 3
+        assert len(Z.shape) == 2
         if isinstance(Z, np.ndarray):
             Z = np.expand_dims(Z, -1)
         else:
