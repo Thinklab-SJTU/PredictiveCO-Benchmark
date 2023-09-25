@@ -334,21 +334,22 @@ class BipartiteMatching(PTOProblem):
         """
         # Sanity check inputs
         # print("Y:",Y.shape)
-        # print("Z:",Z.shape)
-        Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
-        Z = Z.reshape(-1, self.num_nodes, self.num_nodes)
+        # # print("Z:",Z.shape)
+        # Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
+        # Z = Z.reshape(-1, self.num_nodes, self.num_nodes)
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor): Z= np.array(Z)
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray): Z= torch.tensor(Z)
-        ins_num = len(Y)
-        ans_list = []
+        ans_list=(Y*Z).sum(axis=0)
+        # ins_num = len(Y)
+        # ans_list = []
 
-        for i in range(ins_num):
-            ans_list.append((Y[i] * Z[i]).sum())
-        if isinstance(Y, np.ndarray):
-            ans_list = np.array(ans_list)
-        else:
-            ans_list = torch.tensor(ans_list)
-        # print("ans_list",ans_list)
+        # for i in range(ins_num):
+        #     ans_list.append((Y[i] * Z[i]).sum())
+        # if isinstance(Y, np.ndarray):
+        #     ans_list = np.array(ans_list)
+        # else:
+        #     ans_list = torch.tensor(ans_list)
+        # # print("ans_list",ans_list)
         return ans_list
 
     def get_decision(
@@ -376,7 +377,7 @@ class BipartiteMatching(PTOProblem):
                 sol = self.opt_train(Y[i])
             else:
                 sol = self.opt_test(Y[i])
-            sol = sol[0].numpy()
+            sol = sol[0].numpy().reshape(-1)
             sols.append(sol)
         if flag_numpy == 1:
             sols = np.array(sols)
@@ -392,6 +393,7 @@ class BipartiteMatching(PTOProblem):
             #         else self.opt_test(Y[start:end])[0]
             #     )
             #     results.append(result)
+        Y=Y.reshape(-1,2500)
         objs = self.get_objective(Y, sols)
         # if flag_numpy == 1:
         #     objs = np.array(objs)
