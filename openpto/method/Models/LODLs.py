@@ -4,7 +4,6 @@ import random
 import time
 
 from copy import deepcopy
-from functools import partial
 
 import numpy as np
 import torch
@@ -368,14 +367,11 @@ class LODL(optModel):
             Yhats /= Yhats.sum(-1, keepdim=True)
 
         # Calculate decision-focused loss for points
-        opt = partial(problem.get_decision, isTrain=False, aux_data=Y_aux)
-        # partial(problem.get_objective, aux_data=Y_aux)
-
         #   Calculate for 'true label'
         best = None
         assert num_restarts > 0
         for _ in range(num_restarts):
-            Z_opt, opt_objective = opt(
+            Z_opt, opt_objective = problem.get_decision(
                 Y.unsqueeze(0),
                 params=Y_aux,
                 optSolver=self.optSolver,
@@ -393,7 +389,7 @@ class LODL(optModel):
         Z_opt, opt_objective = best
 
         #   Calculate for Yhats
-        Zs, objectives = opt(
+        Zs, objectives = problem.get_decision(
             Yhats,
             # Z_init=Z_opt,
             params=Y_aux,
