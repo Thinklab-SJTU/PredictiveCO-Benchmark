@@ -63,8 +63,9 @@ def get_loss_fn(name, problem, **kwargs):
         from openpto.method.Models.LODLs import LODL
 
         return LODL
-        # return _get_learned_loss(problem, name, **kwargs)
     elif name == "perturb":
-        return None
+        from openpto.method.Models.perturbed import perturbed
+
+        return perturbed
     else:
         raise LookupError()

@@ -44,7 +44,7 @@ class blackbox(optModel):
         Forward pass
         """
         sols_hat = self.dbb.apply(coeff_hat, problem, params, self.optSolver, self.lambd)
-        objs_hat = problem.get_objective(coeff_hat, sols_hat)
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(objs_hat)

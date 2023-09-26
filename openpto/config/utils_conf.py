@@ -20,10 +20,10 @@ def get_args():
             "budgetalloc",
             "bipartitematching",
             "cubic",
-            "rmab",
             "portfolio",
             "knapsack",
             "energy",
+            "advertising",
         ],
         default="portfolio",
     )
@@ -33,15 +33,7 @@ def get_args():
         type=str,
         choices=[
             "mse",
-            "msesum",
-            "dense",
-            "weightedmse",
-            "weightedmse++",
-            "weightedce",
-            "weightedmsesum",
             "dfl",
-            "quad",
-            "quad++",
             "ce",
             "mae",
             "spo",
@@ -55,6 +47,7 @@ def get_args():
             "nce",
             "qptl",
             "lodl",
+            "perturb",
         ],
         default="mse",
     )
@@ -78,7 +71,6 @@ def get_args():
     parser.add_argument("--seed", type=int, default=2023)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--batchsize", type=int, default=1)
-    parser.add_argument("--pred_bz", type=int, default=8192)
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--do_debug", action="store_true")

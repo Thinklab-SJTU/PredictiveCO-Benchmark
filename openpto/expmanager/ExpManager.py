@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Models.MSE import MSE
@@ -112,14 +112,6 @@ class ExpManager:
         train_logs = {"epoch": list(), "obj": list(), "loss": list()}
         val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         if self.args.n_ptr_epochs > 0:
-            pred_dataset = OptDataset(X_train, Y_train)
-            DataLoader(
-                pred_dataset,
-                batch_size=self.args.pred_bz,
-                shuffle=True,
-                num_workers=1,
-                drop_last=False,
-            )
             criterion = MSE()
             self.logger.info("Pretraining Prediction Model...")
             # pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)

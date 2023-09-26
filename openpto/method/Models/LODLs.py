@@ -19,7 +19,6 @@ from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.RMAB import RMAB
-from openpto.problems.wrapper_prob import find_saved_problem
 
 NUM_CPUS = os.cpu_count()
 
@@ -73,22 +72,15 @@ class LODL(optModel):
         _, Y_train, Y_train_aux = problem.get_train_data()
         _, Y_val, Y_val_aux = problem.get_val_data()
         #   Get points in the neighbourhood of the Ys
-        #       Try to load sampled 
-        master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
-        print("~~~~~~~~~~:", master_filename)
-        problem_filename, _ = find_saved_problem(master_filename, problem.__dict__)
-        print(problem_filename)
-        problem_filename_postfix = problem_filename.split("/")[-1]
-        os.makedirs(
-            os.path.join(folder, "lodl", str(problem.__class__.__name__)), exist_ok=True
-        )
+        #       Try to load sampled points
+        problen_name = str(problem.__class__.__name__)
+        os.makedirs(os.path.join(folder, "lodl", problen_name), exist_ok=True)
         samples_filename_read = os.path.join(
             folder,
             "lodl",
-            str(problem.__class__.__name__),
-            f"{problem_filename[:-4]}_{sampling}_{sampling_std}.pkl",
+            problen_name,
+            f"{problen_name}_{sampling}_{sampling_std}.pkl",
         )
-
         # Check if there are enough stored samples
         num_samples_needed = num_extra_samples = num_samples
         if os.path.exists(samples_filename_read):
@@ -160,12 +152,11 @@ class LODL(optModel):
                     SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
 
             # Save dataset
-            print("folder1, ", folder)
             samples_filename_write = os.path.join(
                 folder,
                 "lodl",
-                str(problem.__class__.__name__),
-                f"{problem_filename_postfix[:-4]}_{sampling}_{sampling_std}_{time.time()}.pkl",
+                problen_name,
+                f"{problen_name}_{sampling}_{sampling_std}_{time.time()}.pkl",
             )
             with open(samples_filename_write, "wb") as filehandle:
                 pickle.dump((num_extra_samples, SL_dataset), filehandle)
