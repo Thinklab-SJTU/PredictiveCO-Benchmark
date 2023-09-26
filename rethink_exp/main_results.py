@@ -57,7 +57,7 @@ if __name__ == "__main__":
         problem,
         **conf,
     )(optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model])
-
+    print("loss_fn ", loss_fn)
     ipdim, opdim = problem.get_model_shape()
     pred_model_args = {
         "ipdim": ipdim,

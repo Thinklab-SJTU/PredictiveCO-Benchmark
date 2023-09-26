@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import Dataset
 
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
-from openpto.method.Models.MSE import MSE
+from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import move_to_array
 
@@ -112,9 +112,9 @@ class ExpManager:
         train_logs = {"epoch": list(), "obj": list(), "loss": list()}
         val_logs = {"epoch": list(), "obj": list(), "loss": list()}
         if self.args.n_ptr_epochs > 0:
-            criterion = MSE()
+            criterion = str2twoStageLoss(problem)
+            print("----- criterion: ", criterion)
             self.logger.info("Pretraining Prediction Model...")
-            # pbar = tqdm.tqdm(desc="Pretrain prediction", total=self.args.n_ptr_epochs)
             for ptr_epoch in range(self.args.n_ptr_epochs):
                 # Check metrics on val set
                 if ptr_epoch % self.args.valfreq == 0:

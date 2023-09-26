@@ -24,7 +24,7 @@ class Advertising(PTOProblem):
         raise NotImplementedError()
 
     def get_twostageloss(self):
-        raise NotImplementedError()
+        return "mse"
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         raise NotImplementedError()
