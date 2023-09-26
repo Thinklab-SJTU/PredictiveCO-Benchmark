@@ -18,8 +18,8 @@ class BipartiteMatching(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=16,  # number of instances to use from the dataset to train
-        num_test_instances=5,  # number of instances to use from the dataset to test
+        num_train_instances=20,  # number of instances to use from the dataset to train
+        num_test_instances=6,  # number of instances to use from the dataset to test
         num_nodes=50,  # number of nodes in the LHS and RHS of the bipartite matching graphs
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
@@ -31,8 +31,9 @@ class BipartiteMatching(PTOProblem):
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
         # Load train and test labels
-        self.num_train_instances = 20
-        self.num_test_instances = 6
+        self.num_train_instances = num_train_instances
+        self.num_test_instances = num_test_instances
+        print("wule",self.num_train_instances,self.num_test_instances)
         self.num_nodes = num_nodes
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
@@ -129,13 +130,13 @@ class BipartiteMatching(PTOProblem):
                 try:
                     lhs_nodes_idx.append(gnodes.index(v))
                     to_add.remove(gnodes.index(v))
-                except:
+                except Exception:
                     print(v, " not in lhs list")
             for v in rhs_nodes:
                 try:
                     rhs_nodes_idx.append(gnodes.index(v))
                     to_add.remove(gnodes.index(v))
-                except:
+                except Exception:
                     print(v, " not in list")
                 # lhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in lhs_nodes]
                 # rhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in rhs_nodes]
@@ -214,9 +215,12 @@ class BipartiteMatching(PTOProblem):
         """
         # Sanity check inputs
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
-            Z = np.array(Z)
+            Z = np.array(Z).cpu()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
-            Z = torch.tensor(Z)
+            Z = torch.tensor(Z).cuda()
+        if isinstance(Y, torch.Tensor): 
+            Z = Z.cuda()
+            Y = Y.cuda()
         ans_list = (Y * Z).sum(axis=1)
         return ans_list
 
@@ -238,19 +242,19 @@ class BipartiteMatching(PTOProblem):
             flag_numpy = 1
         ins_num = len(Y)
         sols = []
-        for i in range(ins_num):
+        for i in range(ins_num)q:
             # solve
             if isTrain:
                 sol = self.opt_train(Y[i])
             else:
                 sol = self.opt_test(Y[i])
-            sol = sol[0].numpy().reshape(-1)
+            sol = sol[0].cpu().numpy().reshape(-1)
             sols.append(sol)
         if flag_numpy == 1:
             sols = np.array(sols)
         else:
             sols = torch.tensor(sols)
-        Y = Y.reshape(-1, 2500)
+        Y = Y.reshape(-1, self.num_nodes*self.num_nodes)
         objs = self.get_objective(Y, sols)
         return sols, objs
 
