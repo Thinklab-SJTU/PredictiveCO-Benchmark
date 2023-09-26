@@ -74,17 +74,10 @@ class LODL(optModel):
         #   Get points in the neighbourhood of the Ys
         #       Try to load sampled points
         problen_name = str(problem.__class__.__name__)
-        # master_filename = os.path.join(folder, f"{problen_name}.csv")
-        # problem_filename, _ = find_saved_problem(master_filename, problem.__dict__)
-        # print("problem_filename: ", problem_filename)
-        # problem_filename_postfix = problem_filename.split("/")[-1]
-        # print("problem_filename_postfix: ", problem_filename_postfix)
-        # print("problem_filename[:-4]: ", problem_filename[:-4])
-        os.makedirs(os.path.join(folder, "lodl", problen_name), exist_ok=True)
+        lodl_save_dir = os.path.join(folder, "lodl", problen_name)
+        os.makedirs(lodl_save_dir, exist_ok=True)
         samples_filename_read = os.path.join(
-            folder,
-            "lodl",
-            problen_name,
+            lodl_save_dir,
             f"{problen_name}_{sampling}_{sampling_std}.pkl",
         )
         # Check if there are enough stored samples
