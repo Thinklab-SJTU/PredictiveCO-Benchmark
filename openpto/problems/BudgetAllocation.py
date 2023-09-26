@@ -153,7 +153,6 @@ class BudgetAllocation(PTOProblem):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
     def get_model_shape(self):
-        # TODO: check this
         return self.num_targets, self.num_targets
 
     def get_output_activation(self):
