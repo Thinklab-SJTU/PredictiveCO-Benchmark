@@ -59,7 +59,7 @@ class LODL(optModel):
         self,
         problem,
         model_type="weightedmse",
-        folder="saved_problems",
+        folder="../saved_problems",
         num_samples=400,
         sampling="random",
         sampling_std=None,
@@ -73,9 +73,11 @@ class LODL(optModel):
         _, Y_train, Y_train_aux = problem.get_train_data()
         _, Y_val, Y_val_aux = problem.get_val_data()
         #   Get points in the neighbourhood of the Ys
-        #       Try to load sampled points
+        #       Try to load sampled 
         master_filename = os.path.join(folder, f"{problem.__class__.__name__}.csv")
+        print("~~~~~~~~~~:", master_filename)
         problem_filename, _ = find_saved_problem(master_filename, problem.__dict__)
+        print(problem_filename)
         problem_filename_postfix = problem_filename.split("/")[-1]
         os.makedirs(
             os.path.join(folder, "lodl", str(problem.__class__.__name__)), exist_ok=True

@@ -35,6 +35,8 @@ class pointwiseLTR(optModel):
         """
         Forward pass
         """
+        
+        coeff_hat  = coeff_hat.squeeze(-1)
         # get device
         device = coeff_hat.device
         # obtain solution cache if empty
@@ -108,6 +110,8 @@ class pairwiseLTR(optModel):
         """
         Forward pass
         """
+        
+        coeff_hat  = coeff_hat.squeeze(-1)
         # get device
         # obtain solution cache if empty
         if len(self.solpool) == 0:
@@ -210,6 +214,7 @@ class listwiseLTR(optModel):
         """
         Forward pass
         """
+        coeff_hat  = coeff_hat.squeeze(-1)
         # get device
         # obtain solution cache if empty
         if len(self.solpool) == 0:

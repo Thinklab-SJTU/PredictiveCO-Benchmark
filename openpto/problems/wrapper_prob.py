@@ -90,16 +90,19 @@ def find_saved_problem(
 ):
     # Open the master file with details about saved models
     if os.path.exists(master_filename):
+        print(1)
+        print(master_filename)
         with open(master_filename, "r") as file:
             saved_probs = pd.read_csv(file)
     else:
+        print(2)
         saved_probs = pd.DataFrame(
             columns=(
                 "filename",
                 *kwargs.keys(),
             )
         )
-
+    print("good morning!",saved_probs)
     # Check if the problem has been saved before
     relevant_models = saved_probs
     for col, val in kwargs.items():
@@ -112,5 +115,5 @@ def find_saved_problem(
     filename = None
     if not relevant_models.empty:
         filename = relevant_models["filename"].values[0]
-
+    print("qwq:",filename,'---',saved_probs)
     return filename, saved_probs

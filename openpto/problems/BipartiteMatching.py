@@ -339,7 +339,8 @@ class BipartiteMatching(PTOProblem):
         # Z = Z.reshape(-1, self.num_nodes, self.num_nodes)
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor): Z= np.array(Z)
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray): Z= torch.tensor(Z)
-        ans_list=(Y*Z).sum(axis=0)
+        #print(Y.shape,Z.shape)
+        ans_list=(Y*Z).sum(axis=1)
         # ins_num = len(Y)
         # ans_list = []
 
