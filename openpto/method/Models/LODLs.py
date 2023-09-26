@@ -58,7 +58,7 @@ class LODL(optModel):
         self,
         problem,
         model_type="weightedmse",
-        folder="saved_problems",
+        folder="../saved_problems",
         num_samples=400,
         sampling="random",
         sampling_std=None,
