@@ -36,7 +36,7 @@ class NCE(optModel):
         """
         # get device
         device = coeff_hat.device
-        coeff_hat  = coeff_hat.squeeze(-1)
+        coeff_hat = coeff_hat.squeeze(-1)
         # get true solution
         sol_true, _ = problem.get_decision(
             coeff_true,
@@ -45,7 +45,8 @@ class NCE(optModel):
             isTrain=False,
             **problem.init_API(),
         )
-        if isinstance(sol_true, torch.Tensor): sol_true = sol_true.numpy()
+        if isinstance(sol_true, torch.Tensor):
+            sol_true = sol_true.numpy()
         sol_true = torch.from_numpy(sol_true.astype(np.float32)).to(device)
         # obtain solution cache if empty
         if len(self.solpool) == 0:

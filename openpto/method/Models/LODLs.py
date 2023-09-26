@@ -76,9 +76,7 @@ class LODL(optModel):
         problen_name = str(problem.__class__.__name__)
         os.makedirs(os.path.join(folder, "lodl", problen_name), exist_ok=True)
         samples_filename_read = os.path.join(
-            folder,
-            "lodl",
-            problen_name,
+            lodl_save_dir,
             f"{problen_name}_{sampling}_{sampling_std}.pkl",
         )
         # Check if there are enough stored samples

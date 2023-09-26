@@ -1,11 +1,11 @@
+import pickle
 import random
 
 import networkx as nx
 import numpy as np
-import pymetis as metis
 import torch
+
 from gurobipy import GRB
-import pickle
 
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
 from openpto.problems.PTOProblem import PTOProblem
@@ -76,11 +76,11 @@ class BipartiteMatching(PTOProblem):
         # """
         # Loads the labels (Ys) of the prediction from a file, and returns a subset of it parameterised by instances.
         # """
-        g = nx.read_edgelist('openpto/data/cora.cites')
+        g = nx.read_edgelist("openpto/data/cora.cites")
         nodes_before = [int(v) for v in g.nodes()]
 
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-        a = np.loadtxt('openpto/data/cora_cites_metis.txt.part.27')
+        a = np.loadtxt("openpto/data/cora_cites_metis.txt.part.27")
         g_part = []
         for i in range(27):
             g_part.append(nx.Graph(nx.subgraph(g, list(np.where(a == i))[0])))
@@ -98,26 +98,24 @@ class BipartiteMatching(PTOProblem):
 
         for i in range(27):
             if len(g_part[i]) < 100:
-                num_needed =  100 - len(g_part[i])
+                num_needed = 100 - len(g_part[i])
                 to_add = nodes_available[:num_needed]
                 nodes_available = nodes_available[num_needed:]
                 g_part[i].add_nodes_from(to_add)
-            
 
         for i in range(27):
             g_part.append(nx.subgraph(g, list(np.where(a == i))[0]))
 
-        features = np.loadtxt('openpto/data/cora.content')
+        features = np.loadtxt("openpto/data/cora.content")
         features_idx = features[:, 0]
         features = features[:, 1:]
         n_nodes = 50
         Ps = np.zeros((27, n_nodes**2))
         n_features = 1433
-        data = np.zeros((27, n_nodes**2, 2*n_features))
+        data = np.zeros((27, n_nodes**2, 2 * n_features))
         msubs = np.zeros((27, n_nodes**2))
-        M = np.load('openpto/data/cora.msubject.npy', allow_pickle=True)
-        partition = pickle.load(open('openpto/data/cora_partition.pickle', 'rb'))
-
+        M = np.load("openpto/data/cora.msubject.npy", allow_pickle=True)
+        partition = pickle.load(open("openpto/data/cora_partition.pickle", "rb"))
 
         percent_removed = []
         for i in range(27):
@@ -125,38 +123,42 @@ class BipartiteMatching(PTOProblem):
             lhs_nodes_idx = []
             rhs_nodes_idx = []
             gnodes = list(g_part[i].nodes())
-            
+
             to_add = set([i for i in range(len(gnodes))])
             for v in lhs_nodes:
                 try:
                     lhs_nodes_idx.append(gnodes.index(v))
                     to_add.remove(gnodes.index(v))
                 except:
-                    print(v, ' not in lhs list')
+                    print(v, " not in lhs list")
             for v in rhs_nodes:
                 try:
                     rhs_nodes_idx.append(gnodes.index(v))
                     to_add.remove(gnodes.index(v))
                 except:
-                    print(v, ' not in list')
+                    print(v, " not in list")
                 # lhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in lhs_nodes]
                 # rhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in rhs_nodes]
-            missing_list = lhs_nodes_idx if len(lhs_nodes_idx) < len(rhs_nodes_idx) else rhs_nodes_idx
-                
+            missing_list = (
+                lhs_nodes_idx
+                if len(lhs_nodes_idx) < len(rhs_nodes_idx)
+                else rhs_nodes_idx
+            )
+
             while len(missing_list) < 50:
                 misidx = to_add.pop()
-                print('node {} idx added successfully'.format(gnodes[misidx]))
+                print("node {} idx added successfully".format(gnodes[misidx]))
                 missing_list.append(misidx)
             assert len(lhs_nodes_idx) == len(rhs_nodes_idx)
             adj = nx.to_numpy_array(g_part[i])
             sum_before = adj.sum()
             adj = adj[lhs_nodes_idx]
             adj = adj[:, rhs_nodes_idx]
-            edges_before = sum_before/2
-            #print(sum_before/2, adj.sum())
-            percent_removed.append((edges_before - adj.sum())/edges_before)
+            edges_before = sum_before / 2
+            # print(sum_before/2, adj.sum())
+            percent_removed.append((edges_before - adj.sum()) / edges_before)
             Ps[i] = adj.flatten()
-            msubs[i] = M[lhs_nodes_idx][:,rhs_nodes_idx].flatten()
+            msubs[i] = M[lhs_nodes_idx][:, rhs_nodes_idx].flatten()
             node_ids_lhs = [nodes_before[v] for v in lhs_nodes]
             node_ids_rhs = [nodes_before[v] for v in rhs_nodes]
             curr_data_idx = 0
@@ -171,9 +173,9 @@ class BipartiteMatching(PTOProblem):
         # with open('cora_data.pickle', 'wb') as f:
         #     pickle.dump((Ps, data, msubs), f)
         # print("->Done.")
-        data_tensor=torch.Tensor(np.array(data))
-        Ps_tensor=torch.Tensor(np.array(Ps)).reshape(-1,2500)
-        return data_tensor,  Ps_tensor
+        data_tensor = torch.Tensor(np.array(data))
+        Ps_tensor = torch.Tensor(np.array(Ps)).reshape(-1, 2500)
+        return data_tensor, Ps_tensor
 
     def get_train_data(self):
         return (
@@ -211,9 +213,11 @@ class BipartiteMatching(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor): Z= np.array(Z)
-        if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray): Z= torch.tensor(Z)
-        ans_list=(Y*Z).sum(axis=1)
+        if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
+            Z = np.array(Z)
+        if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
+            Z = torch.tensor(Z)
+        ans_list = (Y * Z).sum(axis=1)
         return ans_list
 
     def get_decision(
@@ -246,7 +250,7 @@ class BipartiteMatching(PTOProblem):
             sols = np.array(sols)
         else:
             sols = torch.tensor(sols)
-        Y=Y.reshape(-1,2500)
+        Y = Y.reshape(-1, 2500)
         objs = self.get_objective(Y, sols)
         return sols, objs
 
