@@ -8,7 +8,7 @@ dataset:
   poly_deg: 4
   knapsack_dim: 1
   num_items: 20
-  capacity: 100
+  capacity: 30
 
 models:
   spo:

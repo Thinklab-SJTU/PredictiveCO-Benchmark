@@ -50,8 +50,6 @@ class ExpManager:
         self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
-        # optimizer:
-        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
         #   Move everything to device
@@ -65,8 +63,8 @@ class ExpManager:
         X_val, Y_val, Y_val_aux = problem.get_val_data()
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
-        ############################## Preliminary Optimization ##############################
-        ###   Document the optimal value
+        ############################## Preliminary Evaluation ##############################
+        #   Document the optimal value
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,
@@ -104,6 +102,8 @@ class ExpManager:
         objs_rand = torch.stack(objs_rand)
 
         ############################# Pretrain #############################
+        # optimizer:
+        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
         total_train_time = 0
         time_train_start = time.time()
@@ -111,71 +111,69 @@ class ExpManager:
         time_since_best = 0
         train_logs = {"epoch": list(), "obj": list(), "loss": list()}
         val_logs = {"epoch": list(), "obj": list(), "loss": list()}
-        if self.args.n_ptr_epochs > 0:
-            criterion = str2twoStageLoss(problem)
-            print("----- criterion: ", criterion)
-            self.logger.info("Pretraining Prediction Model...")
-            for ptr_epoch in range(self.args.n_ptr_epochs):
-                # Check metrics on val set
-                if ptr_epoch % self.args.valfreq == 0:
-                    # Compute metrics
-                    datasets = [
-                        (X_train, Y_train, Y_train_aux, "train"),
-                        (X_val, Y_val, Y_val_aux, "val"),
-                    ]
-                    metrics = print_metrics(
-                        datasets,
-                        self.pred_model,
-                        problem,
-                        criterion,
-                        optSolver,
-                        f"Ptr iter {ptr_epoch},",
-                        self.logger,
-                        **self.model_args,
-                    )
-                    add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
-                    add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
-                    # Save model if it's the best one
-                    if (
-                        best[1] is None
-                        or metrics["val"]["regret"].mean() <= best[0].mean()
-                    ):
-                        best = (metrics["val"]["regret"], deepcopy(self.pred_model))
-                        time_since_best = 0
-                        # save
-                        torch.save(
-                            self.pred_model.state_dict(),
-                            os.path.join(
-                                self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
-                            ),
-                        )
-
-                    # Stop if model hasn't improved for patience steps
-                    if self.args.earlystopping and time_since_best > self.args.patience:
-                        break
-
-                ###### one-shot training
-                preds = self.pred_model(X_train)
-                loss = criterion(problem, preds, Y_train.float(), **self.model_args)
-
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-                time_since_best += 1
-                if debug:
+        # loss function
+        criterion = str2twoStageLoss(problem)
+        self.logger.info("Pretraining Prediction Model...")
+        for ptr_epoch in range(self.args.n_ptr_epochs):
+            # Check metrics on val set
+            if ptr_epoch % self.args.valfreq == 0:
+                # Compute metrics
+                datasets = [
+                    (X_train, Y_train, Y_train_aux, "train"),
+                    (X_val, Y_val, Y_val_aux, "val"),
+                ]
+                metrics = print_metrics(
+                    datasets,
+                    self.pred_model,
+                    problem,
+                    criterion,
+                    optSolver,
+                    f"Ptr iter {ptr_epoch},",
+                    self.logger,
+                    **self.model_args,
+                )
+                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
+                # Save model if it's the best one
+                if best[1] is None or metrics["val"]["regret"].mean() <= best[0].mean():
+                    best = (metrics["val"]["regret"], deepcopy(self.pred_model))
+                    time_since_best = 0
+                    # save
                     torch.save(
-                        preds.detach().cpu(),
+                        self.pred_model.state_dict(),
                         os.path.join(
-                            self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+                            self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
                         ),
                     )
+            # Stop if model hasn't improved for patience steps
+            if self.args.earlystopping and time_since_best > self.args.patience:
+                break
+            ###### one-shot training
+            preds = self.pred_model(X_train)
+            loss = criterion(problem, preds, Y_train.float(), **self.model_args)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            time_since_best += 1
+
+            if debug:
+                torch.save(
+                    preds.detach().cpu(),
+                    os.path.join(
+                        self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+                    ),
+                )
         total_train_time += time.time() - time_train_start
-        if best[1] is not None and self.args.earlystopping:
+        if best[1] is not None:
             self.pred_model = best[1]
 
         ############################# Train #############################
+        # optimizer:
+        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Train PTO
         time_since_best = 0
+        self.logger.info("Training Model...")
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -213,7 +211,8 @@ class ExpManager:
                     break
 
             # Learn
-            # TODO: batch train or individually train?            # currently, only support individually train
+            # TODO: batch train or individually train?
+            # currently, only support individually train
             losses = []
             preds = self.pred_model(X_train)
             time_train_start = time.time()
@@ -229,14 +228,14 @@ class ExpManager:
                 )
                 losses.append(loss_idx)
 
-            loss = torch.stack(losses).mean()
+            loss = torch.stack(losses).sum()
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             time_since_best += 1
             total_train_time += time.time() - time_train_start
 
-        if best[1] is not None and self.args.earlystopping:
+        if best[1] is not None:
             self.pred_model = best[1]
 
         ############################# Evaluate final model #############################
@@ -267,11 +266,13 @@ class ExpManager:
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
-            [Objs_test_opt, results["test"]["objective"], regret],
+            [Objs_test_opt, regret],
         )
         # save solutions
-        np.save(os.path.join(self.args.log_dir, "solution.npy"), Z_test_opt)
         if debug:
+            np.save(
+                os.path.join(self.args.log_dir, "tensors", "solution.npy"), Z_test_opt
+            )
             torch.save(
                 results["test"]["preds"].cpu().detach(),
                 os.path.join(self.args.log_dir, "tensors", "preds.pt"),
