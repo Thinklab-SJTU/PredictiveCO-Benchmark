@@ -33,7 +33,7 @@ class BipartiteMatching(PTOProblem):
         # Load train and test labels
         self.num_train_instances = num_train_instances
         self.num_test_instances = num_test_instances
-        print("wule",self.num_train_instances,self.num_test_instances)
+        print("wule", self.num_train_instances, self.num_test_instances)
         self.num_nodes = num_nodes
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
@@ -218,7 +218,7 @@ class BipartiteMatching(PTOProblem):
             Z = np.array(Z).cpu()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
             Z = torch.tensor(Z).cuda()
-        if isinstance(Y, torch.Tensor): 
+        if isinstance(Y, torch.Tensor):
             Z = Z.cuda()
             Y = Y.cuda()
         ans_list = (Y * Z).sum(axis=1)
@@ -242,7 +242,7 @@ class BipartiteMatching(PTOProblem):
             flag_numpy = 1
         ins_num = len(Y)
         sols = []
-        for i in range(ins_num)q:
+        for i in range(ins_num):
             # solve
             if isTrain:
                 sol = self.opt_train(Y[i])
@@ -254,7 +254,7 @@ class BipartiteMatching(PTOProblem):
             sols = np.array(sols)
         else:
             sols = torch.tensor(sols)
-        Y = Y.reshape(-1, self.num_nodes*self.num_nodes)
+        Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
         objs = self.get_objective(Y, sols)
         return sols, objs
 

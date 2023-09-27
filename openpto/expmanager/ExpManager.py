@@ -161,7 +161,7 @@ class ExpManager:
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                loss.item()
+                time_since_best += 1
                 if debug:
                     torch.save(
                         preds.detach().cpu(),
@@ -175,6 +175,7 @@ class ExpManager:
 
         ############################# Train #############################
         # Train PTO
+        time_since_best = 0
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -212,8 +213,7 @@ class ExpManager:
                     break
 
             # Learn
-            # TODO: batch train or individually train?
-            # currently, only support individually train
+            # TODO: batch train or individually train?            # currently, only support individually train
             losses = []
             preds = self.pred_model(X_train)
             time_train_start = time.time()
