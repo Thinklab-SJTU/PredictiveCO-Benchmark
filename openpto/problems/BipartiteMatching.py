@@ -33,12 +33,10 @@ class BipartiteMatching(PTOProblem):
         # Load train and test labels
         self.num_train_instances = num_train_instances
         self.num_test_instances = num_test_instances
-        print("wule", self.num_train_instances, self.num_test_instances)
         self.num_nodes = num_nodes
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
         )
-        print("self ys: ", self.Ys.shape)
         # self.Xs = torch.load('data/cora_features_bipartite.pt').reshape((27, 50, 50, 2866))
         # self.Ys = torch.load('data/cora_graphs_bipartite.pt').reshape((27, 50, 50))
         # Split data into train/val/test
@@ -218,13 +216,15 @@ class BipartiteMatching(PTOProblem):
         assert len(Y.shape) == 3
         assert len(Z.shape) == 2
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
-            Z = np.array(Z).cpu()
+            Z = Z.cpu().numpy()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
-            Z = torch.tensor(Z).cuda()
+            Z = torch.from_numpy(Z).to(self.device)
+        #
         if isinstance(Y, torch.Tensor):
-            Z = Z.cuda()
-            Y = Y.cuda()
-        return (Y.squeeze(-1) * Z).sum(axis=1)
+            Z = Z.to(self.device)
+            Y = Y.to(self.device)
+        ans_list = (Y.squeeze(-1) * Z).sum(axis=1)
+        return ans_list
 
     def get_decision(
         self,
@@ -240,13 +240,11 @@ class BipartiteMatching(PTOProblem):
         Y_unflatten = Y.reshape(-1, self.num_nodes, self.num_nodes)
         flag_numpy = 0
         if isinstance(Y_unflatten, np.ndarray):
-            Y_unflatten = torch.from_numpy(Y)
+            Y_unflatten = torch.from_numpy(Y_unflatten)
             flag_numpy = 1
-        ins_num = len(Y_unflatten)
         sols = []
-        for i in range(ins_num):
+        for i in range(len(Y_unflatten)):
             # solve
-            print("Y_unflatten[i]: ", Y_unflatten[i].shape)
             if isTrain:
                 sol = self.opt_train(Y_unflatten[i])
             else:
@@ -257,7 +255,6 @@ class BipartiteMatching(PTOProblem):
         if flag_numpy:
             sols = sols.numpy()
         # Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
-        print("Y shape: ", Y.shape)
         objs = self.get_objective(Y, sols)
         return sols, objs
 
@@ -304,5 +301,4 @@ class BipartiteMatching(PTOProblem):
 
 
 if __name__ == "__main__":
-    # pdb.set_trace()
     problem = BipartiteMatching()

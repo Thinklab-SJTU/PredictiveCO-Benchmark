@@ -1,4 +1,4 @@
-EPOCHS=1
+EPOCHS=100
 GPU=0
 
 # Prediction-focused learning【[]

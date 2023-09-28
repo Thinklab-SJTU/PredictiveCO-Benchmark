@@ -65,9 +65,8 @@ class ExpManager:
 
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
-        print("Y_val: ", Y_val.shape)
         Z_val_opt, Objs_val_opt = problem.get_decision(
-            Y_val,
+            Y_val.cpu(),
             params=Y_val_aux,
             optSolver=optSolver,
             isTrain=False,
@@ -78,7 +77,7 @@ class ExpManager:
         Objs_val_opt = move_to_array(Objs_val_opt)
         #
         Z_test_opt, Objs_test_opt = problem.get_decision(
-            Y_test,
+            Y_test.cpu(),
             params=Y_test_aux,
             optSolver=optSolver,
             isTrain=False,
@@ -93,7 +92,7 @@ class ExpManager:
         objs_rand = []
         for _ in range(10):
             Z_test_rand, objectives_rand = problem.get_decision(
-                torch.rand_like(Y_test),
+                torch.rand_like(Y_test).cpu(),
                 params=Y_test_aux,
                 optSolver=optSolver,
                 isTrain=False,

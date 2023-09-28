@@ -41,8 +41,8 @@ class pointwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train[:3],
-                params=Y_train_aux[:3],
+                Y_train.cpu(),
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -67,15 +67,6 @@ class pointwiseLTR(optModel):
         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(problem.device)
         # obj for solpool as score
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
-        print("expand_shape: ", expand_shape)
-        print(
-            "coeff_hat: ",
-            coeff_hat.shape,
-            "coeff_true:",
-            coeff_true.shape,
-            "solpool: ",
-            solpool.shape,
-        )
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
         #
@@ -117,14 +108,12 @@ class pairwiseLTR(optModel):
         """
         Forward pass
         """
-
-        # coeff_hat = coeff_hat.squeeze(-1)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train[:3],
-                params=Y_train_aux[:3],
+                Y_train.cpu(),
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
@@ -225,7 +214,7 @@ class listwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train,
+                Y_train.cpu(),
                 params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
