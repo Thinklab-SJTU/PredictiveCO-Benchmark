@@ -215,12 +215,13 @@ class BipartiteMatching(PTOProblem):
         """
         # Sanity check inputs
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
-            Z = np.array(Z).cpu()
+            Z = Z.cpu().numpy()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
-            Z = torch.tensor(Z).cuda()
-        if isinstance(Y, torch.Tensor):
-            Z = Z.cuda()
-            Y = Y.cuda()
+            Z = torch.from_numpy(Z).to(self.device)
+        # 
+        # if isinstance(Y, torch.Tensor):
+        #     Z = Z.to(self.device)
+        #     Y = Y.to(self.device)
         ans_list = (Y * Z).sum(axis=1)
         return ans_list
 
@@ -248,12 +249,13 @@ class BipartiteMatching(PTOProblem):
                 sol = self.opt_train(Y[i])
             else:
                 sol = self.opt_test(Y[i])
-            sol = sol[0].cpu().numpy().reshape(-1)
+            sol = sol[0].reshape(-1)
             sols.append(sol)
-        if flag_numpy == 1:
-            sols = np.array(sols)
-        else:
-            sols = torch.tensor(sols)
+        sols = torch.vstack(sols)
+        if not flag_numpy:
+            sols = sols.cpu().numpy()
+            
+        # 
         Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
         objs = self.get_objective(Y, sols)
         return sols, objs
