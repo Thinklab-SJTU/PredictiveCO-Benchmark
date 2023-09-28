@@ -65,6 +65,7 @@ class ExpManager:
 
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
+        print("Y_val: ", Y_val.shape)
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,

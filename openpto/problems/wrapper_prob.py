@@ -109,5 +109,5 @@ def find_saved_problem(
     # If it has, find the relevant filename
     filename = None
     if not relevant_models.empty:
-        filename = relevant_models["filename"].values[0]
+        filename = relevant_models["filename"].values[-1]
     return filename, saved_probs

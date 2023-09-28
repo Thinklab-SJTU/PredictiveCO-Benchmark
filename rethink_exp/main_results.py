@@ -37,6 +37,8 @@ if __name__ == "__main__":
     )
     args.log_dir = log_dir
     os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
+    if args.do_debug:
+        os.makedirs(os.path.join(log_dir, "tensors"), exist_ok=True)
     logger = get_logger(log_dir)
     logger.info(f" args: {args} \n")
 

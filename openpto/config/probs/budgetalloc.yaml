@@ -26,7 +26,7 @@ models:
     reduction: sum
   lodl:
     sampling: random
-    sampling_std: None
+    sampling_std: -1
     quadrank: 20
     quadalpha: 0
     serial: True

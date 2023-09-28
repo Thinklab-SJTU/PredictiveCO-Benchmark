@@ -38,6 +38,7 @@ class BipartiteMatching(PTOProblem):
         self.Xs, self.Ys = self._load_instances(
             self.num_train_instances, self.num_test_instances, self.num_nodes
         )
+        print("self ys: ", self.Ys.shape)
         # self.Xs = torch.load('data/cora_features_bipartite.pt').reshape((27, 50, 50, 2866))
         # self.Ys = torch.load('data/cora_graphs_bipartite.pt').reshape((27, 50, 50))
         # Split data into train/val/test
@@ -174,8 +175,8 @@ class BipartiteMatching(PTOProblem):
         # with open('cora_data.pickle', 'wb') as f:
         #     pickle.dump((Ps, data, msubs), f)
         # print("->Done.")
-        data_tensor = torch.Tensor(np.array(data))
-        Ps_tensor = torch.Tensor(np.array(Ps)).reshape(-1, 2500)
+        data_tensor = torch.from_numpy(data.astype(np.float32))
+        Ps_tensor = torch.from_numpy(Ps.astype(np.float32)).reshape(-1, 2500, 1)
         return data_tensor, Ps_tensor
 
     def get_train_data(self):
@@ -214,6 +215,8 @@ class BipartiteMatching(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
+        assert len(Y.shape) == 3
+        assert len(Z.shape) == 2
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
             Z = np.array(Z).cpu()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
@@ -221,8 +224,7 @@ class BipartiteMatching(PTOProblem):
         if isinstance(Y, torch.Tensor):
             Z = Z.cuda()
             Y = Y.cuda()
-        ans_list = (Y * Z).sum(axis=1)
-        return ans_list
+        return (Y.squeeze(-1) * Z).sum(axis=1)
 
     def get_decision(
         self,
@@ -235,26 +237,27 @@ class BipartiteMatching(PTOProblem):
     ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
-        Y = Y.reshape(-1, self.num_nodes, self.num_nodes)
+        Y_unflatten = Y.reshape(-1, self.num_nodes, self.num_nodes)
         flag_numpy = 0
-        if isinstance(Y, np.ndarray):
-            Y = torch.from_numpy(Y)
+        if isinstance(Y_unflatten, np.ndarray):
+            Y_unflatten = torch.from_numpy(Y)
             flag_numpy = 1
-        ins_num = len(Y)
+        ins_num = len(Y_unflatten)
         sols = []
         for i in range(ins_num):
             # solve
+            print("Y_unflatten[i]: ", Y_unflatten[i].shape)
             if isTrain:
-                sol = self.opt_train(Y[i])
+                sol = self.opt_train(Y_unflatten[i])
             else:
-                sol = self.opt_test(Y[i])
-            sol = sol[0].cpu().numpy().reshape(-1)
+                sol = self.opt_test(Y_unflatten[i])
+            sol = sol[0].cpu().reshape(-1)
             sols.append(sol)
-        if flag_numpy == 1:
-            sols = np.array(sols)
-        else:
-            sols = torch.tensor(sols)
-        Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
+        sols = torch.vstack(sols)
+        if flag_numpy:
+            sols = sols.numpy()
+        # Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
+        print("Y shape: ", Y.shape)
         objs = self.get_objective(Y, sols)
         return sols, objs
 

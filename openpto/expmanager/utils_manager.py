@@ -59,6 +59,7 @@ def print_metrics(
             )
 
             Ys_array = move_to_array(Ys)
+            print("Ys: ", Ys.shape)
             Zs_hat_array = move_to_array(Zs_hat)
 
             objective_hat = problem.get_objective(
@@ -68,12 +69,10 @@ def print_metrics(
             losses = []
             preds = model(Xs)
             for idx in range(len(Xs)):
-                pred = preds[[idx]]
-
                 losses.append(
                     loss_fn(
                         problem,
-                        coeff_hat=pred,
+                        coeff_hat=preds[[idx]],
                         coeff_true=Ys[[idx]],
                         params=Ys_aux[idx],
                         partition=partition,

@@ -283,14 +283,14 @@ class LODL(optModel):
         sampling,  # The method for sampling points
         num_samples,  # Number of points with which to fit model
         Y_aux=None,  # Extra information needed to solve the problem
-        sampling_std=None,  # Standard deviation for the training data
+        sampling_std=-1,  # Standard deviation for the training data
         num_restarts=10,  # The number of times to run the optimisation problem for Z_opt
     ):
         # Sample points in the neighbourhood
         #   Find the rough scale of the predictions
-        try:
+        if sampling_std > 0:
             Y_std = float(sampling_std)
-        except TypeError:
+        else:
             Y_std = torch.std(Y) + 1e-5
         #   Generate points
         if sampling == "random":
