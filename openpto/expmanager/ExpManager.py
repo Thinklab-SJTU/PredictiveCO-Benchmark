@@ -289,7 +289,7 @@ class ExpManager:
             f"[avg Test Time]: {avg_test_time:.6f} "
         )
         self.logger.info(
-            f"{results['test']['objective'].mean():.6f}  {regret.mean():.6f}  "
+            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.6f}  {regret.mean():.6f}  "
             f"{avg_train_time:.6f}  {avg_test_time:.6f}"
         )
         return True

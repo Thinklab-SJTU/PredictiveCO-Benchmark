@@ -13,7 +13,7 @@ GPU=0
 python rethink_exp/main_results.py --problem=cubic --opt_model pointLTR --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 python rethink_exp/main_results.py --problem=cubic --opt_model listLTR  --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 python rethink_exp/main_results.py --problem=cubic --opt_model pairLTR  --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
-python rethink_exp/main_results.py --problem=cubic --opt_model lodl     --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
+# python rethink_exp/main_results.py --problem=cubic --opt_model lodl     --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 # python rethink_exp/main_results.py --problem=cubic --opt_model perturb  --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 
 # prediction + decision

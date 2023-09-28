@@ -48,7 +48,7 @@ class pointwiseLTR(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
@@ -64,7 +64,7 @@ class pointwiseLTR(optModel):
             coeff_true_array, params, self.optSolver, **problem.init_API()
         )
         # convert tensor
-        solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(problem.device)
+        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
         # obj for solpool as score
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
@@ -119,7 +119,7 @@ class pairwiseLTR(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
@@ -132,17 +132,14 @@ class pairwiseLTR(optModel):
         sol_true, _ = problem.get_decision(
             coeff_true, params, self.optSolver, **problem.init_API()
         )
-        solpool = self.solpool
+        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
         # transform to tensor
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
         coeff_true_pool = coeff_true.expand(*expand_shape)
-        #
-        move_to_tensor(sol_true).to(problem.device)
-        solpool_tensor = move_to_tensor(solpool).to(problem.device)
         # obj for solpool
-        objpool_c_true = problem.get_objective(coeff_true_pool, solpool_tensor)
-        objpool_c_hat_pool = problem.get_objective(coeff_hat_pool, solpool_tensor)
+        objpool_c_true = problem.get_objective(coeff_true_pool, solpool)
+        objpool_c_hat_pool = problem.get_objective(coeff_hat_pool, solpool)
         # TODO: currently, only support batch-1 training
         # init loss
         loss = []
@@ -221,7 +218,7 @@ class listwiseLTR(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve $TODO: if sol pool reasonable?
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
@@ -232,7 +229,7 @@ class listwiseLTR(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
-        solpool = move_to_tensor(self.solpool).to(problem.device)
+        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
