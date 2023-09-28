@@ -10,6 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import move_to_tensor
 
 
 class NCE(optModel):
@@ -36,7 +37,7 @@ class NCE(optModel):
         """
         # get device
         device = coeff_hat.device
-        coeff_hat = coeff_hat.squeeze(-1)
+        # coeff_hat = coeff_hat.squeeze(-1)
         # get true solution
         sol_true, _ = problem.get_decision(
             coeff_true,
@@ -47,7 +48,7 @@ class NCE(optModel):
         )
         if isinstance(sol_true, torch.Tensor):
             sol_true = sol_true.numpy()
-        sol_true = torch.from_numpy(sol_true.astype(np.float32)).to(device)
+        sol_true = move_to_tensor(sol_true).to(device)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
@@ -69,7 +70,7 @@ class NCE(optModel):
             self.solpool = np.concatenate((self.solpool, sols_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
-        solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
+        solpool = move_to_tensor(self.solpool).to(device)
         # get obj
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
