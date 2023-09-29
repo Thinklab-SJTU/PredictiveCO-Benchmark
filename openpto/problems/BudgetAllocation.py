@@ -191,16 +191,13 @@ class BudgetAllocation(PTOProblem):
         return obj
 
     def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
-        # If this is a single instance of a decision problem
-        if len(Y.shape) == 2:
-            assert 0
-            # Z = optSolver.solve(Y, self.budget, Z_init=Z_init)
-            # objective = self.get_objective(Y, Z).cpu().numpy()
-            # return Z.cpu().numpy(), objective
-        if Z_init is None:
-            Z_init = torch.rand(Y.shape[1:-1])
+        assert len(Y.shape) == 3
+        # Z
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
+        #
+        if Z_init is None:
+            Z_init = torch.rand(Y.shape[1:-1])
         if isinstance(Z_init, np.ndarray):
             Z_init = torch.from_numpy(Z_init)
         # to device

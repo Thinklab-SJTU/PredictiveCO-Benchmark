@@ -190,7 +190,12 @@ class LODL(optModel):
                     )
 
                     # Update
-                    SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
+                    SL_dataset[partition][idx] = (
+                        Y.to(Yhats.device),
+                        opt_objective.to(Yhats.device),
+                        Yhats,
+                        objectives.to(Yhats.device),
+                    )
             num_existing_samples += num_extra_samples
         else:
             SL_dataset = SL_dataset_old
@@ -598,7 +603,6 @@ class WeightedMSE(torch.nn.Module):
     def forward(self, Yhats):
         # Flatten inputs
         Yhat = Yhats.view((-1, self.Y.shape[0]))
-
         # Compute MSE
         squared_error = (Yhat - self.Y).square()
         weighted_mse = (squared_error * self.weights.clamp(min=self.min_val)).mean(dim=-1)

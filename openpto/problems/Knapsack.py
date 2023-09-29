@@ -96,28 +96,21 @@ class Knapsack(PTOProblem):
         return self.Xs_test, self.Ys_test, self.params_test
 
     def get_objective(self, Y, Z, **kwargs):
-        if isinstance(Y, list):
-            objectives = []
-            num_instances = Y.shape[0]
-            for ins in range(num_instances):
-                objectives.append(sum(Y[ins] * Z[ins]))
-            return np.array(objectives)
-        elif isinstance(Y, np.ndarray):
-            assert len(Y.shape) == 2
-            assert len(Z.shape) == 2
-            assert Y.shape[0] == Z.shape[0]
-            assert Y.shape[1] == Z.shape[1]
-            return np.multiply(Y, Z).sum(1)
-        elif torch.is_tensor(Y):
-            assert len(Y.shape) == 2
-            assert len(Z.shape) == 2
-            assert Y.shape[0] == Z.shape[0]
-            assert Y.shape[1] == Z.shape[1]
-            return torch.mul(Y, Z).sum(1)
-        else:
-            raise ValueError("Y should be np.ndarray or torch.Tensor")
+        # asssert shape
+        assert len(Y.shape) == 2
+        assert len(Z.shape) == 2
+        assert Y.shape[0] == Z.shape[0]
+        assert Y.shape[1] == Z.shape[1]
+        # convert to device
+        if torch.is_tensor(Y):
+            Y = Y.cpu()
+            Z = Z.cpu()
+        return (Y * Z).sum(1)
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+        if torch.is_tensor(Y):
+            Y = Y.cpu()
+
         # determine solver
         if optSolver is None:
             if params.ndim > 1:
@@ -128,10 +121,8 @@ class Knapsack(PTOProblem):
 
         if Y.ndim == 1:
             Y = Y.reshape(1, -1)
-        ins_num = len(Y)
-        sol = []
-        obj = []
-        for i in range(ins_num):
+        sol, obj = [], []
+        for i in range(len(Y)):
             # solve
             optSolver.setObj(Y[i])
             solp, objp, other = optSolver.solve()

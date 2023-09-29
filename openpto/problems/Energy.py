@@ -109,6 +109,7 @@ class Energy(PTOProblem):
         return ans_list
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+        Y = Y.cpu()
         # determine solver
         if optSolver is None:
             optSolver = ICONGrbSolver(**kwargs)

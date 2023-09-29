@@ -41,7 +41,7 @@ class SPO(optModel):
         if coeff_hat.dim() == 1:
             coeff_hat, coeff_true = coeff_hat.unsqueeze(0), coeff_true.unsqueeze(0)
         sols_true, objs_true = problem.get_decision(
-            coeff_true.cpu(),
+            coeff_true,
             params,
             isTrain=False,
             optSolver=self.optSolver,

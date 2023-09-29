@@ -215,10 +215,11 @@ class BipartiteMatching(PTOProblem):
         # Sanity check inputs
         assert len(Y.shape) == 3
         assert len(Z.shape) == 2
+        # convert Z to Y type
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
             Z = Z.cpu().numpy()
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
-            Z = torch.from_numpy(Z).to(self.device)
+            Z = torch.from_numpy(Z)
         #
         if isinstance(Y, torch.Tensor):
             Z = Z.to(self.device)
@@ -237,6 +238,7 @@ class BipartiteMatching(PTOProblem):
     ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
+        Y = Y.cpu()
         Y_unflatten = Y.reshape(-1, self.num_nodes, self.num_nodes)
         flag_numpy = 0
         if isinstance(Y_unflatten, np.ndarray):

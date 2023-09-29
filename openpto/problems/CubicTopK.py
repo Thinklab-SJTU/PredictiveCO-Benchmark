@@ -99,6 +99,7 @@ class CubicTopK(PTOProblem):
     def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
+        Y = Y.cpu()
         _, idxs = torch.topk(Y, self.budget, dim=1)
         Z = torch.nn.functional.one_hot(idxs, self.num_items).sum(dim=-2).sum(-2)
         output_sols = Z.cpu().numpy()

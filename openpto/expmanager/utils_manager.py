@@ -51,7 +51,7 @@ def print_metrics(
             preds = model(Xs)
 
             Zs_hat, _ = problem.get_decision(
-                preds.cpu(),
+                preds,
                 params=Ys_aux,
                 optSolver=optSolver,
                 isTrain=isTrain,
@@ -71,8 +71,8 @@ def print_metrics(
                 losses.append(
                     loss_fn(
                         problem,
-                        coeff_hat=preds[[idx]].cpu(),
-                        coeff_true=Ys[[idx]].cpu(),
+                        coeff_hat=preds[[idx]],
+                        coeff_true=Ys[[idx]],
                         params=Ys_aux[idx],
                         partition=partition,
                         index=idx,

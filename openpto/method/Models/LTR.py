@@ -41,7 +41,7 @@ class pointwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train.cpu(),
+                Y_train,
                 params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
@@ -112,7 +112,7 @@ class pairwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train.cpu(),
+                Y_train,
                 params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
@@ -211,7 +211,7 @@ class listwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train.cpu(),
+                Y_train,
                 params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,

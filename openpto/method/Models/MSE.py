@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import move_to_tensor
 
 
 class MSE(optModel):
@@ -131,7 +132,8 @@ class DFL(optModel):
             **problem.init_API(),
         )
         if isinstance(objs, np.ndarray):
-            objs = torch.from_numpy(objs.astype("float")).to(problem.device)
+            objs = move_to_tensor(objs)
+        objs = objs.to(problem.device)
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
         loss = -objs + self.dflalpha * twostage_loss
         return loss
