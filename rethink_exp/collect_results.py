@@ -21,9 +21,30 @@ def get_results(data_name, model_name, prefix_name):
     return np.array(result)
 
 
-data_names = ["knapsack-gen", "budgetalloc-real", "cubic-gen"]
-prefix_names = ["default"]
-model_names = [
+def collect_results(data_name, prefix_name, model_names):
+    pd.options.display.float_format = "{:.6f}".format
+    results = list()
+    for model_name in model_names:
+        result = get_results(data_name, model_name, prefix_name)
+        results.append(result)
+    results = np.vstack(results)
+    data_dict = dict()
+    for idx in range(len(model_names)):
+        data_dict[model_names[idx]] = results[idx, :]
+    df = pd.DataFrame(data_dict)
+    return df
+
+
+def collect_ptr_ftn(data_name, prefix_name):
+    if prefix_name == "default":
+        ptr_ftn_prefix_name = "ptr-ftn"
+    else:
+        ptr_ftn_prefix_name = prefix_name + "-ptr-ftn"
+    return collect_results(data_name, ptr_ftn_prefix_name, ["blackbox", "identity"])
+
+
+global_data_names = ["knapsack-gen", "budgetalloc-real", "cubic-gen"]
+global_model_names = [
     "mse",
     "dfl",
     "blackbox",
@@ -38,26 +59,37 @@ model_names = [
 ]
 
 
-# all_path_list.append(("blackbox", "ptr-ftn"))
-# all_path_list.append(("identity", "ptr-ftn"))
-
-pd.options.display.float_format = "{:.6f}".format
-results = list()
-for data_name in data_names:
-    for prefix_name in prefix_names:
-        results = list()
-        for model_name in model_names:
-            result = get_results(data_name, model_name, prefix_name)
-            results.append(result)
-        results = np.vstack(results)
-        data_dict = dict()
-        for idx in range(len(model_names)):
-            data_dict[model_names[idx]] = results[idx, :]
-        df = pd.DataFrame(data_dict)
+def collect_benchmarks():
+    prefix_name = "default"
+    for data_name in global_data_names:
+        df_main = collect_results(data_name, "default", global_model_names)
+        df_add = collect_ptr_ftn(data_name, "default")
+        df = pd.concat((df_main, df_add), axis=1)
+        print("-" * 130)
         print(data_name, prefix_name)
         print(df)
         df.to_excel(
-            os.path.join("saved_records", data_name, f"{prefix_name}-results.xlsx"),
+            os.path.join("saved_records", data_name, "benchmark-results.xlsx"),
             index=False,
             float_format="%.6f",
         )
+
+
+def collect_cap():
+    cap_prefix_names = ["cap60", "cap90", "cap120"]
+    for prefix_name in cap_prefix_names:
+        df_main = collect_results("knapsack-gen", prefix_name, global_model_names)
+        df_add = collect_ptr_ftn("knapsack-gen", prefix_name)
+        df = pd.concat((df_main, df_add), axis=1)
+        df.to_excel(
+            os.path.join("saved_records", "knapsack-gen", f"{prefix_name}-results.xlsx"),
+            index=False,
+            float_format="%.6f",
+        )
+        print("knapsack gen", prefix_name)
+        print(df)
+
+
+if __name__ == "__main__":
+    collect_benchmarks()
+    # collect_cap()

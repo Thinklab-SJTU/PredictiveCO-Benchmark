@@ -171,7 +171,8 @@ class BudgetAllocation(PTOProblem):
             Y = torch.from_numpy(Y)
         if isinstance(Z, np.ndarray):
             Z = torch.from_numpy(Z)
-        # print("--- get obj:", Z.shape, Y.shape)
+        Y = Y.to(self.device)
+        Z = Z.to(self.device)
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert len(Z.shape) + 1 == len(Y.shape)
@@ -197,12 +198,14 @@ class BudgetAllocation(PTOProblem):
             # objective = self.get_objective(Y, Z).cpu().numpy()
             # return Z.cpu().numpy(), objective
         if Z_init is None:
-            Z_init = torch.rand(Y.shape[1:-1]).to(self.device)
+            Z_init = torch.rand(Y.shape[1:-1])
         if isinstance(Y, np.ndarray):
-            Y = torch.from_numpy(Y).to(self.device)
+            Y = torch.from_numpy(Y)
         if isinstance(Z_init, np.ndarray):
-            Z_init = torch.from_numpy(Z_init).to(self.device)
-
+            Z_init = torch.from_numpy(Z_init)
+        # to device
+        Z_init = Z_init.to(self.device)
+        Y = Y.to(self.device)
         Y_shape = Y.shape
         Y_new = Y
         Z = torch.cat(

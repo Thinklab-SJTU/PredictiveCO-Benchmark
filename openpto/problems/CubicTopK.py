@@ -92,6 +92,7 @@ class CubicTopK(PTOProblem):
             Z = np.expand_dims(Z, -1)
         else:
             Z = Z.unsqueeze(-1)
+            Z = Z.to(Y.device)
         obj = (Z * Y).sum(-1).sum(-1)
         return obj
 
