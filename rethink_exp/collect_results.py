@@ -69,7 +69,9 @@ def collect_benchmarks():
         print(data_name, prefix_name)
         print(df)
         df.to_excel(
-            os.path.join("saved_records", data_name, "benchmark-results.xlsx"),
+            os.path.join(
+                "saved_records", data_name, f"{data_name}-benchmark-results.xlsx"
+            ),
             index=False,
             float_format="%.6f",
         )
@@ -82,7 +84,11 @@ def collect_cap():
         df_add = collect_ptr_ftn("knapsack-gen", prefix_name)
         df = pd.concat((df_main, df_add), axis=1)
         df.to_excel(
-            os.path.join("saved_records", "knapsack-gen", f"{prefix_name}-results.xlsx"),
+            os.path.join(
+                "saved_records",
+                "knapsack-gen",
+                f"knapsack-gen-{prefix_name}-results.xlsx",
+            ),
             index=False,
             float_format="%.6f",
         )
@@ -92,4 +98,4 @@ def collect_cap():
 
 if __name__ == "__main__":
     collect_benchmarks()
-    # collect_cap()
+    collect_cap()
