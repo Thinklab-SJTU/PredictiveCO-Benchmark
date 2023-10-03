@@ -88,7 +88,7 @@ class blackboxFunc(torch.autograd.Function):
         # get device
         device = coeff_hat.device
         # convert tenstor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         sols_hat, _ = problem.get_decision(
             coeff_hat_array, params, optSolver, **problem.init_API()
         )

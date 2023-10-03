@@ -83,6 +83,9 @@ def collect_cap():
         df_main = collect_results("knapsack-gen", prefix_name, global_model_names)
         df_add = collect_ptr_ftn("knapsack-gen", prefix_name)
         df = pd.concat((df_main, df_add), axis=1)
+        print("-" * 130)
+        print("knapsack gen", prefix_name)
+        print(df)
         df.to_excel(
             os.path.join(
                 "saved_records",
@@ -92,10 +95,29 @@ def collect_cap():
             index=False,
             float_format="%.6f",
         )
+
+
+def collect_size():
+    cap_prefix_names = ["size40", "size60", "size80", "size100"]
+    for prefix_name in cap_prefix_names:
+        df_main = collect_results("knapsack-gen", prefix_name, global_model_names)
+        df_add = collect_ptr_ftn("knapsack-gen", prefix_name)
+        df = pd.concat((df_main, df_add), axis=1)
+        print("-" * 130)
         print("knapsack gen", prefix_name)
         print(df)
+        df.to_excel(
+            os.path.join(
+                "saved_records",
+                "knapsack-gen",
+                f"knapsack-gen-{prefix_name}-results.xlsx",
+            ),
+            index=False,
+            float_format="%.6f",
+        )
 
 
 if __name__ == "__main__":
     collect_benchmarks()
     collect_cap()
+    collect_size()
