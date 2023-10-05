@@ -6,6 +6,7 @@ from typing import Dict
 
 import pandas as pd
 
+from openpto.problems.Advertising import Advertising
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.CubicTopK import CubicTopK
@@ -13,7 +14,6 @@ from openpto.problems.Energy import Energy
 from openpto.problems.Knapsack import Knapsack
 
 # from openpto.problems.PortfolioOpt import PortfolioOpt
-# from openpto.problems.RMAB import RMAB
 
 
 ################################# Wrappers ################################################
@@ -30,10 +30,10 @@ def str2prob(prob_str):
         "budgetalloc": BudgetAllocation,
         "cubic": CubicTopK,
         "bipartitematching": BipartiteMatching,
-        # "rmab": RMAB,
         # "portfolio": PortfolioOpt,
         "knapsack": Knapsack,
         "energy": Energy,
+        "advertising": Advertising,
     }
     return prob_dict[prob_str]
 
@@ -66,6 +66,7 @@ def init_if_not_saved(
             problem = pickle.load(file)
     else:
         # Initialise model from scratch
+        print("kwargs:", kwargs)
         problem = problem_cls(**kwargs)
 
         # Save model for the future

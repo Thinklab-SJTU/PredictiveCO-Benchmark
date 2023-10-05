@@ -30,7 +30,11 @@ models:
     reduction: sum
   mse:
     reduction: sum
+  bce:
+    reduction: sum
   ce:
+    reduction: sum
+  bce:
     reduction: sum
   dfl:
     dflalpha: 0.1
@@ -41,3 +45,6 @@ models:
 solver:
   heuristic:
     kwargs: none
+  neural:
+    epsilon: 0.01
+    max_iter: 200

@@ -32,6 +32,8 @@ models:
     n_iters: 10
   msesum:
     alpha: 0.1
+  bce:
+    reduction: sum
   ce:
     reduction: sum
   dfl:

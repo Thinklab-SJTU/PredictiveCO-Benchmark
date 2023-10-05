@@ -97,8 +97,8 @@ class Knapsack(PTOProblem):
 
     def get_objective(self, Y, Z, **kwargs):
         # asssert shape
-        assert len(Y.shape) == 2
-        assert len(Z.shape) == 2
+        assert Y.ndim == 2
+        assert Z.ndim == 2
         assert Y.shape[0] == Z.shape[0]
         assert Y.shape[1] == Z.shape[1]
         # convert to device

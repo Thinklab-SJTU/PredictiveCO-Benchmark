@@ -34,6 +34,7 @@ def get_args():
         choices=[
             "mse",
             "dfl",
+            "bce",
             "ce",
             "mae",
             "spo",

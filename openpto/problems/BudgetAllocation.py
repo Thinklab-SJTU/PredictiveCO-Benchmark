@@ -59,7 +59,7 @@ class BudgetAllocation(PTOProblem):
                 [self.Ys_train, self.Ys_test]
             )
             # X_train:[400, 5, 10])     Ys_train: [400, 5, 10])  Z: torch.Size([5])
-            # assert len(Z.shape) + 1 == len(Y.shape)
+            # assert Z.ndim + 1 == Y.ndim
             assert not (
                 torch.isnan(self.Xs_train).any() or torch.isnan(self.Xs_test).any()
             )
@@ -88,7 +88,7 @@ class BudgetAllocation(PTOProblem):
         Loads the labels (Ys) of the prediction from a file, and returns a subset of it parameterised by instances.
         """
         # Load the dataset
-        with open("openpto/data/budget_allocation_data.pkl", "rb") as f:
+        with open(f"{self.data_dir}/budget_allocation_data.pkl", "rb") as f:
             Yfull, _ = pickle.load(f, encoding="bytes")
         Yfull = np.array(Yfull)  # [2000,100, 500]
 
@@ -175,7 +175,7 @@ class BudgetAllocation(PTOProblem):
         Z = Z.to(self.device)
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
-        assert len(Z.shape) + 1 == len(Y.shape)
+        assert Z.ndim + 1 == Y.ndim
 
         # Initialise weights to default value
         if w is None:
@@ -191,7 +191,7 @@ class BudgetAllocation(PTOProblem):
         return obj
 
     def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
-        assert len(Y.shape) == 3
+        assert Y.ndim == 3
         # Z
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)

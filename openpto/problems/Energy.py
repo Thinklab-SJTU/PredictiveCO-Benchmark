@@ -40,7 +40,7 @@ class Energy(PTOProblem):
 
     def get_energy_data(self):
         x_train, y_train, x_test, y_test = self.get_energy(
-            fname="openpto/data/prices2013.dat"
+            fname=f"{self.data_dir}/prices2013.dat"
         )
         x_train = x_train[:, 1:]
         x_test = x_test[:, 1:]
@@ -132,10 +132,10 @@ class Energy(PTOProblem):
         return sol, objs
 
     def init_API(self):
-        dirct = "openpto/data/SchedulingInstances"
+        dirct = f"{self.data_dir}/SchedulingInstances"
         os.listdir(dirct)[0]
         reading_dict = self.problem_data_reading(
-            "openpto/data/SchedulingInstances/load1/day01.txt"
+            f"{self.data_dir}/SchedulingInstances/load1/day01.txt"
         )
         out_dict = {**reading_dict, **{"modelSense": GRB.MINIMIZE}}
         return out_dict

@@ -16,6 +16,10 @@ def get_loss_fn(name, problem, **kwargs):
         from openpto.method.Models.MSE import CE
 
         return CE
+    elif name == "bce":
+        from openpto.method.Models.MSE import BCE
+
+        return BCE
     elif name == "mae":
         from openpto.method.Models.MSE import MAE
 

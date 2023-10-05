@@ -63,6 +63,21 @@ class MAE(optModel):
         return loss
 
 
+class BCE(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
+        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+
+    @staticmethod
+    def forward(
+        problem,
+        coeff_hat,
+        coeff_true,
+        params=None,
+        **hyperparams,
+    ):
+        return torch.nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
+
+
 class CE(optModel):
     def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
         super().__init__(optSolver, processes, solve_ratio, **kwargs)
@@ -75,7 +90,9 @@ class CE(optModel):
         params=None,
         **hyperparams,
     ):
-        return torch.nn.BCELoss()(coeff_hat, coeff_true)
+        return torch.nn.CrossEntropyLoss(reduction=hyperparams["reduction"])(
+            coeff_hat, coeff_true
+        )
 
 
 class MSE_Sum(optModel):
@@ -122,10 +139,13 @@ class DFL(optModel):
     ):
         if problem.get_twostageloss() == "mse":
             twostageloss = MSE()
+        elif problem.get_twostageloss() == "bce":
+            twostageloss = BCE()
         elif problem.get_twostageloss() == "ce":
             twostageloss = CE()
         else:
             raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
+        print("coeff_hat: ", coeff_hat.shape)
         sol_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
@@ -136,6 +156,7 @@ class DFL(optModel):
         if isinstance(sol_hat, np.ndarray):
             sol_hat = move_to_tensor(sol_hat)
         sol_hat = sol_hat.to(problem.device)
+
         obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)

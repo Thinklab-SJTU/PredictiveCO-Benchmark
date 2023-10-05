@@ -80,8 +80,8 @@ class CubicTopK(PTOProblem):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
     def get_objective(self, Y, Z, **kwargs):
-        assert len(Y.shape) == 3
-        assert len(Z.shape) == 2
+        assert Y.ndim == 3
+        assert Z.ndim == 2
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         if isinstance(Z, np.ndarray):
@@ -89,7 +89,7 @@ class CubicTopK(PTOProblem):
         Z = Z.to(Y.device)
         return (Z.unsqueeze(-1) * Y).sum(-1).sum(-1)
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, optSolver, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         Y = Y.cpu()

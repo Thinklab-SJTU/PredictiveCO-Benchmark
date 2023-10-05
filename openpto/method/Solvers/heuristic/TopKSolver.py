@@ -17,12 +17,7 @@ class TopKSolver(optSolver):
         self.n_vars = n_vars
 
     def solve(self, Y, budget):
-        """
-        A method to set objective function
-
-        Args:
-            c (np.ndarray / list): cost of objective function
-        """
+        """ """
         num_items = Y.shape[1]
         _, idxs = torch.topk(Y, budget, dim=1)
         Z = torch.nn.functional.one_hot(idxs, num_items).sum(dim=-2).sum(-2)

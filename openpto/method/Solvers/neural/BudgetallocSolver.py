@@ -68,7 +68,7 @@ if __name__ == "__main__":
         # Function to be *maximised*
         #   Sanity check inputs
         assert Y.shape[0] == Z.shape[0]
-        assert len(Z.shape) == 1
+        assert Z.ndim == 1
 
         #   Compute submodular objective from Wilder, et. al. (2019)
         p_fail = 1 - Z.unsqueeze(1) * Y
