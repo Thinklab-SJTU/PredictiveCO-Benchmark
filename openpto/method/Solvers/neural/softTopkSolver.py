@@ -4,12 +4,12 @@
 Abstract optimization model based on GurobiPy
 """
 
-import torch
 
 from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 
 
-class TopKSolver(optSolver):
+class softTopkSolver(optSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, **kwargs):
@@ -23,7 +23,6 @@ class TopKSolver(optSolver):
         Args:
             c (np.ndarray / list): cost of objective function
         """
-        num_items = Y.shape[1]
-        _, idxs = torch.topk(Y, budget, dim=1)
-        Z = torch.nn.functional.one_hot(idxs, num_items).sum(dim=-2).sum(-2)
+        gamma = TopK_custom(budget)(-Y).squeeze()
+        Z = gamma[..., 0] * Y.shape[-1]
         return Z

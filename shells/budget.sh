@@ -1,11 +1,11 @@
-EPOCHS=1
 GPU=0
+EPOCHS=1
 
 # # Prediction-focused learning
 python rethink_exp/main_results.py --problem=budgetalloc --opt_model mse      --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}
 
 # ## Decisoin-focused learning
-## python rethink_exp/main_results.py --problem=budgetalloc --opt_model dfl      --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}
+# python rethink_exp/main_results.py --problem=budgetalloc --opt_model dfl      --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}
 python rethink_exp/main_results.py --problem=budgetalloc --opt_model blackbox --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}
 python rethink_exp/main_results.py --problem=budgetalloc --opt_model identity --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}
 python rethink_exp/main_results.py --problem=budgetalloc --opt_model spo      --solver neural --n_epochs ${EPOCHS} --gpu ${GPU}

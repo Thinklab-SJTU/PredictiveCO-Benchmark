@@ -36,8 +36,9 @@ def save_pd(_dict, path):
 
 
 def print_metrics(
-    datasets, model, problem, loss_fn, optSolver, prefix, logger, **model_args
+    datasets, model, problem, loss_fn, optSolver, prefix, logger, do_debug, **model_args
 ):
+    model.eval()
     with torch.no_grad():
         # logger.info(f"Current model parameters: {[param for param in model.parameters()]}")
         metrics = {}
@@ -76,6 +77,7 @@ def print_metrics(
                         params=Ys_aux[idx],
                         partition=partition,
                         index=idx,
+                        do_debug=do_debug,
                         **model_args,
                     )
                 )

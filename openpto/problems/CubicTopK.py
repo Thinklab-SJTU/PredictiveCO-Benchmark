@@ -5,7 +5,6 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-from openpto.method.Solvers.neural.RMABSolver import TopK_custom
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -80,30 +79,22 @@ class CubicTopK(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
-    def opt_train(self, Y):
-        gamma = TopK_custom(self.budget)(-Y).squeeze()
-        Z = gamma[..., 0] * Y.shape[-1]
-        return Z
-
     def get_objective(self, Y, Z, **kwargs):
         assert len(Y.shape) == 3
         assert len(Z.shape) == 2
+        if isinstance(Y, np.ndarray):
+            Y = torch.from_numpy(Y)
         if isinstance(Z, np.ndarray):
-            Z = np.expand_dims(Z, -1)
-        else:
-            Z = Z.unsqueeze(-1)
-            Z = Z.to(Y.device)
-        obj = (Z * Y).sum(-1).sum(-1)
-        return obj
+            Z = torch.from_numpy(Z)
+        Z = Z.to(Y.device)
+        return (Z.unsqueeze(-1) * Y).sum(-1).sum(-1)
 
     def get_decision(self, Y, params, optSolver=None, isTrain=False, **kwargs):
         if isinstance(Y, np.ndarray):
             Y = torch.from_numpy(Y)
         Y = Y.cpu()
-        _, idxs = torch.topk(Y, self.budget, dim=1)
-        Z = torch.nn.functional.one_hot(idxs, self.num_items).sum(dim=-2).sum(-2)
-        output_sols = Z.cpu().numpy()
-        output_vals = self.get_objective(Y, Z)
+        output_sols = optSolver.solve(Y, self.budget)
+        output_vals = self.get_objective(Y, output_sols)
         return output_sols, output_vals
 
     def get_model_shape(self):
