@@ -19,5 +19,3 @@ python rethink_exp/main_results.py --problem=bipartitematching --opt_model black
 python rethink_exp/main_results.py --problem=bipartitematching --opt_model identity --solver cvxpy --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU} --instances 20 --testinstances 6 --losslr 0.01 --n_layers 1 --n_hidden 32
 
 
-
-python rethink_exp/main_results.py --problem=bipartitematching --opt_model spo      --solver cvxpy --n_epochs 1 --gpu 0 --instances 20 --testinstances 6 --losslr 0.01 --n_layers 1 --n_hidden 32

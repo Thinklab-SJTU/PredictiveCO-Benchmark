@@ -1,4 +1,0 @@
-python rethink_exp/main_results.py --problem=bipartitematching --opt_model ce --solver cvxpy --n_epochs 100 --gpu 0 --instances 20 --testinstances 6 --losslr 0.1 --n_layers 3 --n_hidden 64 --prefix "0.1/3/64"
-python rethink_exp/main_results.py --problem=bipartitematching --opt_model ce --solver cvxpy --n_epochs 100 --gpu 0 --instances 20 --testinstances 6 --losslr 0.01 --n_layers 3 --n_hidden 64 --prefix "0.01/3/64"
-python rethink_exp/main_results.py --problem=bipartitematching --opt_model ce --solver cvxpy --n_epochs 100 --gpu 0 --instances 20 --testinstances 6 --losslr 0.001 --n_layers 3 --n_hidden 64 --prefix "0.001/3/64"
-python rethink_exp/main_results.py --problem=bipartitematching --opt_model ce --solver cvxpy --n_epochs 100 --gpu 0 --instances 20 --testinstances 6 --losslr 0.0001 --n_layers 3 --n_hidden 64  --prefix "0.0001/3/64"
