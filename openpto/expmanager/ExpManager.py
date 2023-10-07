@@ -6,27 +6,10 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from torch.utils.data import Dataset
-
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import move_to_array
-
-
-class OptDataset(Dataset):
-    def __init__(self, features, labels):
-        super().__init__()
-        self.features = features
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.features)
-
-    def __getitem__(self, idx):
-        feature = self.features[idx]
-        label = self.labels[idx]
-        return feature, label
 
 
 class ExpManager:
@@ -51,9 +34,10 @@ class ExpManager:
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
 
-    def run(self, problem, loss_fn, optSolver=None, n_epochs=1, debug=False):
+    def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
         move_to_gpu(problem, self.device)
+        move_to_gpu(optSolver, self.device)
         problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
@@ -65,6 +49,7 @@ class ExpManager:
 
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
+        # TODO: !!! use exact sovler for optimal
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,
@@ -91,14 +76,14 @@ class ExpManager:
         ###   Document the value of a random guess
         objs_rand = []
         for _ in range(10):
-            Z_test_rand, objectives_rand = problem.get_decision(
+            Z_test_rand, Objs_test_rand = problem.get_decision(
                 torch.rand_like(Y_test, device=self.device),
                 params=Y_test_aux,
                 optSolver=optSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
-            objs_rand.append(torch.Tensor(objectives_rand))
+            objs_rand.append(torch.Tensor(Objs_test_rand))
         objs_rand = torch.stack(objs_rand)
 
         ############################# Pretrain #############################
@@ -114,6 +99,7 @@ class ExpManager:
         # loss function
         criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")
+        self.pred_model.train()
         for ptr_epoch in range(self.args.n_ptr_epochs):
             # Check metrics on val set
             if ptr_epoch % self.args.valfreq == 0:
@@ -130,6 +116,7 @@ class ExpManager:
                     optSolver,
                     f"Ptr iter {ptr_epoch},",
                     self.logger,
+                    do_debug=do_debug,
                     **self.model_args,
                 )
                 add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
@@ -148,7 +135,7 @@ class ExpManager:
             # Stop if model hasn't improved for patience steps
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
-            
+
             ###### one-shot training
             preds = self.pred_model(X_train)
             loss = criterion(problem, preds, Y_train.float(), **self.model_args)
@@ -158,7 +145,7 @@ class ExpManager:
             self.optimizer.step()
             time_since_best += 1
 
-            if debug:
+            if do_debug:
                 torch.save(
                     preds.detach().cpu(),
                     os.path.join(
@@ -175,6 +162,7 @@ class ExpManager:
         # Train PTO
         time_since_best = 0
         self.logger.info("Training Model...")
+        self.pred_model.train()
         for iter_idx in range(n_epochs):
             # Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
@@ -191,6 +179,7 @@ class ExpManager:
                     optSolver,
                     f"Iter {iter_idx},",
                     self.logger,
+                    do_debug=do_debug,
                     **self.model_args,
                 )
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
@@ -225,6 +214,7 @@ class ExpManager:
                     params=Y_train_aux[idx],
                     partition="train",
                     index=idx,
+                    do_debug=do_debug,
                     **self.model_args,
                 )
                 losses.append(loss_idx)
@@ -256,6 +246,7 @@ class ExpManager:
             optSolver,
             "Final",
             self.logger,
+            do_debug=do_debug,
             **self.model_args,
         )
         total_test_time = results["test"]["time"]
@@ -270,7 +261,7 @@ class ExpManager:
             [Objs_test_opt, regret],
         )
         # save solutions
-        if debug:
+        if do_debug:
             np.save(
                 os.path.join(self.args.log_dir, "tensors", "solution.npy"), Z_test_opt
             )

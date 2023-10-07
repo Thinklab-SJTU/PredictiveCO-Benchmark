@@ -26,7 +26,7 @@ class BipartiteMatching(PTOProblem):
         prob_version="bipartitematching",
         data_dir="./openpto/data/",
     ):
-        super(BipartiteMatching, self).__init__()
+        super(BipartiteMatching, self).__init__(data_dir)
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
@@ -76,11 +76,11 @@ class BipartiteMatching(PTOProblem):
         # """
         # Loads the labels (Ys) of the prediction from a file, and returns a subset of it parameterised by instances.
         # """
-        g = nx.read_edgelist("openpto/data/cora.cites")
+        g = nx.read_edgelist(f"{self.data_dir}/cora.cites")
         nodes_before = [int(v) for v in g.nodes()]
 
         g = nx.convert_node_labels_to_integers(g, first_label=0)
-        a = np.loadtxt("openpto/data/cora_cites_metis.txt.part.27")
+        a = np.loadtxt(f"{self.data_dir}/cora_cites_metis.txt.part.27")
         g_part = []
         for i in range(27):
             g_part.append(nx.Graph(nx.subgraph(g, list(np.where(a == i))[0])))
@@ -106,7 +106,7 @@ class BipartiteMatching(PTOProblem):
         for i in range(27):
             g_part.append(nx.subgraph(g, list(np.where(a == i))[0]))
 
-        features = np.loadtxt("openpto/data/cora.content")
+        features = np.loadtxt(f"{self.data_dir}/cora.content")
         features_idx = features[:, 0]
         features = features[:, 1:]
         n_nodes = 50
@@ -114,8 +114,8 @@ class BipartiteMatching(PTOProblem):
         n_features = 1433
         data = np.zeros((27, n_nodes**2, 2 * n_features))
         msubs = np.zeros((27, n_nodes**2))
-        M = np.load("openpto/data/cora.msubject.npy", allow_pickle=True)
-        partition = pickle.load(open("openpto/data/cora_partition.pickle", "rb"))
+        M = np.load(f"{self.data_dir}/cora.msubject.npy", allow_pickle=True)
+        partition = pickle.load(open(f"{self.data_dir}/cora_partition.pickle", "rb"))
 
         percent_removed = []
         for i in range(27):
@@ -201,7 +201,7 @@ class BipartiteMatching(PTOProblem):
         return "sigmoid"
 
     def get_twostageloss(self):
-        return "ce"
+        return "bce"
 
     def get_objective(self, Y, Z, **kwargs):
         """
@@ -209,8 +209,8 @@ class BipartiteMatching(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        assert len(Y.shape) == 3
-        assert len(Z.shape) == 2
+        assert Y.ndim == 3
+        assert Z.ndim == 2
         # convert Z to Y type
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
             Z = Z.cpu().numpy()

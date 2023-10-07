@@ -10,6 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import move_to_tensor
 
 
 class blackbox(optModel):
@@ -43,8 +44,11 @@ class blackbox(optModel):
         """
         Forward pass
         """
-        sols_hat = self.dbb.apply(coeff_hat, problem, params, self.optSolver, self.lambd)
+        sols_hat = self.dbb.apply(
+            coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
+        )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, **hyperparams)
+
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(objs_hat)
@@ -59,6 +63,21 @@ class blackbox(optModel):
             pass
         elif self.optSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
+
+        if (
+            hyperparams["do_debug"]
+            and hyperparams["partition"] == "train"
+            and loss.requires_grad
+        ):
+            objs_hat_grad = torch.autograd.grad(loss, objs_hat, retain_graph=True)[0]
+            coeff_hat_grad = torch.autograd.grad(loss, coeff_hat, retain_graph=True)[0]
+            sols_hat_grad = torch.autograd.grad(loss, sols_hat, retain_graph=True)[0]
+            print(
+                "dbb grad: ",
+                objs_hat_grad.shape,
+                coeff_hat_grad.shape,
+                sols_hat_grad.shape,
+            )
         return loss
 
 
@@ -73,6 +92,7 @@ class blackboxFunc(torch.autograd.Function):
         params,
         optSolver,
         lambd,
+        hyperparams,
     ):
         """
         Forward pass for DBB
@@ -88,7 +108,7 @@ class blackboxFunc(torch.autograd.Function):
         # get device
         device = coeff_hat.device
         # convert tenstor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         sols_hat, _ = problem.get_decision(
             coeff_hat_array, params, optSolver, **problem.init_API()
         )
@@ -101,7 +121,7 @@ class blackboxFunc(torch.autograd.Function):
         ctx.problem = problem
         # convert to tensor
         if isinstance(sols_hat, np.ndarray):
-            sols_hat = torch.from_numpy(sols_hat)
+            sols_hat = move_to_tensor(sols_hat)
         sols_hat = sols_hat.to(device)
         return sols_hat
 
@@ -149,4 +169,4 @@ class blackboxFunc(torch.autograd.Function):
                     *grad_shape, coeff_hat_array.shape[-1]
                 )
         ##### end #####
-        return grad, None, None, None, None
+        return grad, None, None, None, None, None

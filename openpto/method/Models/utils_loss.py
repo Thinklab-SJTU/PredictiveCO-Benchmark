@@ -1,9 +1,11 @@
-from openpto.method.Models.MSE import CE, MAE, MSE
+from openpto.method.Models.MSE import BCE, CE, MAE, MSE
 
 
 def str2twoStageLoss(problem):
     if problem.get_twostageloss() == "mse":
         twostageloss = MSE()
+    elif problem.get_twostageloss() == "bce":
+        twostageloss = BCE()
     elif problem.get_twostageloss() == "ce":
         twostageloss = CE()
     elif problem.get_twostageloss() == "mae":

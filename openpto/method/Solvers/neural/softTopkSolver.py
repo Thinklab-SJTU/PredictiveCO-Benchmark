@@ -4,21 +4,21 @@
 Abstract optimization model based on GurobiPy
 """
 
-import torch
 
 from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.neural.softTopk import SoftTopk
 
 
-class TopKSolver(optSolver):
+class softTopkSolver(optSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, **kwargs):
         super().__init__(modelSense)
         self.n_vars = n_vars
+        self.topk = SoftTopk()
 
     def solve(self, Y, budget):
         """ """
-        num_items = Y.shape[1]
-        _, idxs = torch.topk(Y, budget, dim=1)
-        Z = torch.nn.functional.one_hot(idxs, num_items).sum(dim=-2).sum(-2)
+        gamma = self.topk(-Y, budget)
+        Z = gamma[..., 0].squeeze(-1) * Y.shape[-1]
         return Z

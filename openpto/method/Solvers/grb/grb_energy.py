@@ -114,7 +114,6 @@ class ICONGrbSolver(optGrbSolver):
         P = self.P
         q = self.q
         N = 1440 // q
-        verbose = self.verbose
         x = self.z
         nbMachines = self.nbMachines
         nbTasks = self.nbTasks
@@ -147,7 +146,7 @@ class ICONGrbSolver(optGrbSolver):
         # print("###################  Value after optimization #########################")
         # print(x)
 
-        solver = np.zeros(N)
+        np.zeros(N)
         schedule = np.zeros((nbTasks, nbMachines, N))
         # if Model.status in [GRB.Status.OPTIMAL, 9]:
         #     try:
@@ -195,6 +194,6 @@ class ICONGrbSolver(optGrbSolver):
         #     print("Model is unbounded")
         # else:
         #     print("Optimization ended with status %d" % Model.status)
-        #self.model.reset(0)
+        # self.model.reset(0)
         schedule = schedule.reshape(-1)
         return schedule

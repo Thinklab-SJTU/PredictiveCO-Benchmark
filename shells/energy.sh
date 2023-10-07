@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 EPOCHS=1
 GPU=-1
+=======
+GPU=0
+EPOCHS=100
+>>>>>>> fad914c78f1d1cb81d789a9487467f8848850920
 
 # Prediction-focused learning
 python rethink_exp/main_results.py --problem=energy --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU}

@@ -137,7 +137,7 @@ class RandomTopK(PTOProblem):
 
     def get_decision(self, Y, params, optSolver=None):
         # If this is a single instance of a decision problem
-        if len(Y.shape) == 1:
+        if Y.ndim == 1:
             return self.opt(Y)
 
         # If it's not, break it down into individual instances and solve

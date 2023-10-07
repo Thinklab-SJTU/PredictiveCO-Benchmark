@@ -46,6 +46,10 @@ class PTOProblem(ABC):
     def get_objective(self, Y, Z, **kwargs):
         raise NotImplementedError()
 
+    @abstractmethod
+    def init_API(self):
+        return dict()
+
     def _set_seed(self, rand_seed=int(time.time())):
         random.seed(rand_seed)
         torch.manual_seed(rand_seed)

@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from gurobipy import GRB  # pylint: disable=no-name-in-module
+
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.utils_method import move_to_tensor
 
@@ -61,6 +63,21 @@ class MAE(optModel):
         return loss
 
 
+class BCE(optModel):
+    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
+        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+
+    @staticmethod
+    def forward(
+        problem,
+        coeff_hat,
+        coeff_true,
+        params=None,
+        **hyperparams,
+    ):
+        return torch.nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
+
+
 class CE(optModel):
     def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
         super().__init__(optSolver, processes, solve_ratio, **kwargs)
@@ -73,7 +90,9 @@ class CE(optModel):
         params=None,
         **hyperparams,
     ):
-        return torch.nn.BCELoss()(coeff_hat, coeff_true)
+        return torch.nn.CrossEntropyLoss(reduction=hyperparams["reduction"])(
+            coeff_hat, coeff_true
+        )
 
 
 class MSE_Sum(optModel):
@@ -120,20 +139,31 @@ class DFL(optModel):
     ):
         if problem.get_twostageloss() == "mse":
             twostageloss = MSE()
+        elif problem.get_twostageloss() == "bce":
+            twostageloss = BCE()
         elif problem.get_twostageloss() == "ce":
             twostageloss = CE()
         else:
             raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
-        sol_hat, objs = problem.get_decision(
+        print("coeff_hat: ", coeff_hat.shape)
+        sol_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
             optSolver=self.optSolver,
             isTrain=True,
             **problem.init_API(),
         )
-        if isinstance(objs, np.ndarray):
-            objs = move_to_tensor(objs)
-        objs = objs.to(problem.device)
+        if isinstance(sol_hat, np.ndarray):
+            sol_hat = move_to_tensor(sol_hat)
+        sol_hat = sol_hat.to(problem.device)
+
+        obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
+        # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
-        loss = -objs + self.dflalpha * twostage_loss
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            loss = obj_hat + self.dflalpha * twostage_loss
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -obj_hat + self.dflalpha * twostage_loss
+        else:
+            raise ValueError(f"Unknown model sense {self.optSolver.modelSense}")
         return loss

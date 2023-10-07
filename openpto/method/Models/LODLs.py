@@ -691,7 +691,7 @@ class WeightedMSESum(torch.nn.Module):
     def __init__(self, Y):
         super(WeightedMSESum, self).__init__()
         # Save true labels
-        assert len(Y.shape) == 2  # make sure it's a multi-dimensional input
+        assert Y.ndim == 2  # make sure it's a multi-dimensional input
         self.Y = Y.detach()
 
         # Initialise paramters

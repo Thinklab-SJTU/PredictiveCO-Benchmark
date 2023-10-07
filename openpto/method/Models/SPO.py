@@ -108,7 +108,9 @@ class SPOPlusFunc(torch.autograd.Function):
         )
         # calculate loss
         loss = (
-            -obj_proxy + 2 * problem.get_objective(coeff_hat_array, sols_true) - objs_true.cpu().numpy()
+            -obj_proxy
+            + 2 * problem.get_objective(coeff_hat_array, sols_true)
+            - objs_true.cpu().numpy()
         )
         # convert to tensor
         if not torch.is_tensor(loss):
