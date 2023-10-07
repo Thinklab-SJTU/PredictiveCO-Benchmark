@@ -137,8 +137,6 @@ class BipartiteMatching(PTOProblem):
                     to_add.remove(gnodes.index(v))
                 except Exception:
                     print(v, " not in list")
-                # lhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in lhs_nodes]
-                # rhs_nodes_idx = [list(g_part[i].nodes()).index(v) for v in rhs_nodes]
             missing_list = (
                 lhs_nodes_idx
                 if len(lhs_nodes_idx) < len(rhs_nodes_idx)
@@ -158,6 +156,7 @@ class BipartiteMatching(PTOProblem):
             # print(sum_before/2, adj.sum())
             percent_removed.append((edges_before - adj.sum()) / edges_before)
             Ps[i] = adj.flatten()
+            print(Ps[i].sum)
             msubs[i] = M[lhs_nodes_idx][:, rhs_nodes_idx].flatten()
             node_ids_lhs = [nodes_before[v] for v in lhs_nodes]
             node_ids_rhs = [nodes_before[v] for v in rhs_nodes]
@@ -170,9 +169,6 @@ class BipartiteMatching(PTOProblem):
                     data[i, curr_data_idx, n_features:] = features[row_idx_k]
                     curr_data_idx += 1
 
-        # with open('cora_data.pickle', 'wb') as f:
-        #     pickle.dump((Ps, data, msubs), f)
-        # print("->Done.")
         data_tensor = torch.from_numpy(data.astype(np.float32))
         Ps_tensor = torch.from_numpy(Ps.astype(np.float32)).reshape(-1, 2500, 1)
         return data_tensor, Ps_tensor
@@ -238,7 +234,8 @@ class BipartiteMatching(PTOProblem):
     ):
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 3D at max
-        Y = Y.cpu()
+        if torch.is_tensor(Y):
+            Y = Y.cpu()
         Y_unflatten = Y.reshape(-1, self.num_nodes, self.num_nodes)
         flag_numpy = 0
         if isinstance(Y_unflatten, np.ndarray):
@@ -264,42 +261,6 @@ class BipartiteMatching(PTOProblem):
         return {
             "modelSense": GRB.MAXIMIZE,
         }
-
-    # def _create_constraint_matrix(self):
-    #     """
-    #     Creates a matrix representation for the inequality constraints
-    #     Gx <= h specific to the bipartite matching problem.
-
-    #     Variables:
-    #     #LHS nodes = #RHS nodes = self.num_nodes
-    #     n_vars: (num_nodes * num_nodes) vector
-    #     n_constraints = n_vars + #LHS nodes + #RHS nodes
-
-    #     Output:
-    #     G: (n_constraints, n_vars) matrix
-    #     h: (n_constraints,) vector
-    #     """
-    #     # Create flow constraints
-    #     #   Create constraints for RHS nodes
-    #     #   \sum_i z_ij <= 1, forall j
-    #     G_lhs = torch.eye(self.num_nodes).repeat(1, self.num_nodes)
-    #     h_lhs = torch.ones(self.num_nodes)
-
-    #     #   Create constraints for LHS nodes
-    #     #   \sum_j z_ij <= 1, forall i
-    #     G_rhs = G_lhs.detach().clone()
-    #     G_rhs = G_rhs.reshape((self.num_nodes, self.num_nodes, self.num_nodes)).permute((0, 2, 1)).reshape((self.num_nodes, -1))
-    #     h_rhs = torch.ones(self.num_nodes)
-
-    #     # Create non-negativity constraints
-    #     G_ineq = -torch.eye(self.num_nodes * self.num_nodes)
-    #     h_ineq = torch.zeros(self.num_nodes * self.num_nodes)
-
-    #     # Putting them together
-    #     G = torch.cat((G_lhs, G_rhs, G_ineq))
-    #     h = torch.cat((h_lhs, h_rhs, h_ineq))
-
-    #     return G, h
 
 
 if __name__ == "__main__":

@@ -43,7 +43,7 @@ def collect_ptr_ftn(data_name, prefix_name):
     return collect_results(data_name, ptr_ftn_prefix_name, ["blackbox", "identity"])
 
 
-global_data_names = ["knapsack-gen", "budgetalloc-real", "cubic-gen"]
+global_data_names = ["bipartitematching-cora"]
 global_model_names = [
     "mse",
     "dfl",
