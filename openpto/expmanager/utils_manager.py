@@ -4,8 +4,7 @@ import time
 
 import torch
 
-from openpto.method.utils_method import move_to_array
-from openpto.metrics.regret import regret_func
+from openpto.metrics.evals import get_eval_results
 
 
 def move_to_gpu(problem, device):
@@ -59,12 +58,6 @@ def print_metrics(
                 **problem.init_API(),
             )
 
-            Ys_array = move_to_array(Ys)
-            Zs_hat_array = move_to_array(Zs_hat)
-
-            objective_hat = problem.get_objective(
-                Ys_array, Zs_hat_array, **problem.init_API()
-            )
             # Loss and Error
             losses = []
             preds = model(Xs)
@@ -83,15 +76,21 @@ def print_metrics(
                 )
 
             losses = torch.stack(losses).flatten()
+            objective_hat = torch.zeros_like(losses).cpu()
             if partition == "train":
                 test_time = 0
-                regret = torch.zeros_like(losses)
+                eval_result = {"value": torch.zeros_like(losses)}
             elif partition == "val":
                 test_time = 0
-                regret = regret_func(problem, Ys, problem.z_val_opt, Zs_hat)
+                eval_result = get_eval_results(
+                    problem, Ys, problem.z_val_opt, Zs_hat, Ys_aux
+                )
             elif partition == "test":
                 test_time = time.time() - time_test_start
-                regret = regret_func(problem, Ys, problem.z_test_opt, Zs_hat)
+                eval_result = get_eval_results(
+                    problem, Ys, problem.z_test_opt, Zs_hat, Ys_aux
+                )
+                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
             else:
                 raise ValueError(f"Unknown partition {partition}")
 
@@ -104,11 +103,11 @@ def print_metrics(
                 "preds": preds,
                 "sols_hat": Zs_hat,
                 "objective": objective_hat,
-                "regret": regret,
+                "eval": eval_result,
             }
             logger.info(
-                f"{prefix:<6} {partition:<6} Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f} "
-                f"{'Regret':>6}: {regret.mean():.6f}"
+                f"{prefix:<6} [{partition:<5}] Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f} "
+                f"{f'{problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.6f}"
             )
         logger.info("----\n")
     return metrics

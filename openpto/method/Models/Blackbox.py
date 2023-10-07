@@ -120,9 +120,7 @@ class blackboxFunc(torch.autograd.Function):
         ctx.params = params
         ctx.problem = problem
         # convert to tensor
-        if isinstance(sols_hat, np.ndarray):
-            sols_hat = move_to_tensor(sols_hat)
-        sols_hat = sols_hat.to(device)
+        sols_hat = move_to_tensor(sols_hat).to(device)
         return sols_hat
 
     @staticmethod
@@ -139,7 +137,7 @@ class blackboxFunc(torch.autograd.Function):
         # get device
         device = problem.device
         # convert tenstor
-        dl = grad_output.detach().to("cpu").numpy()
+        dl = grad_output.detach().cpu().numpy()
         ##### work around #####
         # if dl.shape != coeff_hat_array.shape:
         #     dl = np.expand(dl, (*dl.shape, coeff_hat_array.shape[-1]))
@@ -156,9 +154,7 @@ class blackboxFunc(torch.autograd.Function):
         sols_lamb, _ = problem.get_decision(cq, params, optSolver, **problem.init_API())
         grad = (sols_lamb - sols_hat) / lambd
         # convert to tensor
-        if isinstance(grad, np.ndarray):
-            grad = torch.from_numpy(grad)
-        grad = grad.to(device)
+        grad = move_to_tensor(grad).to(device)
         ##### work around #####
         if grad.shape != coeff_hat_array.shape:
             if np.prod(grad.shape) == np.prod(coeff_hat_array.shape):

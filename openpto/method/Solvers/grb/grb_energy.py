@@ -1,10 +1,10 @@
 import gurobipy as gp  # pylint: disable=no-name-in-module
 import numpy as np
-import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
+from openpto.method.utils_method import move_to_array
 
 
 # optimization model
@@ -122,8 +122,7 @@ class ICONGrbSolver(optGrbSolver):
         Machines = range(nbMachines)
         Tasks = range(nbTasks)
         range(nbResources)
-        if torch.is_tensor(price):
-            price = price.cpu().numpy()
+        price = move_to_array(price)
 
         # print( price.shape )
         obj_expr = gp.quicksum(

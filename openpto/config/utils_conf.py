@@ -58,7 +58,7 @@ def get_args():
     parser.add_argument(
         "--solver",
         type=str,
-        choices=["gurobi", "neural", "heuristic", "cvxpy"],
+        choices=["gurobi", "neural", "heuristic", "cvxpy", "ortools"],
         default="gurobi",
     )
     parser.add_argument("--gpu", type=str, default="-1", help="Visible GPU")
@@ -78,7 +78,6 @@ def get_args():
     parser.add_argument("--instances", type=int, default=400)
     parser.add_argument("--testinstances", type=int, default=200)
     # debug
-    # parser.add_argument("--valfrac", type=float, default=0.5)
     parser.add_argument("--valfreq", type=int, default=1)
     parser.add_argument("--prefix", type=str, default="default")
     # model
@@ -87,10 +86,7 @@ def get_args():
     # solver
     parser.add_argument("--solve_ratio", type=float, default=1.0)
     parser.add_argument("--processes", type=int, default=1)
-    #   Decision-Focused Learning
-    # parser.add_argument("--numsamples", type=int, default=5000)
-    parser.add_argument("--losslr", type=float, default=0.01)
-
+    #
     args = parser.parse_args()
     return args
 

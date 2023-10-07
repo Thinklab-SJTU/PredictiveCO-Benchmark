@@ -5,6 +5,7 @@ from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.heuristic.TopKSolver import TopKSolver
 from openpto.method.Solvers.neural.BudgetallocSolver import budgetallocSolver
 from openpto.method.Solvers.neural.softTopkSolver import softTopkSolver
+from openpto.method.Solvers.ortools.ortools_ad import AdOrToolSolver
 
 
 ################################# Wrappers ################################################
@@ -16,11 +17,11 @@ def str2solver(args, conf, solver_str, prob_str, problem):
     prob_solver_dict = {
         "budgetalloc": {"neural": budgetallocSolver},
         "bipartitematching": {"cvxpy": BmatchingSolver},
-        # 'portfolio':PortfolioOpt,
+        # 'portfolio': {},
         "cubic": {"heuristic": TopKSolver, "neural": softTopkSolver},
         "energy": {"gurobi": ICONGrbSolver},
         "knapsack": {"gurobi": KPGrbSolver},
-        "advertising": {"gurobi": AdGrbSolver},
+        "advertising": {"gurobi": AdGrbSolver, "ortools": AdOrToolSolver},
     }
     # TODO: more problems
     solve_dict = {**problem.init_API(), **conf["solver"][solver_str]}

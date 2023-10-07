@@ -46,8 +46,6 @@ class NCE(optModel):
             isTrain=False,
             **problem.init_API(),
         )
-        if isinstance(sol_true, torch.Tensor):
-            sol_true = sol_true.numpy()
         sol_true = move_to_tensor(sol_true).to(device)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
@@ -60,7 +58,7 @@ class NCE(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        cp = coeff_hat.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sols_hat, _ = problem.get_decision(
@@ -83,7 +81,6 @@ class NCE(optModel):
             loss = objpool_cp - obj_cp
         else:
             raise NotImplementedError
-        # print("loss: ", loss.shape, loss)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)
@@ -93,7 +90,6 @@ class NCE(optModel):
             pass
         else:
             raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
-        # assert 0
         return loss
 
 
@@ -128,7 +124,7 @@ class NCE(optModel):
 #         # get device
 #         device = coeff_hat.device
 #         # convert tensor
-#         cp = coeff_hat.detach().to("cpu").numpy()
+#         cp = coeff_hat.detach().cpu().numpy()
 #         # solve
 #         if np.random.uniform() <= self.solve_ratio:
 #             sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)

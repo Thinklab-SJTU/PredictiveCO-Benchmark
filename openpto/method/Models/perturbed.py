@@ -132,7 +132,7 @@ class perturbedOptFunc(torch.autograd.Function):
         # get device
         device = coeff_hat.device
         # convert tenstor
-        cp = coeff_hat.detach().to("cpu").numpy()
+        cp = coeff_hat.detach().cpu().numpy()
         # sample perturbations
         noises = rnd.normal(0, 1, size=(n_samples, *cp.shape[1:]))
         coeff_perturb = cp + sigma * noises
@@ -288,8 +288,8 @@ class perturbedOptFunc(torch.autograd.Function):
 #         # get device
 #         device = coeff_hat.device
 #         # convert tenstor
-#         cp = coeff_hat.detach().to("cpu").numpy()
-#         w = true_sol.detach().to("cpu").numpy()
+#         cp = coeff_hat.detach().cpu().numpy()
+#         w = true_sol.detach().cpu().numpy()
 #         # sample perturbations
 #         noises = rnd.normal(0, 1, size=(n_samples, *cp.shape))
 #         ptb_c = cp + sigma * noises

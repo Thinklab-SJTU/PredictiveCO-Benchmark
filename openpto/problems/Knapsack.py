@@ -18,9 +18,7 @@ class Knapsack(PTOProblem):
         num_test_instances=500,  # number of instances to use from the dataset to test
         num_items=100,  # number of targets to consider
         val_frac=0.2,  # fraction of training data reserved for validation
-        generate_weight=True,
         unit_weight=False,
-        kfold=[0],
         noise_level=0,
         rand_seed=0,  # for reproducibility
         prob_version="gen",  # "energy" or "gen"
