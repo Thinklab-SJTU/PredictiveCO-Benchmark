@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
@@ -153,10 +152,8 @@ class DFL(optModel):
             isTrain=True,
             **problem.init_API(),
         )
-        if isinstance(sol_hat, np.ndarray):
-            sol_hat = move_to_tensor(sol_hat)
-        sol_hat = sol_hat.to(problem.device)
 
+        sol_hat = move_to_tensor(sol_hat).to(problem.device)
         obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)

@@ -45,3 +45,5 @@ models:
 solver:
   gurobi:
     kwargs: none
+  ortools:
+    kwargs: none

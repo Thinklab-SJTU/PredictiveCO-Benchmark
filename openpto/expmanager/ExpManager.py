@@ -58,7 +58,6 @@ class ExpManager:
             **problem.init_API(),
         )
 
-        Z_val_opt = move_to_array(Z_val_opt)
         Objs_val_opt = move_to_array(Objs_val_opt)
         #
         Z_test_opt, Objs_test_opt = problem.get_decision(
@@ -68,7 +67,6 @@ class ExpManager:
             isTrain=False,
             **problem.init_API(),
         )
-        Z_test_opt = move_to_array(Z_test_opt)
         Objs_test_opt = move_to_array(Objs_test_opt)
         # save
         problem.z_val_opt = Z_val_opt
@@ -87,6 +85,12 @@ class ExpManager:
         objs_rand = torch.stack(objs_rand)
 
         ############################# Pretrain #############################
+        # pretrain data:
+        if hasattr(problem, "get_pretrain_data"):
+            X_pretrain, Y_pretrain, _ = problem.get_pretrain_data()
+        else:
+            X_pretrain, Y_pretrain, _ = X_train, Y_train, Y_train_aux
+
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
@@ -105,7 +109,7 @@ class ExpManager:
             if ptr_epoch % self.args.valfreq == 0:
                 # Compute metrics
                 datasets = [
-                    (X_train, Y_train, Y_train_aux, "train"),
+                    # (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
                     (X_val, Y_val, Y_val_aux, "val"),
                 ]
                 metrics = print_metrics(
@@ -119,11 +123,14 @@ class ExpManager:
                     do_debug=do_debug,
                     **self.model_args,
                 )
-                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                # add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
                 add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
                 # Save model if it's the best one
-                if best[1] is None or metrics["val"]["regret"].mean() <= best[0].mean():
-                    best = (metrics["val"]["regret"], deepcopy(self.pred_model))
+                if (
+                    best[1] is None
+                    or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
+                ):
+                    best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
                     torch.save(
@@ -137,8 +144,8 @@ class ExpManager:
                 break
 
             ###### one-shot training
-            preds = self.pred_model(X_train)
-            loss = criterion(problem, preds, Y_train.float(), **self.model_args)
+            preds = self.pred_model(X_pretrain)
+            loss = criterion(problem, preds, Y_pretrain.float(), **self.model_args)
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -185,8 +192,11 @@ class ExpManager:
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
                 add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
                 # Save model if it's the best one
-                if best[1] is None or metrics["val"]["regret"].mean() <= best[0].mean():
-                    best = (metrics["val"]["regret"], deepcopy(self.pred_model))
+                if (
+                    best[1] is None
+                    or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
+                ):
+                    best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
                     torch.save(
@@ -250,7 +260,7 @@ class ExpManager:
             **self.model_args,
         )
         total_test_time = results["test"]["time"]
-        regret = results["test"]["regret"]
+        eval_value = results["test"]["eval"]["value"]
         ############################ Save to file ############################
         # save logs
         save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
@@ -258,12 +268,14 @@ class ExpManager:
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
-            [Objs_test_opt, regret],
+            [Objs_test_opt, eval_value],
         )
         # save solutions
         if do_debug:
+            Z_test_opt_array = move_to_array(Z_test_opt)
             np.save(
-                os.path.join(self.args.log_dir, "tensors", "solution.npy"), Z_test_opt
+                os.path.join(self.args.log_dir, "tensors", "solution.npy"),
+                Z_test_opt_array,
             )
             torch.save(
                 results["test"]["preds"].cpu().detach(),
@@ -276,12 +288,12 @@ class ExpManager:
         self.logger.info(
             f"[Random Obj]: {objs_rand.mean().item():.6f} "
             f"[Optimal Obj]: {Objs_test_opt.mean().item():.6f} "
-            f"[Regret]: {regret.mean():.6f} "
+            f"[{problem.get_eval_metric()}]: {eval_value.mean():.6f} "
             f"[avg Train Time]: {avg_train_time:.6f} "
             f"[avg Test Time]: {avg_test_time:.6f} "
         )
         self.logger.info(
-            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.6f}  {regret.mean():.6f}  "
+            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.6f}  {eval_value.mean():.6f}  "
             f"{avg_train_time:.6f}  {avg_test_time:.6f}"
         )
         return True

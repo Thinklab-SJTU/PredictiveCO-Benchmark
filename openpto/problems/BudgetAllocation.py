@@ -6,6 +6,7 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
+from openpto.method.utils_method import move_to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -167,12 +168,8 @@ class BudgetAllocation(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        if isinstance(Y, np.ndarray):
-            Y = torch.from_numpy(Y)
-        if isinstance(Z, np.ndarray):
-            Z = torch.from_numpy(Z)
-        Y = Y.to(self.device)
-        Z = Z.to(self.device)
+        Y = move_to_tensor(Y).to(self.device)
+        Z = move_to_tensor(Z).to(self.device)
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert Z.ndim + 1 == Y.ndim
@@ -192,14 +189,11 @@ class BudgetAllocation(PTOProblem):
 
     def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
         assert Y.ndim == 3
-        # Z
-        if isinstance(Y, np.ndarray):
-            Y = torch.from_numpy(Y)
+        Y = move_to_tensor(Y)
         #
         if Z_init is None:
             Z_init = torch.rand(Y.shape[1:-1])
-        if isinstance(Z_init, np.ndarray):
-            Z_init = torch.from_numpy(Z_init)
+        Z_init = move_to_tensor(Z_init)
         # to device
         Z_init = Z_init.to(self.device)
         Y = Y.to(self.device)

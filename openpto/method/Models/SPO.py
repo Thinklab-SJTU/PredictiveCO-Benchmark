@@ -10,6 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import move_to_tensor
 
 
 class SPO(optModel):
@@ -97,8 +98,8 @@ class SPOPlusFunc(torch.autograd.Function):
         # get device
         device = coeff_hat.device
         # convert tenstor
-        coeff_hat_array = coeff_hat.detach().to("cpu").numpy()
-        coeff_true_array = coeff_true.detach().to("cpu").numpy()
+        coeff_hat_array = coeff_hat.detach().cpu().numpy()
+        coeff_true_array = coeff_true.detach().cpu().numpy()
         # solve
         sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_array - coeff_true_array,
@@ -113,16 +114,10 @@ class SPOPlusFunc(torch.autograd.Function):
             - objs_true.cpu().numpy()
         )
         # convert to tensor
-        if not torch.is_tensor(loss):
-            loss = torch.from_numpy(loss)
-        loss = loss.to(device)
+        loss = move_to_tensor(loss).to(device)
+        sols_proxy = move_to_tensor(sols_proxy).to(device)
+        sols_true = move_to_tensor(sols_true).to(device)
         # save solutions
-        if not torch.is_tensor(sols_proxy):
-            sols_proxy = torch.from_numpy(sols_proxy)
-        sols_proxy = sols_proxy.to(device)
-        if not torch.is_tensor(sols_true):
-            sols_true = torch.from_numpy(sols_true)
-        sols_true = sols_true.to(device)
         ctx.save_for_backward(sols_true, sols_proxy)
         # add other objects to ctx
         ctx.modelSense = optSolver.modelSense

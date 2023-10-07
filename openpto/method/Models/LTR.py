@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_array, move_to_tensor
+from openpto.method.utils_method import move_to_tensor
 
 
 class pointwiseLTR(optModel):
@@ -58,11 +58,6 @@ class pointwiseLTR(optModel):
             self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
-        # get sol_true:
-        coeff_true_array = move_to_array(coeff_true)
-        sol_true, _ = problem.get_decision(
-            coeff_true_array, params, self.optSolver, **problem.init_API()
-        )
         # convert tensor
         solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
         # obj for solpool as score
@@ -129,9 +124,6 @@ class pairwiseLTR(optModel):
             self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
-        sol_true, _ = problem.get_decision(
-            coeff_true, params, self.optSolver, **problem.init_API()
-        )
         solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
         # transform to tensor
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
@@ -219,7 +211,7 @@ class listwiseLTR(optModel):
             )
         # convert tensor
         coeff_hat_array = coeff_hat.detach().cpu().numpy()
-        # solve $TODO: if sol pool reasonable?
+        # solve #TODO: if sol pool reasonable?
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
                 coeff_hat_array, params, self.optSolver, **problem.init_API()

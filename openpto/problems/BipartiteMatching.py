@@ -8,9 +8,8 @@ import torch
 from gurobipy import GRB
 
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
+from openpto.method.utils_method import move_to_array, move_to_tensor
 from openpto.problems.PTOProblem import PTOProblem
-
-# from SubmodularOptimizer import SubmodularOptimizer
 
 
 class BipartiteMatching(PTOProblem):
@@ -213,11 +212,11 @@ class BipartiteMatching(PTOProblem):
         assert Z.ndim == 2
         # convert Z to Y type
         if isinstance(Y, np.ndarray) and isinstance(Z, torch.Tensor):
-            Z = Z.cpu().numpy()
+            Z = move_to_array(Z)
         if isinstance(Y, torch.Tensor) and isinstance(Z, np.ndarray):
-            Z = torch.from_numpy(Z)
+            Z = move_to_tensor(Z)
         #
-        if isinstance(Y, torch.Tensor):
+        if torch.is_tensor(Y):
             Z = Z.to(self.device)
             Y = Y.to(self.device)
         ans_list = (Y.squeeze(-1) * Z).sum(axis=1)

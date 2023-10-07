@@ -43,7 +43,6 @@ def prob2args(args, conf):
         "data_dir": args.data_dir,
         "num_train_instances": args.instances,
         "num_test_instances": args.testinstances,
-        # "val_frac": args.valfrac,
         "rand_seed": args.seed,
     }
     problem_kwargs = {}

@@ -50,6 +50,9 @@ class PTOProblem(ABC):
     def init_API(self):
         return dict()
 
+    def get_eval_metric(self):
+        return "regret"
+
     def _set_seed(self, rand_seed=int(time.time())):
         random.seed(rand_seed)
         torch.manual_seed(rand_seed)

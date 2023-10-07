@@ -15,6 +15,7 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Models.MSE import MSE
 from openpto.method.Predicts.dense import dense_nn
 from openpto.method.Solvers.utils_solver import starmap_with_kwargs
+from openpto.method.utils_method import move_to_tensor
 from openpto.problems.BipartiteMatching import BipartiteMatching
 from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.RMAB import RMAB
@@ -139,14 +140,8 @@ class LODL(optModel):
                     sampled_points
                 ):
                     # turn to torch
-                    if isinstance(opt_objective, np.ndarray):
-                        opt_objective = torch.from_numpy(
-                            opt_objective.astype("float")
-                        ).to(problem.device)
-                    if isinstance(objectives, np.ndarray):
-                        objectives = torch.from_numpy(objectives.astype("float")).to(
-                            problem.device
-                        )
+                    opt_objective = move_to_tensor(opt_objective).to(problem.device)
+                    objectives = move_to_tensor(objectives).to(problem.device)
                     SL_dataset[partition][idx] = (Y, opt_objective, Yhats, objectives)
 
             # Save dataset

@@ -30,8 +30,6 @@ models:
     reduction: sum
   mse:
     reduction: sum
-  bce:
-    reduction: sum
   ce:
     reduction: sum
   bce:
