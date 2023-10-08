@@ -1,8 +1,9 @@
-import torch
+import numpy as np
 
-from ortools.linear_solver import pywraplp
+from ortools.linear_solver import pywraplp  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.utils_method import move_to_array
 
 
 # optimization model
@@ -14,9 +15,9 @@ class AdOrToolSolver(optSolver):
     def solve(self, profits, cost_pv, given_pv):
         # ceil rounded solution
         profits = profits.reshape(-1, 4)
-        coefficient = profits.detach().cpu().numpy().tolist()
-        num_workers = len(coefficient)
-        num_tasks = len(coefficient[0])
+        coefficient = move_to_array(profits)
+        num_users = len(coefficient)
+        num_channels = len(coefficient[0])
 
         # Solver
         # Create the mip solver with the SCIP backend.
@@ -28,73 +29,57 @@ class AdOrToolSolver(optSolver):
         # x[i, j] is an array of 0-1 variables, which will be 1
         # if worker i is assigned to task j.
         x = {}
-        for worker in range(num_workers):
-            for task in range(num_tasks):
-                # x[worker, task] = solver.BoolVar(f'x[{worker},{task}]')
-                x[worker, task] = solver.NumVar(0, 1.01, f"x[{worker},{task}]")
+        for worker in range(num_users):
+            for task in range(num_channels):
+                x[worker, task] = solver.BoolVar(f"x[{worker},{task}]")
+                # x[worker, task] = solver.NumVar(0, 1.01, f"x[{worker},{task}]")
 
         # print('Number of variables =', solver.NumVariables())
 
         # # Each task is assigned to exactly one worker.
-        # for task in range(num_tasks):
+        # for task in range(num_channels):
         #     solver.Add(
-        #         solver.Sum([x[worker, task] for worker in range(num_workers)]) == 1)
+        #         solver.Sum([x[worker, task] for worker in range(num_users)]) == 1)
 
         solver.Add(
             solver.Sum(
-                solver.Sum(x[i, j] * cost_pv[j] for j in range(num_tasks))
-                for i in range(num_workers)
+                solver.Sum(x[i, j] * cost_pv[j] for j in range(num_channels))
+                for i in range(num_users)
             )
             <= given_pv
         )
-        # solver.Add(solver.Sum(solver.Sum(x[i,j] * costs2[j] for j in range(num_tasks)) for i in range(num_workers)) <= given_money)
+        # solver.Add(solver.Sum(solver.Sum(x[i,j] * costs2[j] for j in range(num_channels)) for i in range(num_users)) <= given_money)
 
-        for worker in range(num_workers):
-            solver.Add(solver.Sum([x[worker, task] for task in range(num_tasks)]) == 1)
+        for worker in range(num_users):
+            solver.Add(solver.Sum([x[worker, task] for task in range(num_channels)]) == 1)
         # # Each worker is assigned to exactly one task.
-        # for worker in range(num_workers):
-        #     solver.AddExactlyOne(x[worker, task] for task in range(num_tasks))
+        # for worker in range(num_users):
+        #     solver.AddExactlyOne(x[worker, task] for task in range(num_channels))
 
         # Objective
         objective_terms = []
-        for worker in range(num_workers):
-            for task in range(num_tasks):
+        for worker in range(num_users):
+            for task in range(num_channels):
                 objective_terms.append(coefficient[worker][task] * x[worker, task])
         solver.Maximize(solver.Sum(objective_terms))
 
         # Solve
         status = solver.Solve()
-        mockchannels = []
         if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-            solver.Objective().Value()
-            # print(f'Total cost = {solver_obj}\n')
-            for worker in range(num_workers):
-                # task_tmp = list()
-                for task in range(num_tasks):
-                    # print(f"x: {x[worker, task].solution_value()}")
-                    # task_tmp.append(x[worker, task].solution_value())
-                    if x[worker, task].solution_value() > 0.5 or task == (num_tasks - 1):
-                        mockchannels.append(task)
-                        # print(f'Worker {worker} assigned to task {task}.' +
-                        #         f' coefficient: {coefficient[worker][task]}')
-                        break
-                # predchannels.append(task_tmp)
+            # solver.Objective().Value()
+            pass
         else:
             print("No solution found.")
+            assert 0
 
         # print(f'Problem solved in {(solver.wall_time()/1000):.3f} seconds')
-        x_vec = sol2vec(profits, x)
-        # np.hstack(mockchannels)
-        return x_vec.reshape(1, -1, 4)
+        return sol2vec(x, num_users, num_channels)
 
 
-def sol2vec(profits, x):
-    num_workers = len(profits)
-    num_tasks = len(profits[0])
+def sol2vec(x, num_users, num_channels):
     sol_res = []
-    for worker in range(num_workers):
-        worder_res = []
-        for task in range(num_tasks):
-            worder_res.append(x[worker, task].solution_value())
-        sol_res.append(worder_res)
-    return torch.FloatTensor(sol_res)
+    for worker in range(num_users):
+        for task in range(num_channels):
+            sol_res.append(x[worker, task].solution_value())
+    # TODO: only support batch=1
+    return np.array(sol_res).reshape(1, num_users * num_channels, 1)

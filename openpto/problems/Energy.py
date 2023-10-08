@@ -121,7 +121,6 @@ class Energy(PTOProblem):
             # solve
             sch = optSolver.solve(Y[i])
             sol.append(sch)
-            # obj.append(objp)
 
         if isinstance(Y, np.ndarray):
             sol = np.array(sol)

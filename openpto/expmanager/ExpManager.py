@@ -12,6 +12,10 @@ from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import move_to_array
 
 
+def ndiv(a, b):
+    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+
 class ExpManager:
     """
     Experiment management class to enable running multiple experiment.
@@ -85,7 +89,7 @@ class ExpManager:
         objs_rand = torch.stack(objs_rand)
 
         ############################# Pretrain #############################
-        # pretrain data:
+        # fetch pretrain data:
         if hasattr(problem, "get_pretrain_data"):
             X_pretrain, Y_pretrain, _ = problem.get_pretrain_data()
         else:
@@ -128,7 +132,8 @@ class ExpManager:
                 # Save model if it's the best one
                 if (
                     best[1] is None
-                    or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
+                    or compare_result(metrics["val"], best)
+                    # or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
                 ):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
@@ -193,7 +198,8 @@ class ExpManager:
                 # Save model if it's the best one
                 if (
                     best[1] is None
-                    or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
+                    or compare_result(metrics["val"], best)
+                    # or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
                 ):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
@@ -282,7 +288,7 @@ class ExpManager:
             )
 
         ############################ Logging ############################
-        avg_train_time = total_train_time / (self.args.n_ptr_epochs + n_epochs)
+        avg_train_time = ndiv(total_train_time, (self.args.n_ptr_epochs + n_epochs))
         avg_test_time = total_test_time
         self.logger.info(
             f"[Random Obj]: {objs_rand.mean().item():.6f} "
@@ -296,3 +302,9 @@ class ExpManager:
             f"{avg_train_time:.6f}  {avg_test_time:.6f}"
         )
         return True
+
+
+def compare_result(metrics_idx, best):
+    # smaller the better
+    sense = metrics_idx["eval"]["sense"]
+    return metrics_idx["eval"]["value"].mean() * sense <= best[0].mean() * sense
