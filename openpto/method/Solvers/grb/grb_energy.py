@@ -114,7 +114,6 @@ class ICONGrbSolver(optGrbSolver):
         P = self.P
         q = self.q
         N = 1440 // q
-        verbose = self.verbose
         x = self.z
         nbMachines = self.nbMachines
         nbTasks = self.nbTasks
@@ -142,58 +141,58 @@ class ICONGrbSolver(optGrbSolver):
         #    Model = Model.relax()
         Model.setParam("Method", self.method)
         # logging.info("Number of constraints:%d", Model.NumConstrs)
-        Model.optimize()
+        # Model.optimize()
         # print("###################  Value after optimization #########################")
         # print(x)
 
-        solver = np.zeros(N)
+        np.zeros(N)
         schedule = np.zeros((nbTasks, nbMachines, N))
-        if Model.status in [GRB.Status.OPTIMAL, 9]:
-            try:
-                # task_on = Model.getAttr('x',x)
-                task_on = np.zeros((nbTasks, nbMachines, N))
-                # print(x.items())
-                for (f, m, t), var in x.items():
-                    # print('im here 4')
-                    try:
-                        task_on[f, m, t] = var.X
-                    except AttributeError:
-                        task_on[f, m, t] = 0.0
-                        print("AttributeError: b' Unable to retrieve attribute 'X'")
-                        print("__________Something WRONG___________________________")
+        # if Model.status in [GRB.Status.OPTIMAL, 9]:
+        #     try:
+        #         # task_on = Model.getAttr('x',x)
+        #         task_on = np.zeros((nbTasks, nbMachines, N))
+        #         # print(x.items())
+        #         for (f, m, t), var in x.items():
+        #             # print('im here 4')
+        #             try:
+        #                 task_on[f, m, t] = var.X
+        #             except AttributeError:
+        #                 task_on[f, m, t] = 0.0
+        #                 print("AttributeError: b' Unable to retrieve attribute 'X'")
+        #                 print("__________Something WRONG___________________________")
 
-                if verbose:
-                    print("\nCost: %g" % Model.objVal)
-                    print("\nExecution Time: %f" % Model.Runtime)
+        #         if verbose:
+        #             print("\nCost: %g" % Model.objVal)
+        #             print("\nExecution Time: %f" % Model.Runtime)
 
-                for t in range(N):
-                    solver[t] = np.sum(
-                        np.sum(task_on[f, :, max(0, t - D[f] + 1) : t + 1]) * P[f]
-                        for f in Tasks
-                    )
-                solver = solver * q / 60
-                for f in Tasks:
-                    for m in Machines:
-                        for t in range(N):
-                            schedule[f, m, t] = task_on[(f, m, t)]
-                self._model.reset(0)
-                schedule = schedule.reshape(-1)
-                return schedule
-            except NameError:
-                print("\n__________Something wrong_______ \n ")
-                # make sure cut is removed! (modifies model)
-                self._model.reset(0)
-                schedule = schedule.reshape(-1)
-                return schedule
+        #         for t in range(N):
+        #             solver[t] = np.sum(
+        #                 np.sum(task_on[f, :, max(0, t - D[f] + 1) : t + 1]) * P[f]
+        #                 for f in Tasks
+        #             )
+        #         solver = solver * q / 60
+        #         for f in Tasks:
+        #             for m in Machines:
+        #                 for t in range(N):
+        #                     schedule[f, m, t] = task_on[(f, m, t)]
+        #         self._model.reset(0)
+        #         schedule = schedule.reshape(-1)
+        #         return schedule
+        #     except NameError:
+        #         print("\n__________Something wrong_______ \n ")
+        #         # make sure cut is removed! (modifies model)
+        #         self._model.reset(0)
+        #         schedule = schedule.reshape(-1)
+        #         return schedule
 
-        elif Model.status == GRB.Status.INF_OR_UNBD:
-            print("Model is infeasible or unbounded")
-        elif Model.status == GRB.Status.INFEASIBLE:
-            print("Model is infeasible")
-        elif Model.status == GRB.Status.UNBOUNDED:
-            print("Model is unbounded")
-        else:
-            print("Optimization ended with status %d" % Model.status)
-        self.model.reset(0)
+        # elif Model.status == GRB.Status.INF_OR_UNBD:
+        #     print("Model is infeasible or unbounded")
+        # elif Model.status == GRB.Status.INFEASIBLE:
+        #     print("Model is infeasible")
+        # elif Model.status == GRB.Status.UNBOUNDED:
+        #     print("Model is unbounded")
+        # else:
+        #     print("Optimization ended with status %d" % Model.status)
+        # self.model.reset(0)
         schedule = schedule.reshape(-1)
         return schedule

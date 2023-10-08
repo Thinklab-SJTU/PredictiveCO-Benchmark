@@ -41,8 +41,8 @@ class pointwiseLTR(optModel):
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
-                Y_train,
-                params=Y_train_aux,
+                Y_train[:1],
+                params=Y_train_aux[:1],
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),

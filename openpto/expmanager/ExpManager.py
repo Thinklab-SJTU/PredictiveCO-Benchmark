@@ -147,6 +147,7 @@ class ExpManager:
             # Stop if model hasn't improved for patience steps
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
+
             ###### one-shot training
             preds = self.pred_model(X_pretrain)
             loss = criterion(problem, preds, Y_pretrain.float(), **self.model_args)

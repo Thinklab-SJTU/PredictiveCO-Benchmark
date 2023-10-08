@@ -60,7 +60,7 @@ class Energy(PTOProblem):
         )
         self.train_idxs = range(0, 550)
         self.Xs = torch.from_numpy(x).to(torch.float32)
-        self.Ys = torch.from_numpy(y).to(torch.float32)
+        self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
 
     def get_train_data(self):
         return (
@@ -101,15 +101,19 @@ class Energy(PTOProblem):
                             * self.q
                             / 60
                         )
-            ans_list.append(float(ans))
+            ans_list.append(ans)
+        # print(ans_list)
         if isinstance(Y, np.ndarray):
             ans_list = np.array(ans_list)
         else:
-            ans_list = torch.tensor(ans_list)
+            ans_list = torch.hstack(ans_list)
+        # print(ans_list)
+        # print(ans_list.shape)
         return ans_list
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
-        Y = Y.cpu()
+        if torch.is_tensor(Y):
+            Y = Y.cpu()
         # determine solver
         if optSolver is None:
             optSolver = ICONGrbSolver(**kwargs)
@@ -126,7 +130,6 @@ class Energy(PTOProblem):
             sol = np.array(sol)
         else:
             sol = torch.tensor(sol)
-
         objs = self.get_objective(Y, sol)
         return sol, objs
 
