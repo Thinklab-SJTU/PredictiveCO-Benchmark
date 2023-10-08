@@ -286,6 +286,7 @@ class LODL(optModel):
         sampling_std=-1,  # Standard deviation for the training data
         num_restarts=10,  # The number of times to run the optimisation problem for Z_opt
     ):
+        # TODO: check parameters
         # Sample points in the neighbourhood
         #   Find the rough scale of the predictions
         if sampling_std > 0:
@@ -407,13 +408,13 @@ class LODL(optModel):
         dataset,  # The data set on which to train SL
         model_type,  # The model we're trying to fit
         num_iters=1,  # Number of iterations over which to train model
-        lr=1e-2,  # Learning rate with which to train the model
+        losslr=1e-2,  # Learning rate with which to train the model
         verbose=False,  # print training loss?
         train_frac=0.3,  # fraction of samples to use for training
         val_frac=0.3,  # fraction of samples to use for testing
         val_freq=1,  # the number of training steps after which to check loss on val set
         print_freq=5,  # the number of val steps after which to print losses
-        patience=25,  # number of iterations to wait for the train loss to improve when learning
+        patience=20,  # number of iterations to wait for the train loss to improve when learning
         **kwargs,
     ):
         """
@@ -470,7 +471,7 @@ class LODL(optModel):
         model = model.to(device)
 
         # Fit a model to the points
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(model.parameters(), losslr=losslr)
         best = (float("inf"), None)
         time_since_best = 0
         for iter_idx in range(num_iters):
@@ -480,7 +481,7 @@ class LODL(optModel):
                 pred = model(Yhats_train).flatten()
                 if not (pred >= -1e-3).all().item():
                     print(f"WARNING: Prediction value < 0: {pred.min()}")
-                loss = MSE()(problem, pred, objectives_train, **kwargs).sum()
+                loss = MSE()(problem, pred, objectives_train).sum()
                 loss.backward()
                 return loss
 
@@ -488,7 +489,7 @@ class LODL(optModel):
             if iter_idx % val_freq == 0:
                 # Get performance on val dataset
                 pred_val = model(Yhats_val).flatten()
-                loss_val = MSE()(problem, pred_val, objectives_val, **kwargs)
+                loss_val = MSE()(problem, pred_val, objectives_val)
 
                 # Print statistics
                 if verbose and iter_idx % (val_freq * print_freq) == 0:

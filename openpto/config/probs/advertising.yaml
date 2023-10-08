@@ -26,6 +26,7 @@ models:
     sampling_std: -1
     quadrank: 20
     quadalpha: 0
+    model_type: weightedmse
     serial: True
     reduction: sum
   mse:

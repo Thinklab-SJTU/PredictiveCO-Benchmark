@@ -43,9 +43,17 @@ def collect_ptr_ftn(data_name, prefix_name):
     return collect_results(data_name, ptr_ftn_prefix_name, ["blackbox", "identity"])
 
 
-global_data_names = ["bipartitematching-cora"]
+# global_data_names = [
+#     "knapsack-gen",
+#     "energy-energy",
+#     "budgetalloc-real",
+#     "cubic-gen",
+#     "bipartitematching-cora",
+#     "advertising-real",
+# ]
+global_data_names = ["advertising-real"]
 global_model_names = [
-    "mse",
+    "bce",
     "dfl",
     "blackbox",
     "identity",
@@ -119,5 +127,5 @@ def collect_size():
 
 if __name__ == "__main__":
     collect_benchmarks()
-    collect_cap()
-    collect_size()
+    # collect_cap()
+    # collect_size()

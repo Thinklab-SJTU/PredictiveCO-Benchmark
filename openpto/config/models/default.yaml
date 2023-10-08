@@ -1,39 +1,42 @@
-dataset:
-  prob_version: real
-
 models:
   spo:
     reduction: sum
   blackbox:
     reduction: sum
-  Identity:
+    lambd: 0.1
+  identity:
     reduction: sum
-  QPTL:
+  qptl:
     reduction: sum
   listLTR:
     reduction: sum
-    tau: 1.0
+    tau: 1
   pairLTR:
     reduction: sum
   pointLTR:
     reduction: sum
   nce:
     reduction: sum
-  LODL:
-    sampling: random, random_flip, random_uniform, numerical_jacobian, random_jacobian, random_hessian, random
+  lodl:
     sampling: random
     sampling_std: -1
     quadrank: 20
     quadalpha: 0
-    model_type: dense, weightedmse, quad, weightedmse, weightedmse++, weightedce, weightedmsesum, quad++
+    model_type: weightedmse
     serial: True
     reduction: sum
     num_iters: 1
     losslr: 1e-3
+  mse:
+    reduction: sum
+  msesum:
+    alpha: 0.1
+  bce:
+    reduction: sum
+  ce:
+    reduction: sum
   dfl:
     dflalpha: 0.1
     reduction: sum
-
-solver:
-  gurobi:
-    none: none
+  perturb: 
+    reduction: sum
