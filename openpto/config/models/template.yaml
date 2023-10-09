@@ -1,6 +1,3 @@
-dataset:
-  prob_version: real
-
 models:
   spo:
     reduction: sum
@@ -33,7 +30,3 @@ models:
   dfl:
     dflalpha: 0.1
     reduction: sum
-
-solver:
-  gurobi:
-    none: none

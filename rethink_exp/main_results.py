@@ -24,7 +24,8 @@ if not hashseed:
 if __name__ == "__main__":
     # get configs
     args = get_args()
-    conf = load_conf(args.config_path, method_name=args.opt_model, prob_name=args.problem)
+    conf = load_conf(args.config_path, args.method_path, args.problem)
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     # set seed
     setup_seed(args.seed)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     logger.info(f" args: {args} \n")
 
     # Load problem
-    logger.info(f" dataset configs: {conf['dataset']},\n")
+    logger.info(f" dataset configs: {conf['dataset']} \n")
     logger.info(f" model configs: {conf['models'][args.opt_model]} \n")
     logger.info(f" Loading [{args.problem}] Problem...")
     problem = problem_wrapper(args, conf)

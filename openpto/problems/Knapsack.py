@@ -4,6 +4,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
+from openpto.method.utils_method import move_to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -102,7 +103,7 @@ class Knapsack(PTOProblem):
         # convert to device
         if torch.is_tensor(Y):
             Y = Y.cpu()
-            Z = Z.cpu()
+            Z = move_to_tensor(Z).cpu()
         return (Y * Z).sum(1)
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):

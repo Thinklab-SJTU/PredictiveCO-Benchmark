@@ -22,7 +22,7 @@ class BipartiteMatching(PTOProblem):
         num_nodes=50,  # number of nodes in the LHS and RHS of the bipartite matching graphs
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
-        prob_version="bipartitematching",
+        prob_version="cora",
         data_dir="./openpto/data/",
     ):
         super(BipartiteMatching, self).__init__(data_dir)
