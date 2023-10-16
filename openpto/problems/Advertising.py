@@ -27,6 +27,18 @@ class Advertising(PTOProblem):
             self.test_X, self.test_Y, self.test_aux = self.load_data(
                 f"{data_dir}/test_mock.pickle", isMock=True
             )
+        elif prob_version == "real-mini":
+            self.cost_pv = [0, 0.5, 1, 1.5]
+            # load data
+            self.pretrain_X, self.pretrain_Y, self.pretrain_aux = self.load_data(
+                f"{data_dir}/test.pickle"
+            )
+            self.train_X, self.train_Y, self.train_aux = self.load_data(
+                f"{data_dir}/test_mock.pickle", isMock=True
+            )
+            self.test_X, self.test_Y, self.test_aux = self.load_data(
+                f"{data_dir}/test_mock.pickle", isMock=True
+            )
         else:
             assert False, "Not implemented"
 
@@ -49,10 +61,10 @@ class Advertising(PTOProblem):
             0
         )
         if isMock:
-            mockchannel = move_to_tensor(data["mockchannel"])
-            realchannel = move_to_tensor(data["realchannel"])
-            m_r_channeles = torch.vstack((mockchannel, realchannel)).long().unsqueeze(0)
-            return out_features, labels, m_r_channeles
+            realchannel = move_to_tensor(data["realchannel"]).long().unsqueeze(0)
+            # mockchannel = move_to_tensor(data["mockchannel"])
+            # m_r_channeles = torch.vstack((mockchannel, realchannel)).long().unsqueeze(0)
+            return out_features, labels, realchannel
         else:
             return out_features, labels, torch.zeros_like(labels)
 
@@ -82,15 +94,16 @@ class Advertising(PTOProblem):
             Y = Y.cpu()
         total_budget = self.avg_budget * Y.shape[1]
         sols = optSolver.solve(Y, self.cost_pv, total_budget)
+        if torch.is_tensor(Y):
+            sols = move_to_tensor(sols)
         objs = self.get_objective(Y, sols)
         return sols, objs
 
     def get_objective(self, Y, Z, **kwargs):
+        assert Y.shape == Z.shape
         if torch.is_tensor(Y):
             Y, Z = Y.cpu(), Z.cpu()
-            return torch.sum(torch.mul(Y.reshape(1, -1, 4), Z))
-        elif isinstance(Y, np.ndarray):
-            return np.sum(np.multiply(Y.reshape(1, -1, 4), Z))
+        return (Y * Z).sum(-1).sum(-1)
 
     def init_API(self):
         return {

@@ -7,18 +7,14 @@ EPOCHS=50
 python rethink_exp/main_results.py --problem=advertising --opt_model bce      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
 
 # Decisoin-focused learning
-python rethink_exp/main_results.py --problem=advertising --opt_model dfl      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model blackbox --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model identity --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model spo      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model nce      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model pointLTR --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model listLTR  --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model pairLTR  --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model lodl     --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} 
+python rethink_exp/main_results.py --problem=advertising --opt_model dfl      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model identity --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model blackbox --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model spo      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model nce      --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model pointLTR --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model listLTR  --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model pairLTR  --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
+python rethink_exp/main_results.py --problem=advertising --opt_model lodl     --solver ortools --n_ptr_epochs ${PTR_EPS} --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
 # python rethink_exp/main_results.py --problem=advertising --opt_model perturb  --solver ortools --n_epochs ${EPOCHS} --gpu ${GPU} 
-
-# prediction + decision
-python rethink_exp/main_results.py --problem=advertising --opt_model blackbox --solver ortools --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU} 
-python rethink_exp/main_results.py --problem=advertising --opt_model identity --solver ortools --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU} 
 

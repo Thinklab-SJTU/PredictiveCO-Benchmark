@@ -254,6 +254,6 @@ class ICONGrbSolver(optGrbSolver):
             print('Model is unbounded')
         else:
             print('Optimization ended with status %d' % Model.status)
-        self._model.reset(0)
+        self.model.reset(0)
 
         return solver

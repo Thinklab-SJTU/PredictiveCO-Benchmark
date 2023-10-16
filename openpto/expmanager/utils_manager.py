@@ -85,6 +85,7 @@ def print_metrics(
                 eval_result = get_eval_results(
                     problem, Ys, problem.z_val_opt, Zs_hat, Ys_aux
                 )
+                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
             elif partition == "test":
                 test_time = time.time() - time_test_start
                 eval_result = get_eval_results(
@@ -106,7 +107,7 @@ def print_metrics(
                 "eval": eval_result,
             }
             logger.info(
-                f"{prefix:<6} [{partition:<5}] Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f} "
+                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f} "
                 f"{f'{problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.6f}"
             )
         logger.info("----\n")

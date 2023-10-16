@@ -10,6 +10,7 @@ def get_results(data_name, model_name, prefix_name):
     )
     if not os.path.exists(log_path):
         return np.zeros(4)
+    print(data_name,"-",model_name)
     with open(log_path, "r") as f:
         last_line = f.readlines()[-1].strip()
         result = last_line.split("  ")[-4:]
@@ -18,6 +19,7 @@ def get_results(data_name, model_name, prefix_name):
     except Exception:
         print(result)
         return np.zeros(4)
+    print(result)
     return np.array(result)
 
 
@@ -43,7 +45,7 @@ def collect_ptr_ftn(data_name, prefix_name):
     return collect_results(data_name, ptr_ftn_prefix_name, ["blackbox", "identity"])
 
 
-global_data_names = ["bipartitematching-cora"]
+global_data_names = ["energy-energy"]
 global_model_names = [
     "mse",
     "dfl",
@@ -119,5 +121,5 @@ def collect_size():
 
 if __name__ == "__main__":
     collect_benchmarks()
-    collect_cap()
-    collect_size()
+    #collect_cap()
+    #collect_size()
