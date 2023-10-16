@@ -31,6 +31,7 @@ def get_args():
     parser.add_argument(
         "--method_path", type=str, default="openpto/config/models/default.yaml"
     )
+    parser.add_argument("--trained_path", type=str, default="")
     parser.add_argument(
         "--opt_model",
         type=str,
@@ -91,6 +92,8 @@ def get_args():
     parser.add_argument("--processes", type=int, default=1)
     #
     args = parser.parse_args()
+
+    args.data_dir = os.path.join(args.data_dir, args.problem)
     return args
 
 

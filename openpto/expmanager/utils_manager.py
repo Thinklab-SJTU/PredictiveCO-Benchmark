@@ -2,8 +2,10 @@ import inspect
 import json
 import time
 
+import pandas as pd
 import torch
 
+from openpto.method.utils_method import get_idxs
 from openpto.metrics.evals import get_eval_results
 
 
@@ -17,6 +19,7 @@ def add_log(_log, iter_idx, metric, mode):
     _log["obj"].append(metric[mode]["objective"].mean().item())
     _log["loss"].append(metric[mode]["loss"])
     _log["epoch"].append(iter_idx)
+    _log["pred_loss"].append(metric[mode]["pred_loss"])
 
 
 def save_dict(_dict, path):
@@ -26,8 +29,6 @@ def save_dict(_dict, path):
 
 
 def save_pd(_dict, path):
-    import pandas as pd
-
     df = pd.DataFrame(_dict)
     df["obj"] = df["obj"].round(6)
     df["loss"] = df["loss"].round(6)
@@ -35,7 +36,16 @@ def save_pd(_dict, path):
 
 
 def print_metrics(
-    datasets, model, problem, loss_fn, optSolver, prefix, logger, do_debug, **model_args
+    datasets,
+    model,
+    problem,
+    loss_fn,
+    twostage_criterion,
+    optSolver,
+    prefix,
+    logger,
+    do_debug,
+    **model_args,
 ):
     model.eval()
     with torch.no_grad():
@@ -47,9 +57,12 @@ def print_metrics(
             # timing
             if partition == "test":
                 time_test_start = time.time()
-            # Decision Quality
-            preds = model(Xs)
 
+            preds = model(Xs)
+            # Prediction quality
+            pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
+
+            # Decision Quality
             Zs_hat, _ = problem.get_decision(
                 preds,
                 params=Ys_aux,
@@ -65,8 +78,8 @@ def print_metrics(
                 losses.append(
                     loss_fn(
                         problem,
-                        coeff_hat=preds[[idx]],
-                        coeff_true=Ys[[idx]],
+                        coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
+                        coeff_true=get_idxs(Ys, idx),  # Ys[[idx]],
                         params=Ys_aux[idx],
                         partition=partition,
                         index=idx,
@@ -100,6 +113,7 @@ def print_metrics(
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
                 "loss": loss,
+                "pred_loss": pred_loss.item(),
                 "time": test_time,
                 "preds": preds,
                 "sols_hat": Zs_hat,
@@ -107,8 +121,8 @@ def print_metrics(
                 "eval": eval_result,
             }
             logger.info(
-                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():.6f}, {'Loss':>5}: {loss:.6f} "
-                f"{f'{problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.6f}"
+                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():>10.6f}, {'Loss':>5}: {loss:>12.6f} "
+                f"{f'Pred Loss: {pred_loss:.6f}, {problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.6f}"
             )
         logger.info("----\n")
     return metrics

@@ -1,5 +1,5 @@
 dataset:
-  prob_version: real-mini
+  prob_version: real
   avg_budget: 0.5
 
 solver:

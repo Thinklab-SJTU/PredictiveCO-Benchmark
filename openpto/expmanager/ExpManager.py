@@ -9,7 +9,7 @@ import torch
 from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import get_idxs, move_to_array, rand_like
 
 
 def ndiv(a, b):
@@ -76,10 +76,10 @@ class ExpManager:
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt
         ###   Document the value of a random guess
-        objs_rand = []
+        objs_rand = list()
         for _ in range(10):
             Z_test_rand, Objs_test_rand = problem.get_decision(
-                torch.rand_like(Y_test, device=self.device),
+                rand_like(Y_test, device=self.device),
                 params=Y_test_aux,
                 optSolver=optSolver,
                 isTrain=False,
@@ -87,6 +87,9 @@ class ExpManager:
             )
             objs_rand.append(torch.Tensor(Objs_test_rand))
         objs_rand = torch.stack(objs_rand)
+        ############################# Load previous model #############################
+        if self.args.trained_path != "":
+            self.pred_model.load_state_dict(torch.load(self.args.trained_path))
 
         ############################# Pretrain #############################
         # fetch pretrain data:
@@ -102,10 +105,10 @@ class ExpManager:
         time_train_start = time.time()
         best = (float("inf"), None)
         time_since_best = 0
-        train_logs = {"epoch": list(), "obj": list(), "loss": list()}
-        val_logs = {"epoch": list(), "obj": list(), "loss": list()}
+        train_logs = {"epoch": list(), "obj": list(), "loss": list(), "pred_loss": list()}
+        val_logs = {"epoch": list(), "obj": list(), "loss": list(), "pred_loss": list()}
         # loss function
-        criterion = str2twoStageLoss(problem)
+        twostage_criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
         for ptr_epoch in range(self.args.n_ptr_epochs):
@@ -120,7 +123,8 @@ class ExpManager:
                     datasets,
                     self.pred_model,
                     problem,
-                    criterion,
+                    twostage_criterion,
+                    twostage_criterion,
                     optSolver,
                     f"Ptr iter {ptr_epoch},",
                     self.logger,
@@ -150,7 +154,7 @@ class ExpManager:
 
             ###### one-shot training
             preds = self.pred_model(X_pretrain)
-            loss = criterion(problem, preds, Y_pretrain.float(), **self.model_args)
+            loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -188,6 +192,7 @@ class ExpManager:
                     self.pred_model,
                     problem,
                     loss_fn,
+                    twostage_criterion,
                     optSolver,
                     f"Iter {iter_idx},",
                     self.logger,
@@ -225,8 +230,8 @@ class ExpManager:
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,
-                    coeff_hat=preds[[idx]],
-                    coeff_true=Y_train[[idx]],
+                    coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
+                    coeff_true=get_idxs(Y_train, idx),  # Y_train[[idx]],
                     params=Y_train_aux[idx],
                     partition="train",
                     index=idx,
@@ -259,6 +264,7 @@ class ExpManager:
             self.pred_model,
             problem,
             loss_fn,
+            twostage_criterion,
             optSolver,
             "Final",
             self.logger,

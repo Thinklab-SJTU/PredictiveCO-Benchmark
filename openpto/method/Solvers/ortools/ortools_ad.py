@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 
 from ortools.linear_solver import pywraplp  # pylint: disable=no-name-in-module
 
@@ -82,4 +82,4 @@ def sol2vec(x, num_users, num_channels):
         for task in range(num_channels):
             sol_res.append(x[worker, task].solution_value())
     # TODO: only support batch=1
-    return np.array(sol_res).reshape(1, num_users * num_channels, 1)
+    return torch.FloatTensor(sol_res).reshape(-1)  # num_users * num_channels)
