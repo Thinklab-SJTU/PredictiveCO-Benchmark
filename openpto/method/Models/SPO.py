@@ -10,7 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 
 
 class SPO(optModel):
@@ -109,14 +109,14 @@ class SPOPlusFunc(torch.autograd.Function):
         )
         # calculate loss
         loss = (
-            -move_to_tensor(obj_proxy).cpu()
-            + 2 * move_to_tensor(problem.get_objective(coeff_hat_cpu, sols_true)).cpu()
-            - move_to_tensor(objs_true).cpu()
+            -to_tensor(obj_proxy).cpu()
+            + 2 * to_tensor(problem.get_objective(coeff_hat_cpu, sols_true)).cpu()
+            - to_tensor(objs_true).cpu()
         )
         # convert to tensor
-        loss = move_to_tensor(loss).to(device)
-        sols_proxy = move_to_tensor(sols_proxy).to(device)
-        sols_true = move_to_tensor(sols_true).to(device)
+        loss = to_tensor(loss).to(device)
+        sols_proxy = to_tensor(sols_proxy).to(device)
+        sols_true = to_tensor(sols_true).to(device)
         # save solutions
         ctx.save_for_backward(sols_true, sols_proxy)
         # add other objects to ctx

@@ -2,17 +2,40 @@ import numpy as np
 import torch
 
 
-def move_to_array(Y):
+def to_device(obj, device):
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device)
+    elif isinstance(obj, list):
+        return [ob.to(device) for ob in obj]
+    else:
+        return obj
+
+
+def to_array(Y):
     if torch.is_tensor(Y):
         Y_array = Y.detach().cpu().numpy()
+    elif isinstance(Y, list):
+        Y_array = list()
+        for item in Y:
+            if torch.is_tensor(item):
+                Y_array.append(item.detach().cpu().numpy())
+            else:
+                Y_array.append(item)
     else:
-        Y_array = np.array(Y)
+        Y_array = Y
     return Y_array
 
 
-def move_to_tensor(Y):
+def to_tensor(Y):
     if torch.is_tensor(Y):
         Y_tensor = Y
+    elif isinstance(Y, list):
+        Y_tensor = list()
+        for item in Y:
+            if torch.is_tensor(item):
+                Y_tensor.append(torch.from_numpy(np.array(item).astype(np.float32)))
+            else:
+                Y_tensor.append(item)
     else:
         Y_tensor = torch.from_numpy(np.array(Y).astype(np.float32))
     return Y_tensor

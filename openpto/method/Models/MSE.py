@@ -3,7 +3,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 
 
 class MSE(optModel):
@@ -163,7 +163,7 @@ class DFL(optModel):
             **problem.init_API(),
         )
 
-        sol_hat = move_to_tensor(sol_hat).to(problem.device)
+        sol_hat = to_tensor(sol_hat).to(problem.device)
         obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)

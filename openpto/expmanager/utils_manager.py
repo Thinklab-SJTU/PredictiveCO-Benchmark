@@ -9,10 +9,18 @@ from openpto.method.utils_method import get_idxs
 from openpto.metrics.evals import get_eval_results
 
 
-def move_to_gpu(problem, device):
+def prob_to_gpu(problem, device):
     for key, value in inspect.getmembers(problem, lambda a: not (inspect.isroutine(a))):
         if isinstance(value, torch.Tensor):
             problem.__dict__[key] = value.to(device)
+        elif isinstance(value, list):
+            new_value = list()
+            for item in value:
+                if isinstance(item, torch.Tensor):
+                    new_value.append(item.to(device))
+                else:
+                    new_value.append(item)
+            problem.__dict__[key] = new_value
 
 
 def add_log(_log, iter_idx, metric, mode):

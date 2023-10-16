@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import to_array
 
 
 def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
@@ -19,12 +19,12 @@ def regret_func(problem, coeff_true, sols_true, sols_hat):
     objs_hat = problem.get_objective(coeff_true, sols_hat)
     objs_true = problem.get_objective(coeff_true, sols_true)
     regret = abs(objs_hat - objs_true)
-    regret = move_to_array(regret)
+    regret = to_array(regret)
     return {"value": regret, "sense": 1}
 
 
 def treatment_func(labels, sols_hat, aux_data):
-    aux_data, labels = move_to_array(aux_data), move_to_array(labels)
+    aux_data, labels = to_array(aux_data), to_array(labels)
     n_instances = aux_data.shape[0]
     ctr_treats, ctr_controls = [], []
     # print("sols_hat shape: ", sols_hat.shape, n_instances)

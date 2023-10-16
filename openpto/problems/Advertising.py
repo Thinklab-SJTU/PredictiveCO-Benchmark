@@ -5,9 +5,8 @@ import pandas as pd
 import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
-from tqdm import tqdm
 
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -17,18 +16,18 @@ class Advertising(PTOProblem):
     def __init__(self, avg_budget, data_dir, prob_version="real", **kwargs):
         super(Advertising, self).__init__(data_dir)
         self.avg_budget = avg_budget
+        self.cost_pv = [0, 0.5, 1, 1.5]
         if prob_version == "real":
-            self.cost_pv = [0, 0.5, 1, 1.5]
             # load data
             raw_data_dir = "/mnt/nas/dataset_share/genghaoyu/OR/Xinye/"
             data12_train, data12_test = gen_opt_data(raw_data_dir)
-            #
-            print("--- train mock data")
-            processed_train = get_data_instances("train", data12_train, data_dir)
-            generate_mock(data_dir, "train", processed_train)
-            print("--- train mock data")
-            processed_test = get_data_instances("test", data12_test, data_dir)
-            generate_mock(data_dir, "test", processed_test)
+
+            # print("--- train mock data")
+            # processed_train = get_data_instances("train", data12_train, data_dir)
+            # generate_mock(data_dir, "train", processed_train)
+            # print("--- test mock data")
+            # processed_test = get_data_instances("test", data12_test, data_dir)
+            # generate_mock(data_dir, "test", processed_test)
             #
             self.pretrain_X, self.pretrain_Y, self.pretrain_aux = self.load_data(
                 f"{data_dir}/train.pickle"
@@ -40,7 +39,6 @@ class Advertising(PTOProblem):
                 f"{data_dir}/test_mock.pickle", isMock=True
             )
         elif prob_version == "real-mini":
-            self.cost_pv = [0, 0.5, 1, 1.5]
             # load data
             self.pretrain_X, self.pretrain_Y, self.pretrain_aux = self.load_data(
                 f"{data_dir}/test.pickle"
@@ -60,20 +58,20 @@ class Advertising(PTOProblem):
         # data["uid"].astype("int")
         labels = list()
         for la in data["label"]:
-            labels.append(move_to_tensor(la).unsqueeze(-1))
-        push_histories = move_to_tensor(data["push_history"])
+            labels.append(torch.FloatTensor(la).unsqueeze(-1))
+        push_histories = to_tensor(data["push_history"])
         # TODO: add channel his to features
         # data["channels_his"]
-        features = move_to_tensor(data["feat_his"])
+        features = to_tensor(data["feat_his"])
         # process
         feat1 = features[:, :, :41]  # torch.Size([1, 155, 41])
         feat2 = features[:, :, 41:]  # torch.Size([1, 155, 22])
         push1 = push_histories[:, :, 0]  # torch.Size([1, 155, 6])
         push2 = push_histories[:, :, 1]  # torch.Size([1, 155, 6])
         # final
-        out_features = move_to_tensor(torch.cat((feat1, feat2, push1, push2), -1))
+        out_features = to_tensor(torch.cat((feat1, feat2, push1, push2), -1))
         if isMock:
-            realchannel = move_to_tensor(data["realchannel"]).long()
+            realchannel = to_tensor(data["realchannel"]).long()
             return out_features, labels, realchannel
         else:
             return out_features, labels, labels  # the last is not used
@@ -109,7 +107,7 @@ class Advertising(PTOProblem):
             total_budget = self.avg_budget * n_users
             sol = optSolver.solve(Y_idx, self.cost_pv, total_budget)
             if torch.is_tensor(Y_idx):
-                sol = move_to_tensor(sol)
+                sol = to_tensor(sol)
             sols.append(sol)
         objs = self.get_objective(Y, sols)
         return sols, objs
@@ -122,7 +120,7 @@ class Advertising(PTOProblem):
             if torch.is_tensor(Y_idx):
                 Y_idx, Z_idx = Y_idx.cpu(), Z_idx.cpu()
             else:
-                Y_idx = move_to_tensor(Y_idx)
+                Y_idx = to_tensor(Y_idx)
             obj = (Y_idx.squeeze(-1) * Z_idx).sum(-1)
             objs.append(obj)
         return torch.hstack(objs)
@@ -167,8 +165,6 @@ def get_data_instances(mode, data12, data_dir):
     ) = ([], [], [], [], [])
     print("total_duration // decision_duration: ", total_duration // decision_duration)
     for week in range(total_duration // decision_duration):
-        if week > 0:
-            break
         start_day = data12.insertdate.min() + week * decision_duration
         end_day = start_day + decision_duration
         data12_duration = data12[
@@ -183,9 +179,9 @@ def get_data_instances(mode, data12, data_dir):
             [],
             [],
         )
-        pbar = tqdm(total=len(data12_groups))
+        # pbar = tqdm(total=len(data12_groups))
         for uid, group in data12_groups:
-            pbar.update(1)
+            # pbar.update(1)
             group_len = len(group)
             group_sort = group.sort_values(by="insertdate", ascending=True)
             line_last = group_sort.iloc[group_len - 1, :]
@@ -235,10 +231,10 @@ def get_data_instances(mode, data12, data_dir):
             label_all.append(label)
             channels_his_all.append(channels_his)
             feat_his_all.append(feat_his)
-        pbar.close()
+        # pbar.close()
         print(f"Initial {len(data12_groups)} users, Final {len(uid_all)} users")
-        print("len of each feat: ", np.array(feat_his_all).shape)
-        print("len of each push:", np.array(push_history_all).shape)
+        # print("len of each feat: ", np.array(feat_his_all).shape)
+        # print("len of each push:", np.array(push_history_all).shape)
         # append
         uid_allweeks.append(uid_all)
         push_history_allweeks.append(push_history_all)
@@ -275,6 +271,7 @@ def generate_mock(save_data_dir, mode, data=None):
     mockchannel_final, realchannel_final = list(), list()
     # read data
     num_instances = len(data["uid"])
+    print("num_instances: ", num_instances)
     for ins_id in range(num_instances):
         user_ids = data["uid"][ins_id]
         labels = data["label"][ins_id]
@@ -289,8 +286,7 @@ def generate_mock(save_data_dir, mode, data=None):
         ) = (list(), list())
         mockchannel, realchannel = list(), list()
 
-        print("number of instances : ", len(user_ids))
-        for slice_id in tqdm(range(len(user_ids))):
+        for slice_id in range(len(user_ids)):
             # if slice_id>9: break
             user_id_tmp = user_ids[slice_id]
             label_tmp = labels[slice_id]
@@ -327,7 +323,6 @@ def generate_mock(save_data_dir, mode, data=None):
         mockchannel_final.append(mockchannel)
         realchannel_final.append(realchannel)
 
-    print("len of real channel: ", len(realchannel))
     save_dict = {
         "uid": user_ids_final,
         "push_history": push_histories_final,

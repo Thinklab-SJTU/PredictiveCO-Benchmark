@@ -6,10 +6,10 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from openpto.expmanager.utils_manager import add_log, move_to_gpu, print_metrics, save_pd
+from openpto.expmanager.utils_manager import add_log, print_metrics, prob_to_gpu, save_pd
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, move_to_array, rand_like
+from openpto.method.utils_method import get_idxs, rand_like, to_array
 
 
 def ndiv(a, b):
@@ -40,8 +40,8 @@ class ExpManager:
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
-        move_to_gpu(problem, self.device)
-        move_to_gpu(optSolver, self.device)
+        prob_to_gpu(problem, self.device)
+        prob_to_gpu(optSolver, self.device)
         problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
@@ -62,7 +62,7 @@ class ExpManager:
             **problem.init_API(),
         )
 
-        Objs_val_opt = move_to_array(Objs_val_opt)
+        Objs_val_opt = to_array(Objs_val_opt)
         #
         Z_test_opt, Objs_test_opt = problem.get_decision(
             Y_test,
@@ -71,7 +71,7 @@ class ExpManager:
             isTrain=False,
             **problem.init_API(),
         )
-        Objs_test_opt = move_to_array(Objs_test_opt)
+        Objs_test_opt = to_array(Objs_test_opt)
         # save
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt
@@ -284,7 +284,7 @@ class ExpManager:
         )
         # save solutions
         if do_debug:
-            Z_test_opt_array = move_to_array(Z_test_opt)
+            Z_test_opt_array = to_array(Z_test_opt)
             np.save(
                 os.path.join(self.args.log_dir, "tensors", "solution.npy"),
                 Z_test_opt_array,

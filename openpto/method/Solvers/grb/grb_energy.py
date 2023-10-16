@@ -4,7 +4,7 @@ import numpy as np
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import to_array
 
 
 # optimization model
@@ -121,7 +121,7 @@ class ICONGrbSolver(optGrbSolver):
         Machines = range(nbMachines)
         Tasks = range(nbTasks)
         range(nbResources)
-        price = move_to_array(price)
+        price = to_array(price)
 
         # print( price.shape )
         obj_expr = gp.quicksum(

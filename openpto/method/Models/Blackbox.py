@@ -10,7 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import minus, move_to_tensor
+from openpto.method.utils_method import minus, to_device, to_tensor
 
 
 class blackbox(optModel):
@@ -120,7 +120,7 @@ class blackboxFunc(torch.autograd.Function):
         ctx.params = params
         ctx.problem = problem
         # convert to tensor
-        sols_hat = move_to_tensor(sols_hat).to(device)
+        sols_hat = to_device(to_tensor(sols_hat), device)
         return sols_hat
 
     @staticmethod
@@ -154,7 +154,7 @@ class blackboxFunc(torch.autograd.Function):
         sols_lamb, _ = problem.get_decision(cq, params, optSolver, **problem.init_API())
         grad = minus(sols_lamb, sols_hat) / lambd
         # convert to tensor
-        grad = move_to_tensor(grad).to(device)
+        grad = to_device(to_tensor(grad), device)
         ##### work around #####
         if grad.shape != coeff_hat_array.shape:
             if np.prod(grad.shape) == np.prod(coeff_hat_array.shape):

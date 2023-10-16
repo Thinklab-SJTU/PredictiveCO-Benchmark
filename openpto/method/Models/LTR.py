@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 
 
 class pointwiseLTR(optModel):
@@ -59,7 +59,7 @@ class pointwiseLTR(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
-        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
+        solpool = to_tensor(self.solpool).to(coeff_hat.device)
         # obj for solpool as score
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
@@ -124,7 +124,7 @@ class pairwiseLTR(optModel):
             self.solpool = np.concatenate((self.solpool, sol_hat))
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
-        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
+        solpool = to_tensor(self.solpool).to(coeff_hat.device)
         # transform to tensor
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
@@ -221,7 +221,7 @@ class listwiseLTR(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
-        solpool = move_to_tensor(self.solpool).to(coeff_hat.device)
+        solpool = to_tensor(self.solpool).to(coeff_hat.device)
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
