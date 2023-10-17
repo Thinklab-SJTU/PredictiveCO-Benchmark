@@ -36,6 +36,7 @@
 #         """
 #         Forward pass
 #         """
+#         n_items = coeff_true.shape[1]
 #         Q = torch.eye(n_items) / tau
 #         # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
 #         # torch.diagflat(torch.ones(n_items)*-1)), 0)

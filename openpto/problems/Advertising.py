@@ -22,12 +22,12 @@ class Advertising(PTOProblem):
             raw_data_dir = "/mnt/nas/dataset_share/genghaoyu/OR/Xinye/"
             data12_train, data12_test = gen_opt_data(raw_data_dir)
 
-            # print("--- train mock data")
-            # processed_train = get_data_instances("train", data12_train, data_dir)
-            # generate_mock(data_dir, "train", processed_train)
-            # print("--- test mock data")
-            # processed_test = get_data_instances("test", data12_test, data_dir)
-            # generate_mock(data_dir, "test", processed_test)
+            print("--- train mock data")
+            processed_train = get_data_instances("train", data12_train, data_dir)
+            generate_mock(data_dir, "train", processed_train)
+            print("--- test mock data")
+            processed_test = get_data_instances("test", data12_test, data_dir)
+            generate_mock(data_dir, "test", processed_test)
             #
             self.pretrain_X, self.pretrain_Y, self.pretrain_aux = self.load_data(
                 f"{data_dir}/train.pickle"
@@ -56,22 +56,32 @@ class Advertising(PTOProblem):
         with open(path, "rb") as f:
             data = pickle.load(f)
         # data["uid"].astype("int")
-        labels = list()
-        for la in data["label"]:
-            labels.append(torch.FloatTensor(la).unsqueeze(-1))
-        push_histories = to_tensor(data["push_history"])
+        labels = [torch.FloatTensor(np.array(la)).unsqueeze(-1) for la in data["label"]]
+
+        def aggr_push(features, push_histories):
+            # 22 155 2 6
+            feat_results = list()
+            for ins_id in range(len(push_histories)):
+                # feat
+                feat_ins = np.array(features[ins_id])
+                feat1 = to_tensor(feat_ins[:, :41])  # torch.Size([1, 155, 41])
+                feat2 = to_tensor(feat_ins[:, 41:])  # torch.Size([1, 155, 22])
+                # push
+                push_ins = np.array(push_histories[ins_id])
+                push1 = to_tensor(push_ins[:, 0])  # torch.Size([1, 155, 6])
+                push2 = to_tensor(push_ins[:, 1])  # torch.Size([1, 155, 6])
+                feat_results.append(
+                    torch.cat((feat1, feat2, push1, push2), -1)
+                )  # torch.Size([1, 155, 12])
+            return feat_results
+
+        out_features = aggr_push(data["feat_his"], data["push_history"])
         # TODO: add channel his to features
         # data["channels_his"]
-        features = to_tensor(data["feat_his"])
-        # process
-        feat1 = features[:, :, :41]  # torch.Size([1, 155, 41])
-        feat2 = features[:, :, 41:]  # torch.Size([1, 155, 22])
-        push1 = push_histories[:, :, 0]  # torch.Size([1, 155, 6])
-        push2 = push_histories[:, :, 1]  # torch.Size([1, 155, 6])
-        # final
-        out_features = to_tensor(torch.cat((feat1, feat2, push1, push2), -1))
         if isMock:
-            realchannel = to_tensor(data["realchannel"]).long()
+            realchannel = [
+                torch.FloatTensor(np.array(item)) for item in data["realchannel"]
+            ]
             return out_features, labels, realchannel
         else:
             return out_features, labels, labels  # the last is not used
@@ -89,7 +99,7 @@ class Advertising(PTOProblem):
         return self.test_X, self.test_Y, self.test_aux
 
     def get_model_shape(self):
-        return self.train_X.shape[-1], 1
+        return self.train_X[0].shape[-1], 1
 
     def get_output_activation(self):
         return "sigmoid"
@@ -320,8 +330,8 @@ def generate_mock(save_data_dir, mode, data=None):
         push_histories_final.append(push_histories_new)
         features_final.append(features_new)
         channels_his_final.append(channels_his_new)
-        mockchannel_final.append(mockchannel)
-        realchannel_final.append(realchannel)
+        mockchannel_final.append(np.array(mockchannel))
+        realchannel_final.append(np.array(realchannel))
 
     save_dict = {
         "uid": user_ids_final,
