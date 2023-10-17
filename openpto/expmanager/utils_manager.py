@@ -24,10 +24,11 @@ def prob_to_gpu(problem, device):
 
 
 def add_log(_log, iter_idx, metric, mode):
+    _log["epoch"].append(iter_idx)
     _log["obj"].append(metric[mode]["objective"].mean().item())
     _log["loss"].append(metric[mode]["loss"])
-    _log["epoch"].append(iter_idx)
     _log["pred_loss"].append(metric[mode]["pred_loss"])
+    _log["eval"].append(metric[mode]["eval"]["value"].mean().item())
 
 
 def save_dict(_dict, path):

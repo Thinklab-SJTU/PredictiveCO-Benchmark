@@ -107,10 +107,11 @@ class SPOPlusFunc(torch.autograd.Function):
             optSolver,
             **problem.init_API(),
         )
+        obj_hat = problem.get_objective(coeff_hat_cpu, sols_true)
         # calculate loss
         loss = (
             -to_tensor(obj_proxy).cpu()
-            + 2 * to_tensor(problem.get_objective(coeff_hat_cpu, sols_true)).cpu()
+            + 2 * to_tensor(obj_hat).cpu()
             - to_tensor(objs_true).cpu()
         )
         # convert to tensor

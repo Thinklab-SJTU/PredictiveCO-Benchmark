@@ -105,8 +105,20 @@ class ExpManager:
         time_train_start = time.time()
         best = (float("inf"), None)
         time_since_best = 0
-        train_logs = {"epoch": list(), "obj": list(), "loss": list(), "pred_loss": list()}
-        val_logs = {"epoch": list(), "obj": list(), "loss": list(), "pred_loss": list()}
+        train_logs = {
+            "epoch": list(),
+            "obj": list(),
+            "loss": list(),
+            "pred_loss": list(),
+            "metric": list(),
+        }
+        val_logs = {
+            "epoch": list(),
+            "obj": list(),
+            "loss": list(),
+            "pred_loss": list(),
+            "metric": list(),
+        }
         # loss function
         twostage_criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")

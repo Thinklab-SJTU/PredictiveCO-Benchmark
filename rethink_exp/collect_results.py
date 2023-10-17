@@ -148,7 +148,7 @@ def collect_ad():
 
 
 if __name__ == "__main__":
-    collect_benchmarks()
-    collect_cap()
-    collect_size()
+    # collect_benchmarks()
+    # collect_cap()
+    # collect_size()
     collect_ad()

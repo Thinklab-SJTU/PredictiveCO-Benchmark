@@ -64,9 +64,6 @@ class NCE(optModel):
             sols_hat, _ = problem.get_decision(
                 cp, params, self.optSolver, **problem.init_API()
             )
-            for i in self.solpool:
-                print(i.shape)
-            print(sols_hat[0].shape)
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sols_hat))
             # remove duplicate

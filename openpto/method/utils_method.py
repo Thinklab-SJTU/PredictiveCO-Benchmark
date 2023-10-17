@@ -44,8 +44,6 @@ def rand_like(obj, device="cpu"):
 
 
 def minus(a, b):
-    if torch.is_tensor(a) and torch.is_tensor(b):
-        return a - b
-    elif isinstance(a, list) and isinstance(b, list):
+    if isinstance(a, list) and isinstance(b, list):
         a, b = torch.stack(a), torch.stack(b)
-        return a - b
+    return a - b
