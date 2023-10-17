@@ -29,6 +29,10 @@ def get_args():
     )
     parser.add_argument("--config_path", type=str, default="")
     parser.add_argument(
+        "--method_path", type=str, default="openpto/config/models/default.yaml"
+    )
+    parser.add_argument("--trained_path", type=str, default="")
+    parser.add_argument(
         "--opt_model",
         type=str,
         choices=[
@@ -88,24 +92,26 @@ def get_args():
     parser.add_argument("--processes", type=int, default=1)
     #
     args = parser.parse_args()
+
+    args.data_dir = os.path.join(args.data_dir, args.problem)
     return args
 
 
 ###################################### Configs ###############################################
 
 
-def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
+def load_conf(prob_path: str = None, method_path: str = None, prob_name: str = None):
     """
     Function to load config file.
 
     Parameters
     ----------
-    path : str
+    prob_path : str
         Path to load config file. Load default configuration if set to `None`.
-    method : str
-        Name of the used mathod. Necessary if ``path`` is set to `None`.
-    dataset : str
-        Name of the corresponding dataset. Necessary if ``path`` is set to `None`.
+    method_path : str
+        Path to load method config file. Necessary if ``path`` is set to `None`.
+    prob_name : str
+        Name of the corresponding problem. Necessary if ``path`` is set to `None`.
 
     Returns
     -------
@@ -113,19 +119,18 @@ def load_conf(path: str = None, method_name: str = None, prob_name: str = None):
         The config file converted to Namespace.
 
     """
-    if path == "":
+    if prob_path == "":
         dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config/probs/"
         )
-        path = os.path.join(dir, prob_name + ".yaml")
+        prob_path = os.path.join(dir, prob_name + ".yaml")
 
-    if os.path.exists(path) is False:
+    if os.path.exists(prob_path) is False:
         raise KeyError("The configuration file is not provided.")
 
-    conf = open(path, "r").read()
-    conf = yaml.safe_load(conf)
+    conf = yaml.safe_load(open(prob_path, "r").read())
+    conf["models"] = yaml.safe_load(open(method_path, "r").read())
     # conf = argparse.Namespace(**conf)
-
     return conf
 
 

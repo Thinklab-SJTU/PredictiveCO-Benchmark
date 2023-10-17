@@ -10,46 +10,6 @@ dataset:
   num_items: 20
   capacity: 30
 
-models:
-  spo:
-    reduction: sum
-  blackbox:
-    reduction: sum
-    lambd: 0.1
-  identity:
-    reduction: sum
-  qptl:
-    reduction: sum
-  listLTR:
-    reduction: sum
-    tau: 1
-  pairLTR:
-    reduction: sum
-  pointLTR:
-    reduction: sum
-  nce:
-    reduction: sum
-  lodl:
-    sampling: random
-    sampling_std: -1
-    quadrank: 20
-    quadalpha: 0
-    serial: True
-    reduction: sum
-  mse:
-    reduction: sum
-  bce:
-    reduction: sum
-  msesum:
-    alpha: 0.1
-  ce:
-    reduction: sum
-  dfl:
-    dflalpha: 0.1
-    reduction: sum
-  perturb: 
-    reduction: sum
-
 solver:
   gurobi:
     kwargs: none

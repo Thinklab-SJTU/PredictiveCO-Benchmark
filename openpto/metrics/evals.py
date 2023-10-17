@@ -1,13 +1,13 @@
 import numpy as np
 import torch
 
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import to_array
 
 
 def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
     if problem.get_eval_metric() == "regret":
         return regret_func(problem, coeff_true, sols_true, sols_hat)
-    elif problem.get_eval_metric() == "treatment":
+    elif problem.get_eval_metric() == "uplift":
         return treatment_func(coeff_true, sols_hat, aux_data)
     else:
         raise NotImplementedError("Not implemented")
@@ -19,12 +19,12 @@ def regret_func(problem, coeff_true, sols_true, sols_hat):
     objs_hat = problem.get_objective(coeff_true, sols_hat)
     objs_true = problem.get_objective(coeff_true, sols_true)
     regret = abs(objs_hat - objs_true)
-    regret = move_to_array(regret)
+    regret = to_array(regret)
     return {"value": regret, "sense": 1}
 
 
 def treatment_func(labels, sols_hat, aux_data):
-    aux_data, labels = move_to_array(aux_data), move_to_array(labels)
+    aux_data, labels = to_array(aux_data), to_array(labels)
     n_instances = aux_data.shape[0]
     ctr_treats, ctr_controls = [], []
     # print("sols_hat shape: ", sols_hat.shape, n_instances)
@@ -36,21 +36,25 @@ def treatment_func(labels, sols_hat, aux_data):
         mockchannels = sol2channel(sols_hat[idx])
         # print("realchannels shape: ", realchannels.shape, mockchannels.shape)
         # calculate ctr
+        # print("label_idx: ", label_idx.shape)
         treat_mask = realchannels == mockchannels
         treat_label = label_idx[treat_mask]
         control_label = label_idx[~treat_mask]
+        # print("treat_label: ", treat_label.shape, control_label.shape)
         ctr_treat = sum(treat_label) / len(treat_label)
         ctr_control = sum(control_label) / len(control_label)
-        # print("len(treat_label): ", len(treat_label), len(control_label))
+        # print("len(treat_label): ", sum(treat_label), len(treat_label))
+        # print("len(control_label): ", sum(control_label), len(control_label))
         # collect
         ctr_treats.append(ctr_treat)
         ctr_controls.append(ctr_control)
+    treats_mean = np.mean(ctr_treats, keepdims=True)
+    controls_mean = np.mean(ctr_controls, keepdims=True)
     return {
         "sense": -1,
-        "ctr_treat": np.mean(ctr_treats, keepdims=True),
-        "ctr_control": np.mean(ctr_controls, keepdims=True),
-        "value": np.mean(ctr_treats, keepdims=True)
-        - np.mean(ctr_controls, keepdims=True),
+        "ctr_treat": treats_mean,
+        "ctr_control": controls_mean,
+        "value": treats_mean - controls_mean,
     }
 
 

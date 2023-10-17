@@ -3,7 +3,7 @@ import numpy as np
 from ortools.linear_solver import pywraplp  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.abcOptSolver import optSolver
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import to_array
 
 
 # optimization model
@@ -15,7 +15,7 @@ class AdOrToolSolver(optSolver):
     def solve(self, profits, cost_pv, given_pv):
         # ceil rounded solution
         profits = profits.reshape(-1, 4)
-        coefficient = move_to_array(profits)
+        coefficient = to_array(profits)
         num_users = len(coefficient)
         num_channels = len(coefficient[0])
 
@@ -82,4 +82,4 @@ def sol2vec(x, num_users, num_channels):
         for task in range(num_channels):
             sol_res.append(x[worker, task].solution_value())
     # TODO: only support batch=1
-    return np.array(sol_res).reshape(1, num_users * num_channels, 1)
+    return torch.FloatTensor(sol_res).reshape(-1)  # num_users * num_channels)

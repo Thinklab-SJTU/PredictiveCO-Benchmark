@@ -120,10 +120,9 @@ class Energy(PTOProblem):
         sols = []
         for i in range(ins_num):
             # solve
-            sol = optSolver.solve(Y[i])
-            sols.append(sol)
-            # obj.append(objp)
-        #print(sols)
+            sch = optSolver.solve(Y[i])
+            sol.append(sch)
+
         if isinstance(Y, np.ndarray):
             sols = np.array(sols)
         else:

@@ -4,7 +4,7 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -82,12 +82,12 @@ class CubicTopK(PTOProblem):
     def get_objective(self, Y, Z, **kwargs):
         assert Y.ndim == 3
         assert Z.ndim == 2
-        Y = move_to_tensor(Y)
-        Z = move_to_tensor(Z).to(Y.device)
+        Y = to_tensor(Y)
+        Z = to_tensor(Z).to(Y.device)
         return (Z.unsqueeze(-1) * Y).sum(-1).sum(-1)
 
     def get_decision(self, Y, params, optSolver, isTrain=False, **kwargs):
-        Y = move_to_tensor(Y).cpu()
+        Y = to_tensor(Y).cpu()
         output_sols = optSolver.solve(Y, self.budget)
         output_vals = self.get_objective(Y, output_sols)
         return output_sols, output_vals

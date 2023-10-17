@@ -1,6 +1,3 @@
-dataset:
-  prob_version: real
-
 models:
   spo:
     reduction: sum
@@ -10,6 +7,7 @@ models:
     reduction: sum
   QPTL:
     reduction: sum
+    tau: 1.0
   listLTR:
     reduction: sum
     tau: 1.0
@@ -21,14 +19,15 @@ models:
     reduction: sum
   LODL:
     sampling: random, random_flip, random_uniform, numerical_jacobian, random_jacobian, random_hessian, random
-    samplingstd: 0.1
+    sampling: random
+    sampling_std: -1
     quadrank: 20
     quadalpha: 0
+    model_type: dense, weightedmse, quad, weightedmse, weightedmse++, weightedce, weightedmsesum, quad++
     serial: True
+    reduction: sum
+    num_iters: 1
+    losslr: 1e-3
   dfl:
     dflalpha: 0.1
     reduction: sum
-
-solver:
-  gurobi:
-    none: none

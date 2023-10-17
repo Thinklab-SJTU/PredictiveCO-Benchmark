@@ -6,7 +6,7 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -168,15 +168,15 @@ class BudgetAllocation(PTOProblem):
         The objective needs to be _maximised_.
         """
         # Sanity check inputs
-        Y = move_to_tensor(Y).to(self.device)
-        Z = move_to_tensor(Z).to(self.device)
+        Y = to_tensor(Y).cpu()
+        Z = to_tensor(Z).cpu()
         # TODO: check maximize or minimize
         assert Y.shape[-2] == Z.shape[-1]
         assert Z.ndim + 1 == Y.ndim
 
         # Initialise weights to default value
         if w is None:
-            w = torch.ones(Y.shape[-1]).requires_grad_(False).to(Z.device)
+            w = torch.ones(Y.shape[-1])
         else:
             assert Y.shape[-1] == w.shape[0]
             assert len(w.shape) == 1
@@ -189,22 +189,15 @@ class BudgetAllocation(PTOProblem):
 
     def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
         assert Y.ndim == 3
-        Y = move_to_tensor(Y)
-        #
         if Z_init is None:
             Z_init = torch.rand(Y.shape[1:-1])
-        Z_init = move_to_tensor(Z_init)
-        # to device
-        Z_init = Z_init.to(self.device)
-        Y = Y.to(self.device)
-        Y_shape = Y.shape
-        Y_new = Y
+        Z_init = to_tensor(Z_init).to(self.device)
+        Y = to_tensor(Y).to(self.device)
         Z = torch.cat(
-            [optSolver.solve(y, self.budget, Z_init=Z_init) for y in Y_new], dim=0
-        )
-        Z = Z.view((*Y_shape[:-2], -1))
-        final_sol = Z.cpu().numpy()
-        final_obj = self.get_objective(Y, Z).cpu().numpy()
+            [optSolver.solve(y, self.budget, Z_init=Z_init) for y in Y], dim=0
+        ).view((*Y.shape[:-2], -1))
+        final_sol = Z.cpu()
+        final_obj = self.get_objective(Y, Z)
         return final_sol, final_obj
 
     def init_API(self):

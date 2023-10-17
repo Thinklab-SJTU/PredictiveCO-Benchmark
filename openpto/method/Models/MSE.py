@@ -3,7 +3,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_tensor
 
 
 class MSE(optModel):
@@ -74,7 +74,18 @@ class BCE(optModel):
         params=None,
         **hyperparams,
     ):
-        return torch.nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
+        if torch.is_tensor(coeff_true):
+            coeff_true = coeff_true.float()
+            return torch.nn.BCELoss(reduction=hyperparams["reduction"])(
+                coeff_hat, coeff_true
+            )
+        elif isinstance(coeff_true, list):
+            loss_list = list()
+            for Y_idx in range(len(coeff_true)):
+                loss_list.append(torch.nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))
+            return torch.stack(loss_list).mean()
+        else:
+            raise ValueError("coeff_true is not a tensor or list")
 
 
 class CE(optModel):
@@ -144,7 +155,6 @@ class DFL(optModel):
             twostageloss = CE()
         else:
             raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
-        print("coeff_hat: ", coeff_hat.shape)
         sol_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
@@ -153,7 +163,7 @@ class DFL(optModel):
             **problem.init_API(),
         )
 
-        sol_hat = move_to_tensor(sol_hat).to(problem.device)
+        sol_hat = to_tensor(sol_hat).to(problem.device)
         obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)

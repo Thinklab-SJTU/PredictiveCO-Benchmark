@@ -36,7 +36,8 @@ class QPTL(optModel):
         """
         Forward pass
         """
-        Q = torch.eye(n_items) / tau
+        n_items = coeff_true.shape[1]
+        Q = torch.eye(n_items) / hyperparams["tau"]
         # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
         # torch.diagflat(torch.ones(n_items)*-1)), 0)
         # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))

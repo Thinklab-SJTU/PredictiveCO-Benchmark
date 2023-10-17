@@ -1,3 +1,4 @@
+DIR="/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/openpto/data/"
 GPU=0
 EPOCHS=100
 

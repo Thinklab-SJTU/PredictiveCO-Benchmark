@@ -4,7 +4,7 @@ import numpy as np
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
-from openpto.method.utils_method import move_to_array
+from openpto.method.utils_method import to_array
 
 
 # optimization model
@@ -101,38 +101,38 @@ class ICONGrbSolver(optGrbSolver):
                 self.x[(f,m,t)] = var
 
     def solve(self, price, timelimit=None):
-        # Model = self._model
-        # D = self.D
-        # P = self.P
-        # q = self.q
-        # N = 1440 // q
-        # x = self.z
-        # nbMachines = self.nbMachines
-        # nbTasks = self.nbTasks
-        # nbResources = self.nbResources
-        # Machines = range(nbMachines)
-        # Tasks = range(nbTasks)
-        # range(nbResources)
-        # price = move_to_array(price)
+        Model = self.model
+        D = self.D
+        P = self.P
+        q = self.q
+        N = 1440 // q
+        x = self.x
+        nbMachines = self.nbMachines
+        nbTasks = self.nbTasks
+        nbResources = self.nbResources
+        Machines = range(nbMachines)
+        Tasks = range(nbTasks)
+        range(nbResources)
+        price = to_array(price)
 
-        # # print( price.shape )
-        # obj_expr = gp.quicksum(
-        #     [
-        #         x[(f, m, t)] * np.sum(price[t : t + D[f]]) * P[f] * q / 60
-        #         for f in Tasks
-        #         for t in range(N - D[f] + 1)
-        #         for m in Machines
-        #         if (f, m, t) in x
-        #     ]
-        # )
+        # print( price.shape )
+        obj_expr = gp.quicksum(
+            [
+                x[(f, m, t)] * np.sum(price[t : t + D[f]]) * P[f] * q / 60
+                for f in Tasks
+                for t in range(N - D[f] + 1)
+                for m in Machines
+                if (f, m, t) in x
+            ]
+        )
 
-        # Model.setObjective(obj_expr, GRB.MAXIMIZE)
-        # if timelimit:
-        #     Model.setParam("TimeLimit", timelimit)
-        # # if relax:
-        # #    Model = Model.relax()
-        # Model.setParam("Method", self.method)
-        # # logging.info("Number of constraints:%d", Model.NumConstrs)
+        Model.setObjective(obj_expr, GRB.MAXIMIZE)
+        if timelimit:
+            Model.setParam("TimeLimit", timelimit)
+        # if relax:
+        #    Model = Model.relax()
+        Model.setParam("Method", self.method)
+        # logging.info("Number of constraints:%d", Model.NumConstrs)
         # Model.optimize()
         # # print("###################  Value after optimization #########################")
         # # print(x)

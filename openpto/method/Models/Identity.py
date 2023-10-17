@@ -4,7 +4,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import move_to_tensor
+from openpto.method.utils_method import to_device, to_tensor
 
 
 class negativeIdentity(optModel):
@@ -87,7 +87,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         sols_hat, _ = problem.get_decision(
             coeff_hat_array, params, optSolver, **problem.init_API()
         )
-        sols_hat = move_to_tensor(sols_hat).to(device)
+        sols_hat = to_device(to_tensor(sols_hat), device)
         # add other objects to ctx
         ctx.modelSense = optSolver.modelSense
         ctx.coeff_hat_array = coeff_hat_array
