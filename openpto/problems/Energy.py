@@ -84,29 +84,25 @@ class Energy(PTOProblem):
         )
 
     def get_objective(self, Y, Z, **kwargs):
-        N = 1440 // self.q
-        Z = Z.reshape(-1, self.nbTasks, self.nbMachines, N)
+        1440 // self.q
+        # Z = Z.reshape(-1, self.nbTasks, self.nbMachines, N)
         ins_num = len(Y)
+        # print(Z)
+        # print("Z_Shape",Z.shape)
+        # print(ins_num)
         ans_list = []
         for i in range(ins_num):
-            ans = 0
-            for f in range(self.nbTasks):
-                for t in range(N - self.D[f] + 1):
-                    for m in range(self.nbMachines):
-                        ans = (
-                            ans
-                            + Z[i, f, m, t]
-                            * (Y[i, t : int(t + self.D[f])]).sum()
-                            * self.P[f]
-                            * self.q
-                            / 60
-                        )
+            print(Z[i])
+            print("--------------")
+            ans = Z[i].sum()
+            print(ans)
             ans_list.append(ans)
         # print(ans_list)
         if isinstance(Y, np.ndarray):
             ans_list = np.array(ans_list)
         else:
-            ans_list = torch.hstack(ans_list)
+            # print(ans_list)
+            ans_list = torch.tensor(ans_list)
         # print(ans_list)
         # print(ans_list.shape)
         return ans_list
@@ -120,18 +116,19 @@ class Energy(PTOProblem):
         if Y.ndim == 1:
             Y = Y.reshape(1, -1)
         ins_num = len(Y)
-        sol = []
+        sols = []
         for i in range(ins_num):
             # solve
-            sch = optSolver.solve(Y[i])
-            sol.append(sch)
-
+            sol = optSolver.solve(Y[i])
+            sols.append(sol)
+            # obj.append(objp)
+        # print(sols)
         if isinstance(Y, np.ndarray):
-            sol = np.array(sol)
+            sols = np.array(sols)
         else:
-            sol = torch.tensor(sol)
-        objs = self.get_objective(Y, sol)
-        return sol, objs
+            sols = torch.tensor(sols)
+        objs = self.get_objective(Y, sols)
+        return sols, objs
 
     def init_API(self):
         dirct = f"{self.data_dir}/SchedulingInstances"

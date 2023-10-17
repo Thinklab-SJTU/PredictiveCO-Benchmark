@@ -49,7 +49,6 @@ global_data_names = [
     "budgetalloc-real",
     "cubic-gen",
     "bipartitematching-cora",
-    "advertising-real",
 ]
 global_model_names = [
     "bce",
@@ -124,7 +123,32 @@ def collect_size():
         )
 
 
+def collect_ad():
+    prefix_name = "default"
+    ad_model_names = [
+        "bce",
+        # "dfl",
+        "blackbox",
+        "identity",
+        # "qptl",
+        "spo",
+    ]
+    for data_name in ["advertising-real"]:
+        df = collect_results(data_name, "default", ad_model_names)
+        print("-" * 130)
+        print(data_name, prefix_name)
+        print(df)
+        df.to_excel(
+            os.path.join(
+                "saved_records", data_name, f"{data_name}-benchmark-results.xlsx"
+            ),
+            index=False,
+            float_format="%.6f",
+        )
+
+
 if __name__ == "__main__":
     collect_benchmarks()
-    # collect_cap()
-    # collect_size()
+    collect_cap()
+    collect_size()
+    collect_ad()
