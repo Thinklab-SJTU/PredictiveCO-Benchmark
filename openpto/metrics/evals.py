@@ -25,14 +25,14 @@ def regret_func(problem, coeff_true, sols_true, sols_hat):
 
 def treatment_func(labels, sols_hat, aux_data):
     aux_data, labels = to_array(aux_data), to_array(labels)
-    n_instances = aux_data.shape[0]
+    n_instances = len(aux_data)
     ctr_treats, ctr_controls = [], []
     # print("sols_hat shape: ", sols_hat.shape, n_instances)
     for idx in range(n_instances):
         label_idx = (
             labels[idx].squeeze(-1).reshape(-1, 4)[:, 0]
         )  # remove duplicated labels
-        realchannels = aux_data[idx, :]
+        realchannels = aux_data[idx]
         mockchannels = sol2channel(sols_hat[idx])
         # print("realchannels shape: ", realchannels.shape, mockchannels.shape)
         # calculate ctr
@@ -48,13 +48,14 @@ def treatment_func(labels, sols_hat, aux_data):
         # collect
         ctr_treats.append(ctr_treat)
         ctr_controls.append(ctr_control)
-    treats_mean = np.mean(ctr_treats, keepdims=True)
-    controls_mean = np.mean(ctr_controls, keepdims=True)
+    # treats_mean = np.mean(ctr_treats, keepdims=True)
+    # controls_mean = np.mean(ctr_controls, keepdims=True)
+    ctr_treats, ctr_controls = np.array(ctr_treats), np.array(ctr_controls)
     return {
         "sense": -1,
-        "ctr_treat": treats_mean,
-        "ctr_control": controls_mean,
-        "value": treats_mean - controls_mean,
+        "ctr_treat": ctr_treats,
+        "ctr_control": ctr_treats,
+        "value": ctr_treats - ctr_controls,
     }
 
 

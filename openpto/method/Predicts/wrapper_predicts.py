@@ -1,9 +1,10 @@
+from openpto.method.Predicts.cvr_model import CVRModel
 from openpto.method.Predicts.dense import dense_nn
 
 
 ######################## prediction model wrapper  ############################
 def pred_model_wrapper(args, pred_model_args):
-    model_dict = {"dense": dense_nn}
+    model_dict = {"dense": dense_nn, "cvr": CVRModel}
     # TODO:more pred models
     return model_dict[args.pred_model](
         num_features=pred_model_args["ipdim"],

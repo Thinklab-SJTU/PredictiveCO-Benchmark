@@ -13,32 +13,20 @@ def to_device(obj, device):
 
 def to_array(Y):
     if torch.is_tensor(Y):
-        Y_array = Y.detach().cpu().numpy()
-    elif isinstance(Y, list):
-        Y_array = list()
-        for item in Y:
-            if torch.is_tensor(item):
-                Y_array.append(item.detach().cpu().numpy())
-            else:
-                Y_array.append(item)
+        return Y.detach().cpu().numpy()
+    elif isinstance(Y, list) and torch.is_tensor(Y[0]):
+        return [item.detach().cpu().numpy() for item in Y]
     else:
-        Y_array = Y
-    return Y_array
+        return Y
 
 
 def to_tensor(Y):
     if torch.is_tensor(Y):
-        Y_tensor = Y
-    elif isinstance(Y, list):
-        Y_tensor = list()
-        for item in Y:
-            if torch.is_tensor(item):
-                Y_tensor.append(torch.from_numpy(np.array(item).astype(np.float32)))
-            else:
-                Y_tensor.append(item)
+        return Y
+    elif isinstance(Y, list) and isinstance(Y[0], np.ndarray):
+        return [torch.from_numpy(np.array(item).astype(np.float32)) for item in Y]
     else:
-        Y_tensor = torch.from_numpy(np.array(Y).astype(np.float32))
-    return Y_tensor
+        return torch.from_numpy(np.array(Y).astype(np.float32))
 
 
 def get_idxs(obj, idxs):
@@ -52,15 +40,14 @@ def rand_like(obj, device="cpu"):
     if torch.is_tensor(obj):
         return torch.rand_like(obj, device=device)
     elif isinstance(obj, list):
-        rand_obj = list()
-        for idx in range(len(obj)):
-            rand_obj.append(torch.rand_like(obj[idx], device=device))
-        return rand_obj
+        return [torch.rand_like(ob, device=device) for ob in obj]
 
 
 def minus(a, b):
-    if torch.is_tensor(a) and torch.is_tensor(b):
+    if (torch.is_tensor(a) and torch.is_tensor(b)) or (isinstance(a, np.ndarray) and isinstance(b, np.ndarray)):
         return a - b
     elif isinstance(a, list) and isinstance(b, list):
         a, b = torch.stack(a), torch.stack(b)
         return a - b
+    else:
+        raise NotImplementedError

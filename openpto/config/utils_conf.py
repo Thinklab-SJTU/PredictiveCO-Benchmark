@@ -57,7 +57,7 @@ def get_args():
         default="mse",
     )
     parser.add_argument(
-        "--pred_model", type=str, choices=["LR", "dense"], default="dense"
+        "--pred_model", type=str, choices=["dense", "cvr"], default="dense"
     )
     parser.add_argument(
         "--solver",

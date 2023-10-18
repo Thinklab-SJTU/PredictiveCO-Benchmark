@@ -56,7 +56,7 @@ class Energy(PTOProblem):
         x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
         self.val_idxs = range(550, 650)
         self.test_idxs = range(
-            650,
+            650,x.shape[0]
         )
         self.train_idxs = range(0, 550)
         self.Xs = torch.from_numpy(x).to(torch.float32)
@@ -120,9 +120,10 @@ class Energy(PTOProblem):
         sols = []
         for i in range(ins_num):
             # solve
-            sch = optSolver.solve(Y[i])
-            sol.append(sch)
-
+            sol = optSolver.solve(Y[i])
+            sols.append(sol)
+            # obj.append(objp)
+        # print(sols)
         if isinstance(Y, np.ndarray):
             sols = np.array(sols)
         else:
