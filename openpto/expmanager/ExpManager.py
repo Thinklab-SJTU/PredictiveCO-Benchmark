@@ -6,7 +6,13 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-from openpto.expmanager.utils_manager import add_log, print_metrics, prob_to_gpu, save_pd
+from openpto.expmanager.utils_manager import (
+    add_log,
+    compare_result,
+    print_metrics,
+    prob_to_gpu,
+    save_pd,
+)
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import get_idxs, rand_like, to_array
@@ -54,6 +60,13 @@ class ExpManager:
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
         # TODO: !!! use exact sovler for optimal
+        Z_train_opt, Objs_train_opt = problem.get_decision(
+            Y_train,
+            params=Y_train_aux,
+            optSolver=optSolver,
+            isTrain=False,
+            **problem.init_API(),
+        )
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,
@@ -73,6 +86,7 @@ class ExpManager:
         )
         Objs_test_opt = to_array(Objs_test_opt)
         # save
+        problem.z_train_opt = Z_train_opt
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt
         ###   Document the value of a random guess
@@ -102,29 +116,47 @@ class ExpManager:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
         total_train_time = 0
-        time_train_start = time.time()
         best = (float("inf"), None)
         time_since_best = 0
         train_logs = {
-            "epoch": list(),
-            "obj": list(),
-            "loss": list(),
-            "pred_loss": list(),
-            # "metric": list(),
+            "epoch": [],
+            "obj": [],
+            "loss": [],
+            "pred_loss": [],
+            "eval": [],
         }
         val_logs = {
-            "epoch": list(),
-            "obj": list(),
-            "loss": list(),
-            "pred_loss": list(),
-            # "metric": list(),
+            "epoch": [],
+            "obj": [],
+            "loss": [],
+            "pred_loss": [],
+            "eval": [],
         }
         # loss function
         twostage_criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
         for ptr_epoch in range(self.args.n_ptr_epochs):
-            # Check metrics on val set
+            ###### one-shot training
+            time_train_start = time.time()
+            preds = self.pred_model(X_pretrain)
+            loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            # update time
+            time_since_best += 1
+            total_train_time += time.time() - time_train_start
+
+            if do_debug:
+                torch.save(
+                    preds.detach().cpu(),
+                    os.path.join(
+                        self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+                    ),
+                )
+            ###### Check metrics on val set
             if ptr_epoch % self.args.valfreq == 0:
                 # Compute metrics
                 datasets = [
@@ -143,14 +175,10 @@ class ExpManager:
                     do_debug=do_debug,
                     **self.model_args,
                 )
-                # add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
                 add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
                 # Save model if it's the best one
-                if (
-                    best[1] is None
-                    or compare_result(metrics["val"], best)
-                    # or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
-                ):
+                if best[1] is None or compare_result(metrics["val"], best):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
@@ -164,23 +192,6 @@ class ExpManager:
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
 
-            ###### one-shot training
-            preds = self.pred_model(X_pretrain)
-            loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            time_since_best += 1
-
-            if do_debug:
-                torch.save(
-                    preds.detach().cpu(),
-                    os.path.join(
-                        self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
-                    ),
-                )
-        total_train_time += time.time() - time_train_start
         if best[1] is not None:
             self.pred_model = best[1]
 
@@ -192,7 +203,33 @@ class ExpManager:
         self.logger.info("Training Model...")
         self.pred_model.train()
         for iter_idx in range(n_epochs):
-            # Check metrics on val set
+            ###### Learn
+            # TODO: batch train or individually train?
+            # currently, only support individually train
+            time_train_start = time.time()
+            losses = []
+            preds = self.pred_model(X_train)
+            for idx in range(len(X_train)):
+                loss_idx = loss_fn(
+                    problem,
+                    coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
+                    coeff_true=get_idxs(Y_train, idx),  # Y_train[[idx]],
+                    params=Y_train_aux[idx],
+                    partition="train",
+                    index=idx,
+                    do_debug=do_debug,
+                    **self.model_args,
+                )
+                losses.append(loss_idx)
+
+            loss = torch.stack(losses).sum()
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            time_since_best += 1
+            total_train_time += time.time() - time_train_start
+
+            ###### Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
                 # Compute metrics
                 datasets = [
@@ -214,11 +251,7 @@ class ExpManager:
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
                 add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
                 # Save model if it's the best one
-                if (
-                    best[1] is None
-                    or compare_result(metrics["val"], best)
-                    # or metrics["val"]["eval"]["value"].mean() <= best[0].mean()
-                ):
+                if best[1] is None or compare_result(metrics["val"], best):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
@@ -232,32 +265,6 @@ class ExpManager:
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
                     break
-
-            # Learn
-            # TODO: batch train or individually train?
-            # currently, only support individually train
-            losses = []
-            preds = self.pred_model(X_train)
-            time_train_start = time.time()
-            for idx in range(len(X_train)):
-                loss_idx = loss_fn(
-                    problem,
-                    coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
-                    coeff_true=get_idxs(Y_train, idx),  # Y_train[[idx]],
-                    params=Y_train_aux[idx],
-                    partition="train",
-                    index=idx,
-                    do_debug=do_debug,
-                    **self.model_args,
-                )
-                losses.append(loss_idx)
-
-            loss = torch.stack(losses).sum()
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            time_since_best += 1
-            total_train_time += time.time() - time_train_start
 
         if best[1] is not None:
             self.pred_model = best[1]
@@ -321,9 +328,3 @@ class ExpManager:
             f"{avg_train_time:.6f}  {avg_test_time:.6f}"
         )
         return True
-
-
-def compare_result(metrics_idx, best):
-    # smaller the better
-    sense = metrics_idx["eval"]["sense"]
-    return metrics_idx["eval"]["value"].mean() * sense <= best[0].mean() * sense

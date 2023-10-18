@@ -28,7 +28,13 @@ def add_log(_log, iter_idx, metric, mode):
     _log["obj"].append(metric[mode]["objective"].mean().item())
     _log["loss"].append(metric[mode]["loss"])
     _log["pred_loss"].append(metric[mode]["pred_loss"])
-    # _log["eval"].append(metric[mode]["eval"]["value"].mean().item())
+    _log["eval"].append(float(metric[mode]["eval"]["value"].mean()))
+
+
+def compare_result(metrics_idx, best):
+    # smaller the better
+    sense = metrics_idx["eval"]["sense"]
+    return metrics_idx["eval"]["value"].mean() * sense <= best[0].mean() * sense
 
 
 def save_dict(_dict, path):
@@ -41,6 +47,8 @@ def save_pd(_dict, path):
     df = pd.DataFrame(_dict)
     df["obj"] = df["obj"].round(6)
     df["loss"] = df["loss"].round(6)
+    df["eval"] = df["eval"].round(6)
+    df["pred_loss"] = df["pred_loss"].round(6)
     df.to_csv(path, index=False)
 
 
@@ -101,7 +109,11 @@ def print_metrics(
             objective_hat = torch.zeros_like(losses).cpu()
             if partition == "train":
                 test_time = 0
-                eval_result = {"value": torch.zeros_like(losses)}
+                # eval_result = {"value": torch.zeros_like(losses)}
+                eval_result = get_eval_results(
+                    problem, Ys, problem.z_train_opt, Zs_hat, Ys_aux
+                )
+                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
             elif partition == "val":
                 test_time = 0
                 eval_result = get_eval_results(
