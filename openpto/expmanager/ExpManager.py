@@ -108,9 +108,9 @@ class ExpManager:
         ############################# Pretrain #############################
         # fetch pretrain data:
         if hasattr(problem, "get_pretrain_data"):
-            X_pretrain, Y_pretrain, _ = problem.get_pretrain_data()
+            X_pretrain, Y_pretrain, Y_pretrain_aux = problem.get_pretrain_data()
         else:
-            X_pretrain, Y_pretrain, _ = X_train, Y_train, Y_train_aux
+            X_pretrain, Y_pretrain, Y_pretrain_aux = X_train, Y_train, Y_train_aux
 
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
@@ -160,7 +160,7 @@ class ExpManager:
             if ptr_epoch % self.args.valfreq == 0:
                 # Compute metrics
                 datasets = [
-                    # (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
+                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
                     (X_val, Y_val, Y_val_aux, "val"),
                 ]
                 metrics = print_metrics(
