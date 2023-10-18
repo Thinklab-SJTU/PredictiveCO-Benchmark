@@ -110,14 +110,14 @@ class ExpManager:
             "obj": list(),
             "loss": list(),
             "pred_loss": list(),
-            "metric": list(),
+            # "metric": list(),
         }
         val_logs = {
             "epoch": list(),
             "obj": list(),
             "loss": list(),
             "pred_loss": list(),
-            "metric": list(),
+            # "metric": list(),
         }
         # loss function
         twostage_criterion = str2twoStageLoss(problem)

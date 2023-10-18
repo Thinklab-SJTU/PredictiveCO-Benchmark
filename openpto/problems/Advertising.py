@@ -113,7 +113,7 @@ class Advertising(PTOProblem):
         sols, objs = list(), list()
         for ins_id in range(len(Y)):
             Y_idx = Y[ins_id]
-            n_users = len(Y_idx)
+            n_users = len(Y_idx) // 4  # TODO: 2 channels, 4 combinations
             total_budget = self.avg_budget * n_users
             sol = optSolver.solve(Y_idx, self.cost_pv, total_budget)
             if torch.is_tensor(Y_idx):
