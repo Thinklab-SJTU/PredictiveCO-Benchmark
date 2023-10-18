@@ -18,3 +18,6 @@ python rethink_exp/main_results.py --problem=knapsack --opt_model lodl     --sol
 # prediction + decision
 python rethink_exp/main_results.py --problem=knapsack --opt_model blackbox --solver gurobi --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU}
 python rethink_exp/main_results.py --problem=knapsack --opt_model identity --solver gurobi --prefix "ptr-ftn" --n_ptr_epochs 50 --n_epochs 50 --gpu ${GPU}
+
+python rethink_exp/main_results.py --problem=knapsack --opt_model lodl     --solver gurobi --n_epochs 1 --gpu 0
+

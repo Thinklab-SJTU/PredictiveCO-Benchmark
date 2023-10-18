@@ -45,9 +45,9 @@ def get_loss_fn(name, problem, **kwargs):
 
         return listwiseLTR
     elif name == "qptl":
-        # from openpto.method.Models.QPTL import QPTL
-        # return QPTL
-        return None
+        from openpto.method.Models.QPTL import QPTL
+
+        return QPTL
     elif name == "intopt":
         # from openpto.method.Models.Intopt import Intopt
         return None

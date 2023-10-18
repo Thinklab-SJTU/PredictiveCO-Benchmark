@@ -7,7 +7,6 @@ import torch
 
 from torch.autograd import Function
 
-from . import solvers
 from .solvers.pdipm import batch as pdipm_b, spbatch as pdipm_spb
 from .util import bger, expandParam, extract_nBatch
 
@@ -74,6 +73,31 @@ def forward_single_np_gurobi(Q, p, G, h, A, b, test=False):
     return model.ObjVal, x_opt, nu, lam, slacks
 
 
+def forward_gurobi_prebuilt(
+    Q, p, model, x, inequality_constraints, equality_constraints, G, h, quadobj
+):
+    import gurobipy as gp
+    import numpy as np
+
+    obj = gp.QuadExpr()
+    obj += quadobj
+    for i in range(len(p)):
+        obj += p[i] * x[i]
+    model.setObjective(obj, gp.GRB.MINIMIZE)
+    model.optimize()
+    x_opt = np.array([x[i].x for i in range(len(x))])
+    if G is not None:
+        slacks = -(G @ x_opt - h)
+    else:
+        slacks = np.array([])
+    lam = np.array(
+        [inequality_constraints[i].pi for i in range(len(inequality_constraints))]
+    )
+    nu = np.array([equality_constraints[i].pi for i in range(len(equality_constraints))])
+
+    return model.ObjVal, x_opt, nu, lam, slacks
+
+
 def make_gurobi_model(G, h, A, b, Q, test=False):
     import gurobipy as gp
     import numpy as np
@@ -121,31 +145,6 @@ def make_gurobi_model(G, h, A, b, Q, test=False):
             obj += x[i] * Q[i, j] * x[j]
 
     return model, x, inequality_constraints, equality_constraints, obj
-
-
-def forward_gurobi_prebuilt(
-    Q, p, model, x, inequality_constraints, equality_constraints, G, h, quadobj
-):
-    import gurobipy as gp
-    import numpy as np
-
-    obj = gp.QuadExpr()
-    obj += quadobj
-    for i in range(len(p)):
-        obj += p[i] * x[i]
-    model.setObjective(obj, gp.GRB.MINIMIZE)
-    model.optimize()
-    x_opt = np.array([x[i].x for i in range(len(x))])
-    if G is not None:
-        slacks = -(G @ x_opt - h)
-    else:
-        slacks = np.array([])
-    lam = np.array(
-        [inequality_constraints[i].pi for i in range(len(inequality_constraints))]
-    )
-    nu = np.array([equality_constraints[i].pi for i in range(len(equality_constraints))])
-
-    return model.ObjVal, x_opt, nu, lam, slacks
 
 
 class QPSolvers(Enum):
@@ -306,38 +305,6 @@ def QPFunction(
                 ctx.lams = lams
                 ctx.nus = nus
                 ctx.slacks = slacks
-            elif solver == QPSolvers.CVXPY:
-                vals = torch.Tensor(nBatch).type_as(Q)
-                zhats = torch.Tensor(nBatch, ctx.nz).type_as(Q)
-                lams = torch.Tensor(nBatch, ctx.nineq).type_as(Q)
-                nus = (
-                    torch.Tensor(nBatch, ctx.neq).type_as(Q)
-                    if ctx.neq > 0
-                    else torch.Tensor()
-                )
-                slacks = torch.Tensor(nBatch, ctx.nineq).type_as(Q)
-                for i in range(nBatch):
-                    Ai, bi = (A[i], b[i]) if neq > 0 else (None, None)
-                    vals[i], zhati, nui, lami, si = solvers.cvxpy.forward_single_np(
-                        *[
-                            x.cpu().numpy() if x is not None else None
-                            for x in (Q[i], p[i], G[i], h[i], Ai, bi)
-                        ]
-                    )
-                    # if zhati[0] is None:
-                    #     import IPython, sys; IPython.embed(); sys.exit(-1)
-                    zhats[i] = torch.Tensor(zhati)
-                    lams[i] = torch.Tensor(lami)
-                    slacks[i] = torch.Tensor(si)
-                    if neq > 0:
-                        nus[i] = torch.Tensor(nui)
-
-                ctx.vals = vals
-                ctx.lams = lams
-                ctx.nus = nus
-                ctx.slacks = slacks
-            else:
-                assert False
 
             ctx.save_for_backward(zhats, Q_, p_, G_, h_, A_, b_)
             end = time.time()

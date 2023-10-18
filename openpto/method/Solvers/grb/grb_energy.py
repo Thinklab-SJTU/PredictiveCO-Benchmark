@@ -112,89 +112,6 @@ class ICONGrbSolver(optGrbSolver):
                 self.x[(f, m, t)] = var
 
     def solve(self, price, timelimit=None):
-        # Model = self._model
-        # D = self.D
-        # P = self.P
-        # q = self.q
-        # N = 1440 // q
-        # x = self.z
-        # nbMachines = self.nbMachines
-        # nbTasks = self.nbTasks
-        # nbResources = self.nbResources
-        # Machines = range(nbMachines)
-        # Tasks = range(nbTasks)
-        # range(nbResources)
-        # price = move_to_array(price)
-
-        # # print( price.shape )
-        # obj_expr = gp.quicksum(
-        #     [
-        #         x[(f, m, t)] * np.sum(price[t : t + D[f]]) * P[f] * q / 60
-        #         for f in Tasks
-        #         for t in range(N - D[f] + 1)
-        #         for m in Machines
-        #         if (f, m, t) in x
-        #     ]
-        # )
-
-        # Model.setObjective(obj_expr, GRB.MAXIMIZE)
-        # if timelimit:
-        #     Model.setParam("TimeLimit", timelimit)
-        # # if relax:
-        # #    Model = Model.relax()
-        # Model.setParam("Method", self.method)
-        # # logging.info("Number of constraints:%d", Model.NumConstrs)
-        # Model.optimize()
-        # # print("###################  Value after optimization #########################")
-        # # print(x)
-
-        # solver=np.zeros(N)
-        # schedule = np.zeros((nbTasks, nbMachines, N))
-        # print(Model.status,GRB.Status.OPTIMAL)
-        # if Model.status in [GRB.Status.OPTIMAL, 9]:
-        #     try:
-        #         print("!!")
-        #         #task_on = Model.getAttr('x',x)
-        #         task_on = np.zeros((nbTasks, nbMachines, N))
-        #         print(x.items())
-        #         for (f, m, t), var in x.items():
-        #             # print('im here 4')
-        #             try:
-        #                 task_on[f, m, t] = var.X
-        #             except AttributeError:
-        #                 task_on[f, m, t] = 0.0
-        #                 print("AttributeError: b' Unable to retrieve attribute 'X'")
-        #                 print("__________Something WRONG___________________________")
-
-        #         if verbose:
-        #             print("\nCost: %g" % Model.objVal)
-        #             print("\nExecution Time: %f" % Model.Runtime)
-
-        #         for t in range(N):
-        #             solver[t] = np.sum(
-        #                 np.sum(task_on[f, :, max(0, t - D[f] + 1) : t + 1]) * P[f]
-        #                 for f in Tasks
-        #             )
-        #         solver = solver * q / 60
-        #         self._model.reset(0)
-        #         return solver
-        #     except NameError:
-        #         print("\n__________Something wrong_______ \n ")
-        #         # make sure cut is removed! (modifies model)
-        #         self._model.reset(0)
-        #         return solver
-
-        # elif Model.status == GRB.Status.INF_OR_UNBD:
-        #     print("Model is infeasible or unbounded")
-        # elif Model.status == GRB.Status.INFEASIBLE:
-        #     print("Model is infeasible")
-        # elif Model.status == GRB.Status.UNBOUNDED:
-        #     print("Model is unbounded")
-        # else:
-        #     print("Optimization ended with status %d" % Model.status)
-        # self._model.reset(0)
-        # schedule = schedule.reshape(-1)
-        # return solver
         Model = self.model
         D = self.D
         P = self.P
@@ -219,20 +136,12 @@ class ICONGrbSolver(optGrbSolver):
         )
 
         Model.setObjective(obj_expr, GRB.MINIMIZE)
-        # Model.setObjective( quicksum( (x[(f,m,t)]*P[f]*quicksum([price[t+i] for i in range(D[f])])*q/60) for f in Tasks
-        #                for m in Machines for t in range(N-D[f]+1)), GRB.MINIMIZE)
-        # if timelimit:
-        #     Model.setParam('TimeLimit', timelimit)
-        # if relax:
-        #    Model = Model.relax()
         Model.setParam("Method", self.method)
-        # logging.info("Number of constraints%d",Model.NumConstrs)
         Model.optimize()
 
         solver = np.zeros(N)
         if Model.status in [GRB.Status.OPTIMAL]:
             try:
-                # task_on = Model.getAttr('x',x)
                 task_on = np.zeros((nbTasks, nbMachines, N))
                 for (f, m, t), var in x.items():
                     try:
@@ -267,6 +176,6 @@ class ICONGrbSolver(optGrbSolver):
             print("Model is unbounded")
         else:
             print("Optimization ended with status %d" % Model.status)
-        self._model.reset(0)
+        self.model.reset(0)
 
         return solver

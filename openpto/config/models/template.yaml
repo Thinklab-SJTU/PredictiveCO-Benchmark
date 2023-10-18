@@ -7,6 +7,7 @@ models:
     reduction: sum
   QPTL:
     reduction: sum
+    tau: 1.0
   listLTR:
     reduction: sum
     tau: 1.0
