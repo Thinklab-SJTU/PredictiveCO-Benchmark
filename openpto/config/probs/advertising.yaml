@@ -1,6 +1,6 @@
 dataset:
   prob_version: real
-  avg_budget: 0.5
+  avg_budget: 0.1
 
 solver:
   gurobi:

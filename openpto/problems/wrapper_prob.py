@@ -18,7 +18,9 @@ from openpto.problems.Knapsack import Knapsack
 
 ################################# Wrappers ################################################
 def problem_wrapper(args, conf):
-    init_problem = partial(init_if_not_saved, load_new=args.loadnew)
+    init_problem = partial(
+        init_if_not_saved, folder="saved_problems", load_new=args.loadnew
+    )
     ProblemClass = str2prob(args.problem)
     problemKwargs = prob2args(args, conf)
     problem = init_problem(ProblemClass, problemKwargs)
@@ -56,6 +58,7 @@ def init_if_not_saved(
     load_new=True,
 ):
     # Find the filename if a saved version of the problem with the same kwargs exists
+    os.makedirs(folder, exist_ok=True)
     master_filename = os.path.join(folder, f"{problem_cls.__name__}.csv")
     filename, saved_probs = find_saved_problem(master_filename, kwargs)
 
