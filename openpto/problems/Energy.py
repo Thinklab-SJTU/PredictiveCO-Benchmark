@@ -54,9 +54,10 @@ class Energy(PTOProblem):
         x = np.concatenate((x_train, x_test), axis=0)
         y = np.concatenate((y_train, y_test), axis=0)
         x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
+        self.train_idxs = range(0, 550)
         self.val_idxs = range(550, 650)
         self.test_idxs = range(650, x.shape[0])
-        self.train_idxs = range(0, 550)
+
         self.Xs = torch.from_numpy(x).to(torch.float32)
         self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
 

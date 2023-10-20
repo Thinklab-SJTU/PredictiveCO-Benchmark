@@ -15,11 +15,7 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, rand_like, to_array
-
-
-def ndiv(a, b):
-    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array
 
 
 class ExpManager:

@@ -13,8 +13,8 @@ class CubicTopK(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=100,  # number of instances to use from the dataset to train
-        num_test_instances=100,  # number of instances to use from the dataset to test
+        num_train_instances=400,  # number of instances to use from the dataset to train
+        num_test_instances=400,  # number of instances to use from the dataset to test
         num_items=50,  # number of targets to consider
         budget=1,  # number of items that can be picked
         val_frac=0.2,  # fraction of training data reserved for validation

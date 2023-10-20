@@ -1,7 +1,9 @@
 import numpy as np
+import sklearn
 import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
+from sklearn.preprocessing import StandardScaler
 
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.utils_method import to_tensor
@@ -38,7 +40,7 @@ class Knapsack(PTOProblem):
         self._set_seed(rand_seed)
         # Obtain data
         if prob_version == "energy":
-            raise NotImplementedError
+            self.get_energy_data()
         elif prob_version == "gen":
             weights, feats, profits = self.genData(
                 num_train_instances + num_test_instances,
@@ -76,6 +78,28 @@ class Knapsack(PTOProblem):
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
         # default sovler
+
+    def get_energy_data(self):
+        x_train, y_train, x_test, y_test = self.get_energy(
+            fname=f"{self.data_dir}/prices2013.dat"
+        )
+        x_train = x_train[:, 1:]
+        x_test = x_test[:, 1:]
+        scaler = StandardScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test = scaler.transform(x_test)
+        x_train = x_train.reshape(-1, 48, x_train.shape[1])
+        y_train = y_train.reshape(-1, 48)
+        x_test = x_test.reshape(-1, 48, x_test.shape[1])
+        y_test = y_test.reshape(-1, 48)
+        x = np.concatenate((x_train, x_test), axis=0)
+        y = np.concatenate((y_train, y_test), axis=0)
+        x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
+        self.train_idxs = range(0, 550)
+        self.val_idxs = range(550, 650)
+        self.test_idxs = range(650, x.shape[0])
+        self.Xs = torch.from_numpy(x).to(torch.float32)
+        self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
 
     def get_train_data(self):
         return (

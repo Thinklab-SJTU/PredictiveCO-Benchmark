@@ -201,7 +201,7 @@ class LODL(optModel):
             # Sanity check that the saved data is the same as the problem's data
             for idx, (Y, Y_aux) in enumerate(zip(Ys, Ys_aux)):
                 Y_dataset, opt_objective, _, objectives = SL_dataset[partition][idx]
-                assert torch.isclose(Y, Y_dataset).all()
+                assert torch.isclose(Y, Y_dataset.to(problem.device)).all()
 
                 # Also log the "average error"
                 avg_dls.append(abs(opt_objective - objectives).mean().item())
@@ -266,12 +266,11 @@ class LODL(optModel):
         # Return the loss function in the expected form
         def surrogate_decision_quality(coeff_hat, coeff_true, partition, index, **kwargs):
             if partition == "test":
-                partition = "train"
+                return torch.zeros(1)
             # during testing, loss is evaluated on the training samples
-            return (
-                losses[partition][index](coeff_hat).flatten()
-                - SL_dataset[partition][index][1]
-            )
+            first = losses[partition][index](coeff_hat).flatten()
+            second = -SL_dataset[partition][index][1].to(problem.device)
+            return first - second
 
         return surrogate_decision_quality
 
@@ -288,10 +287,12 @@ class LODL(optModel):
         # TODO: check parameters
         # Sample points in the neighbourhood
         #   Find the rough scale of the predictions
+        device = problem.device
         if sampling_std > 0:
             Y_std = float(sampling_std)
         else:
             Y_std = torch.std(Y) + 1e-5
+        Y_std = Y_std.to(device)
         #   Generate points
         if sampling == "random":
             #   Create some noise
@@ -309,8 +310,10 @@ class LODL(optModel):
             #   Create some noise
             Y_noise = torch.distributions.Normal(0, Y_std).sample((num_samples, *Y.shape))
             #   Drop some of the entries randomly
-            drop_idxs = torch.distributions.Bernoulli(probs=0.1).sample(
-                (num_samples, *Y.shape)
+            drop_idxs = (
+                torch.distributions.Bernoulli(probs=0.1)
+                .sample((num_samples, *Y.shape))
+                .to(device)
             )
             Y_noise = Y_noise * drop_idxs
             #   Add this noise to Y to get sampled points
@@ -318,8 +321,10 @@ class LODL(optModel):
         elif sampling == "random_flip":
             assert 0 < Y_std < 1
             #   Randomly choose some indices to flip
-            flip_idxs = torch.distributions.Bernoulli(probs=Y_std).sample(
-                (num_samples, *Y.shape)
+            flip_idxs = (
+                torch.distributions.Bernoulli(probs=Y_std)
+                .sample((num_samples, *Y.shape))
+                .to(device)
             )
             #   Flip chosen indices to get sampled points
             Yhats = torch.logical_xor(Y, flip_idxs).float()
@@ -330,7 +335,7 @@ class LODL(optModel):
             Yhats = torch.cat((Yhats_plus, Yhats_minus), dim=0)
         elif sampling == "random_jacobian":
             #   Find dimensions to perturb and how much to perturb them by
-            idxs = torch.randint(Y.numel(), size=(num_samples,))
+            idxs = torch.randint(Y.numel(), size=(num_samples,)).to(device)
             idxs = torch.nn.functional.one_hot(idxs, num_classes=Y.numel())
             noise_scale = (
                 torch.distributions.Normal(0, Y_std)
@@ -342,9 +347,9 @@ class LODL(optModel):
             Yhats = Y + noise
         elif sampling == "random_hessian":
             #   Find dimensions to perturb and how much to perturb them by
-            noise = torch.zeros((num_samples, *Y.shape))
+            noise = torch.zeros((num_samples, *Y.shape), device=device)
             for _ in range(2):
-                idxs = torch.randint(Y.numel(), size=(num_samples,))
+                idxs = torch.randint(Y.numel(), size=(num_samples,)).to(device)
                 idxs = torch.nn.functional.one_hot(idxs, num_classes=Y.numel())
                 noise_scale = (
                     torch.distributions.Normal(0, Y_std)

@@ -43,6 +43,10 @@ def rand_like(obj, device="cpu"):
         return [torch.rand_like(ob, device=device) for ob in obj]
 
 
+def ndiv(a, b):
+    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+
 def minus(a, b):
     if isinstance(a, list) and isinstance(b, list):
         a, b = torch.stack(a), torch.stack(b)
