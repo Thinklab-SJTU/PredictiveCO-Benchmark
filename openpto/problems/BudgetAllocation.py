@@ -27,7 +27,7 @@ class BudgetAllocation(PTOProblem):
         data_dir="./openpto/data/",
         **kwargs,
     ):
-        super(BudgetAllocation, self).__init__()
+        super(BudgetAllocation, self).__init__(data_dir)
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)

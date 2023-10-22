@@ -25,7 +25,7 @@ def get_args():
             "energy",
             "advertising",
         ],
-        default="portfolio",
+        default="knapsack",
     )
     parser.add_argument("--config_path", type=str, default="")
     parser.add_argument(
@@ -126,7 +126,7 @@ def load_conf(prob_path: str = None, method_path: str = None, prob_name: str = N
         prob_path = os.path.join(dir, prob_name + ".yaml")
 
     if os.path.exists(prob_path) is False:
-        raise KeyError("The configuration file is not provided.")
+        raise ValueError(f"The configuration file, [{prob_path}] is not provided.")
 
     conf = yaml.safe_load(open(prob_path, "r").read())
     conf["models"] = yaml.safe_load(open(method_path, "r").read())

@@ -313,14 +313,14 @@ class ExpManager:
         avg_train_time = ndiv(total_train_time, (self.args.n_ptr_epochs + n_epochs))
         avg_test_time = total_test_time
         self.logger.info(
-            f"[Random Obj]: {objs_rand.mean().item():.6f} "
-            f"[Optimal Obj]: {Objs_test_opt.mean().item():.6f} "
-            f"[{problem.get_eval_metric()}]: {eval_value.mean():.6f} "
-            f"[avg Train Time]: {avg_train_time:.6f} "
-            f"[avg Test Time]: {avg_test_time:.6f} "
+            f"[Random Obj]: {objs_rand.mean().item():.5f} "
+            f"[Optimal Obj]: {Objs_test_opt.mean().item():.5f} "
+            f"[{problem.get_eval_metric()}]: {eval_value.mean():.5f} "
+            f"[avg Train Time]: {avg_train_time:.5f} "
+            f"[avg Test Time]: {avg_test_time:.5f} "
         )
         self.logger.info(
-            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.6f}  {eval_value.mean():.6f}  "
-            f"{avg_train_time:.6f}  {avg_test_time:.6f}"
+            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.5f}  {eval_value.mean():.5f}  "
+            f"{avg_train_time:.5f}  {avg_test_time:.5f}"
         )
         return True

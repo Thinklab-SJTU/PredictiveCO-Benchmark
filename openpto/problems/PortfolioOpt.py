@@ -33,7 +33,7 @@ class PortfolioOpt(PTOProblem):
         val_frac=0.2,  # fraction of training data reserved for test
         rand_seed=0,  # for reproducibility
         alpha=1,  # risk aversion constant
-        prob_version="gen",
+        prob_version="real",
         data_dir="openpto/data",  # directory to store data
     ):
         super(PortfolioOpt, self).__init__()
@@ -362,6 +362,13 @@ class PortfolioOpt(PTOProblem):
             data_dir,
             "price_data_{}_{}_{}.pt".format(start_date.date(), end_date.date(), collapse),
         )
+        print(
+            "filenames: ",
+            self.raw_historical_price_file,
+            self.raw_symbol_file,
+            self.price_feature_file,
+            self.torch_file,
+        )
 
         # Load data if it exists
         if not overwrite and os.path.exists(self.torch_file):
@@ -462,9 +469,10 @@ class PortfolioOpt(PTOProblem):
     def _get_covar_mat(self, instance_idxs):
         return self.covar_mat.reshape((-1, *self.covar_mat.shape[2:]))[instance_idxs]
 
-    def get_decision(self, Y, aux_data, max_instances_per_batch=1500, **kwargs):
+    def get_decision(self, Y, aux_data=None, max_instances_per_batch=1500, **kwargs):
         # Get the sqrt of the covariance matrix
-        covar_mat = aux_data
+        # covar_mat = aux_data #TODO
+        covar_mat = self.covar_mat
         sqrt_covar = torch.linalg.cholesky(covar_mat)
 
         # Split Y into reasonably sized chunks so that we don't run into memory issues
