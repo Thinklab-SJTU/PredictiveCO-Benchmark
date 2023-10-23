@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import sklearn
 import torch
 
@@ -35,13 +36,14 @@ class Knapsack(PTOProblem):
     ):
         super(Knapsack, self).__init__(data_dir)
         self.capacity = capacity
-        self.num_items = num_items
         self.prob_version = prob_version
+        self.rand_seed = rand_seed
         self._set_seed(rand_seed)
         # Obtain data
         if prob_version == "energy":
             self.get_energy_data()
         elif prob_version == "gen":
+            self.num_items = num_items
             weights, feats, profits = self.genData(
                 num_train_instances + num_test_instances,
                 num_features,
@@ -80,6 +82,7 @@ class Knapsack(PTOProblem):
         # default sovler
 
     def get_energy_data(self):
+        self.num_items = 48
         x_train, y_train, x_test, y_test = self.get_energy(
             fname=f"{self.data_dir}/prices2013.dat"
         )
@@ -89,17 +92,136 @@ class Knapsack(PTOProblem):
         x_train = scaler.fit_transform(x_train)
         x_test = scaler.transform(x_test)
         x_train = x_train.reshape(-1, 48, x_train.shape[1])
-        y_train = y_train.reshape(-1, 48)
-        x_test = x_test.reshape(-1, 48, x_test.shape[1])
-        y_test = y_test.reshape(-1, 48)
-        x = np.concatenate((x_train, x_test), axis=0)
-        y = np.concatenate((y_train, y_test), axis=0)
-        x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
-        self.train_idxs = range(0, 550)
-        self.val_idxs = range(550, 650)
-        self.test_idxs = range(650, x.shape[0])
-        self.Xs = torch.from_numpy(x).to(torch.float32)
-        self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
+        y_train = y_train.reshape(-1, 48, 1)
+        # x = np.concatenate((x_train, x_test), axis=0)
+        # y = np.concatenate((y_train, y_test), axis=0)
+        # self.test_idxs = range(650, x.shape[0])
+        x, y = sklearn.utils.shuffle(x_train, y_train, random_state=self.rand_seed)
+        self.train_idxs = range(0, int(len(x) * 0.8))
+        self.val_idxs = range(int(len(x) * 0.8), len(x))
+        self.Xs_train = to_tensor(x)
+        self.Ys_train = to_tensor(y)
+        # test
+        self.Xs_test = to_tensor(x_test).reshape(-1, 48, x_test.shape[1])
+        self.Ys_test = to_tensor(y_test).reshape(-1, 48, 1)
+        # torch.Size([552, 48, 8]) torch.Size([552, 48, 1]) torch.Size([237, 48, 8]) torch.Size([237, 48, 1])
+        # get weights
+        self.weights = torch.FloatTensor(
+            [
+                5,
+                3,
+                3,
+                5,
+                5,
+                7,
+                7,
+                3,
+                7,
+                7,
+                3,
+                3,
+                5,
+                3,
+                7,
+                3,
+                7,
+                7,
+                5,
+                5,
+                3,
+                5,
+                5,
+                3,
+                7,
+                7,
+                3,
+                7,
+                5,
+                5,
+                7,
+                3,
+                7,
+                3,
+                3,
+                5,
+                7,
+                5,
+                3,
+                5,
+                3,
+                7,
+                5,
+                7,
+                5,
+                5,
+                3,
+                7,
+            ]
+        )
+        self.params_train = self.weights.unsqueeze(0).expand(len(self.Xs_train), -1)
+        self.params_test = self.weights.unsqueeze(0).expand(len(self.Xs_test), -1)
+
+    def get_energy(self, fname=None, trainTestRatio=0.70):
+        df = self.get_energy_pandas(fname)
+
+        length = df["groupID"].nunique()
+        grouplength = 48
+
+        # numpy arrays, X contains groupID as first column
+        X1g = df.loc[:, df.columns != "SMPEP2"].values
+        y = df.loc[:, "SMPEP2"].values
+
+        # no negative values allowed...for now I just clamp these values to zero. They occur three times in the training data.
+        # for i in range(len(y)):
+        #     y[i] = max(y[i], 0)
+
+        # ordered split per complete group
+        train_len = int(trainTestRatio * length)
+
+        # the splitting
+        X_1gtrain = X1g[: grouplength * train_len]
+        y_train = y[: grouplength * train_len]
+        X_1gtest = X1g[grouplength * train_len :]
+        y_test = y[grouplength * train_len :]
+
+        # print(len(X1g_train),len(X1g_test),len(X),len(X1g_train)+len(X1g_test))
+        return (X_1gtrain, y_train, X_1gtest, y_test)
+
+    def get_energy_pandas(self, fname=None):
+        if fname is None:
+            fname = "prices2013.dat"
+
+        df = pd.read_csv(fname, delim_whitespace=True, quotechar='"')
+        # remove unnecessary columns
+        df.drop(
+            ["#DateTime", "Holiday", "ActualWindProduction", "SystemLoadEP2"],
+            axis=1,
+            inplace=True,
+        )
+        # remove columns with missing values
+        df.drop(["ORKTemperature", "ORKWindspeed"], axis=1, inplace=True)
+
+        # missing value treatment
+        # df[pd.isnull(df).any(axis=1)]
+        # impute missing CO2 intensities linearly
+        df.loc[df.loc[:, "CO2Intensity"] == 0, "CO2Intensity"] = np.nan  # an odity
+        df.loc[:, "CO2Intensity"].interpolate(inplace=True)
+        # remove remaining 3 days with missing values
+        grouplength = 48
+        for i in range(0, len(df), grouplength):
+            day_has_nan = pd.isnull(df.loc[i : i + (grouplength - 1)]).any(axis=1).any()
+            if day_has_nan:
+                # print("Dropping",i)
+                df.drop(range(i, i + grouplength), inplace=True)
+        # data is sorted by year, month, day, periodofday; don't want learning over this
+        df.drop(["Day", "Year", "PeriodOfDay"], axis=1, inplace=True)
+
+        # insert group identifier at beginning
+        grouplength = 48
+        length = int(len(df) / 48)  # 792
+        gids = [gid for gid in range(length) for i in range(grouplength)]
+        df.insert(0, "groupID", gids)
+        return df
 
     def get_train_data(self):
         return (
@@ -119,20 +241,26 @@ class Knapsack(PTOProblem):
         return self.Xs_test, self.Ys_test, self.params_test
 
     def get_objective(self, Y, Z, **kwargs):
-        # asssert shape
-        assert Y.ndim == 2
-        assert Z.ndim == 2
-        assert Y.shape[0] == Z.shape[0]
-        assert Y.shape[1] == Z.shape[1]
-        # convert to device
-        if torch.is_tensor(Y):
-            Y = Y.cpu()
-            Z = to_tensor(Z).cpu()
-        return (Y * Z).sum(1)
+        if self.prob_version == "energy":
+            assert Z.ndim == Y.ndim == 3
+            assert Y.shape == Z.shape
+            if torch.is_tensor(Y):
+                Z = to_tensor(Z).to(Y.device)
+            return (Y * Z).sum(-1).sum(-1)
+        elif self.prob_version == "gen":
+            assert Y.ndim + 1 == Z.ndim == 3
+            assert Y.shape == Z.shape[:-1]
+            if torch.is_tensor(Y):
+                Z = to_tensor(Z).to(Y.device)
+            return (Y * Z.squeeze(-1)).sum(-1).sum(-1)
+        else:
+            raise KeyError(f"prob version {self.prob_version} not implemented")
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
+        else:
+            Y = to_tensor(Y)
 
         # determine solver
         if optSolver is None:
@@ -142,8 +270,6 @@ class Knapsack(PTOProblem):
                 pass
             optSolver = KPGrbSolver(**kwargs)
 
-        if Y.ndim == 1:
-            Y = Y.reshape(1, -1)
         sol, obj = [], []
         for i in range(len(Y)):
             # solve

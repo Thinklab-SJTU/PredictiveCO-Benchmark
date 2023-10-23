@@ -225,7 +225,6 @@ class Energy(PTOProblem):
         length = int(len(df) / 48)  # 792
         gids = [gid for gid in range(length) for i in range(grouplength)]
         df.insert(0, "groupID", gids)
-
         return df
 
     def problem_data_reading(self, filename):

@@ -106,6 +106,7 @@ class LODL(optModel):
             for Ys, Ys_aux, partition in datasets:
                 # Get new sampled points
                 start_time = time.time()
+                print("-" * 10, "serial: ", serial)
                 if serial is True:
                     sampled_points = []
                     for Y, Y_aux in zip(Ys, Ys_aux):

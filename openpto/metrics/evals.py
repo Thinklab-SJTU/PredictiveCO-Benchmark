@@ -6,18 +6,18 @@ from openpto.method.utils_method import to_array
 
 def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
     if problem.get_eval_metric() == "regret":
-        return regret_func(problem, coeff_true, sols_true, sols_hat)
+        return regret_func(problem, coeff_true, sols_true, sols_hat, aux_data)
     elif problem.get_eval_metric() == "uplift":
         return treatment_func(coeff_true, sols_hat, aux_data)
     else:
         raise NotImplementedError("Not implemented")
 
 
-def regret_func(problem, coeff_true, sols_true, sols_hat):
+def regret_func(problem, coeff_true, sols_true, sols_hat, aux_data):
     if torch.is_tensor(coeff_true):
         coeff_true = coeff_true.detach().cpu()
-    objs_hat = problem.get_objective(coeff_true, sols_hat)
-    objs_true = problem.get_objective(coeff_true, sols_true)
+    objs_hat = problem.get_objective(coeff_true, sols_hat, aux_data)
+    objs_true = problem.get_objective(coeff_true, sols_true, aux_data)
     regret = abs(objs_hat - objs_true)
     regret = to_array(regret)
     return {"value": regret, "sense": 1}
