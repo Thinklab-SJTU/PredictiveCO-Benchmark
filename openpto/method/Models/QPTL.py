@@ -45,8 +45,8 @@ class QPTL(optModel):
         G = torch.from_numpy(weights).float()
         h = torch.tensor([capacity], dtype=torch.float)
 
-        c_true = - coeff_true
-        c_pred = - coeff_hat
+        c_true = -coeff_true
+        c_pred = -coeff_hat
         solver = QPFunction(
             verbose=False, solver=QPSolvers.GUROBI, model_params=model_params_quad
         )

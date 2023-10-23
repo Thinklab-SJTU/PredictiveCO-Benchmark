@@ -9,7 +9,8 @@ class QPGrbSolver(optGrbSolver):
     def __init__(self, modelSense):
         super().__init__()
         self.modelSense = modelSense
-    
+        self.Q, self.G, self.h, self.A, self.b = self.get_qp_params()
+
     """
     Parameters:
     Q:  A (nBatch, nz, nz) or (nz, nz) Tensor.
@@ -19,17 +20,10 @@ class QPGrbSolver(optGrbSolver):
     A:  A (nBatch, neq, nz) or (neq, nz) Tensor.
     b:  A (nBatch, neq) or (neq) Tensor.
     """
-    
-    def _getModel(
-        self,
-        Q, 
-        p, 
-        G, 
-        h, 
-        A, 
-        b
-        test=False
-    ):
+    def get_qp_params(self):
+        pass #TODO
+
+    def _getModel(self, Q, p, G, h, A, b, test=False):
         vtype = gp.GRB.CONTINUOUS  # gp.GRB.BINARY if test else gp.GRB.CONTINUOUS
         n = Q.shape[1]
         model = gp.Model()
@@ -71,31 +65,25 @@ class QPGrbSolver(optGrbSolver):
                 equality_constraints.append(
                     model.addConstr(gp.quicksum(A[i, j] * x[j] for j in row) == b[i])
                 )
+        # TODO: CHECK IF NEED UPDATE 
+        model.update()  
 
+        return model
+        
+    def solve(self, p, test=False):
+        model = self._getModel(self.Q, p, self.G, self.h, self.A, self.b)
         model.optimize()
 
         x_opt = np.array([x[i].x for i in range(len(x))])
-        slacks = -(G @ x_opt - h)
-        lam = np.array(
+        -(G @ x_opt - h)
+        np.array(
             [inequality_constraints[i].pi for i in range(len(inequality_constraints))]
         )
-        nu = np.array([equality_constraints[i].pi for i in range(len(equality_constraints))])
-        self.obj = model.ObjVal
+        np.array([equality_constraints[i].pi for i in range(len(equality_constraints))])
         
-    
-    def solve( 
-        self,
-        Q, 
-        p, 
-        G, 
-        h, 
-        A, 
-        b
-        test=False
-    )
-        self._getModel(Q, p, G, h, A, b)
-    
-
+        self.obj = model.ObjVal
+        self.x = x_opt 
+        return self.x , self.obj
     # def setObj(self):
     #     """
     #     A method to set objective function

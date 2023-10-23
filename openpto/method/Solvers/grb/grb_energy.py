@@ -175,7 +175,7 @@ class ICONGrbSolver(optGrbSolver):
         elif Model.status == GRB.Status.UNBOUNDED:
             print("Model is unbounded")
         else:
-            print('Optimization ended with status %d' % Model.status)
+            print("Optimization ended with status %d" % Model.status)
         self.model.reset(0)
 
         return solver

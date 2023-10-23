@@ -55,9 +55,7 @@ class Energy(PTOProblem):
         y = np.concatenate((y_train, y_test), axis=0)
         x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
         self.val_idxs = range(550, 650)
-        self.test_idxs = range(
-            650,x.shape[0]
-        )
+        self.test_idxs = range(650, x.shape[0])
         self.train_idxs = range(0, 550)
         self.Xs = torch.from_numpy(x).to(torch.float32)
         self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
@@ -84,9 +82,9 @@ class Energy(PTOProblem):
         )
 
     def get_objective(self, Y, Z, **kwargs):
-        N = 1440 // self.q
+        1440 // self.q
         # print("Y_Shape",Y.shape)
-        Y = Y.reshape(-1,48)
+        Y = Y.reshape(-1, 48)
         # ins_num = len(Y)
         # ans_list = []
         # if torch.is_tensor(Y):
@@ -106,7 +104,7 @@ class Energy(PTOProblem):
         return (Y * Z).sum(-1)
         # print(ans_list)
         # print(ans_list.shape)
-        #return ans_list
+        # return ans_list
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):

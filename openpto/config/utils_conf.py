@@ -72,7 +72,7 @@ def get_args():
     parser.add_argument("--n_epochs", type=int, default=0)
     parser.add_argument("--n_ptr_epochs", type=int, default=0)
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)
-    parser.add_argument("--patience", type=int, default=30)
+    parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--seed", type=int, default=2023)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--batchsize", type=int, default=1)

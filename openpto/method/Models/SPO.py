@@ -100,12 +100,6 @@ class SPOPlusFunc(torch.autograd.Function):
         # convert tenstor
         coeff_hat_cpu = coeff_hat.detach().cpu()
         coeff_true_cpu = coeff_true.detach().cpu()
-<<<<<<< HEAD
-        # concert to array
-        coeff_hat_array = coeff_hat.detach().cpu().numpy()
-        coeff_true.detach().cpu().numpy()
-=======
->>>>>>> 840ead186bc3d78407952c78ffd6d83fe221e67d
         # solve
         sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_cpu - coeff_true_cpu,
@@ -116,13 +110,9 @@ class SPOPlusFunc(torch.autograd.Function):
         obj_hat = problem.get_objective(coeff_hat_cpu, sols_true)
         # calculate loss
         loss = (
-<<<<<<< HEAD
-            -obj_proxy + 2 * problem.get_objective(coeff_hat_cpu, sols_true) - objs_true
-=======
             -to_tensor(obj_proxy).cpu()
             + 2 * to_tensor(obj_hat).cpu()
             - to_tensor(objs_true).cpu()
->>>>>>> 840ead186bc3d78407952c78ffd6d83fe221e67d
         )
         # convert to tensor
         loss = to_tensor(loss).to(device)

@@ -118,13 +118,13 @@ class Knapsack(PTOProblem):
                 pass
             optSolver = KPGrbSolver(**kwargs)
 
+
         if Y.ndim == 1:
             Y = Y.reshape(1, -1)
         sol, obj = [], []
         for i in range(len(Y)):
             # solve
-            optSolver.setObj(Y[i])
-            solp, objp, other = optSolver.solve()
+            solp, objp, other = optSolver.solve(Y[i])
             sol.append(solp)
             obj.append(objp)
         sols_array, objs_array = np.array(sol), np.array(obj)

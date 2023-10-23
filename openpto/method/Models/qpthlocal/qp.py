@@ -7,7 +7,6 @@ import torch
 
 from torch.autograd import Function
 
-from . import solvers
 from .solvers.pdipm import batch as pdipm_b, spbatch as pdipm_spb
 from .util import bger, expandParam, extract_nBatch
 
@@ -77,7 +76,6 @@ def forward_single_np_gurobi(Q, p, G, h, A, b, test=False):
 def forward_gurobi_prebuilt(
     Q, p, model, x, inequality_constraints, equality_constraints, G, h, quadobj
 ):
-    
     import gurobipy as gp
     import numpy as np
 
@@ -146,7 +144,6 @@ def make_gurobi_model(G, h, A, b, Q, test=False):
             obj += x[i] * Q[i, j] * x[j]
 
     return model, x, inequality_constraints, equality_constraints, obj
-
 
 
 class QPSolvers(Enum):
@@ -385,116 +382,3 @@ def QPFunction(
     QPFunction.Runtime = Runtime
     return QPFunctionFn.apply
 
-
-class SpQPFunction(Function):
-    def __init__(
-        self,
-        Qi,
-        Qsz,
-        Gi,
-        Gsz,
-        Ai,
-        Asz,
-        eps=1e-12,
-        verbose=0,
-        notImprovedLim=3,
-        maxIter=20,
-    ):
-        self.Qi, self.Qsz = Qi, Qsz
-        self.Gi, self.Gsz = Gi, Gsz
-        self.Ai, self.Asz = Ai, Asz
-
-        self.eps = eps
-        self.verbose = verbose
-        self.notImprovedLim = notImprovedLim
-        self.maxIter = maxIter
-
-        self.nineq, self.nz = Gsz
-        self.neq, _ = Asz
-
-    def forward(self, Qv, p, Gv, h, Av, b):
-        self.nBatch = Qv.size(0)
-
-        zhats, self.nus, self.lams, self.slacks = pdipm_spb.forward(
-            self.Qi,
-            Qv,
-            self.Qsz,
-            p,
-            self.Gi,
-            Gv,
-            self.Gsz,
-            h,
-            self.Ai,
-            Av,
-            self.Asz,
-            b,
-            self.eps,
-            self.verbose,
-            self.notImprovedLim,
-            self.maxIter,
-        )
-
-        self.save_for_backward(zhats, Qv, p, Gv, h, Av, b)
-        return zhats
-
-    def backward(self, dl_dzhat):
-        zhats, Qv, p, Gv, h, Av, b = self.saved_tensors
-
-        Di = type(self.Qi)([range(self.nineq), range(self.nineq)])
-        Dv = self.lams / self.slacks
-        Dsz = torch.Size([self.nineq, self.nineq])
-        dx, _, dlam, dnu = pdipm_spb.solve_kkt(
-            self.Qi,
-            Qv,
-            self.Qsz,
-            Di,
-            Dv,
-            Dsz,
-            self.Gi,
-            Gv,
-            self.Gsz,
-            self.Ai,
-            Av,
-            self.Asz,
-            dl_dzhat,
-            type(p)(self.nBatch, self.nineq).zero_(),
-            type(p)(self.nBatch, self.nineq).zero_(),
-            type(p)(self.nBatch, self.neq).zero_(),
-        )
-
-        dps = dx
-
-        dGs = bger(dlam, zhats) + bger(self.lams, dx)
-        GM = (
-            torch.cuda.sparse.DoubleTensor(self.Gi, Gv[0].clone().fill_(1.0), self.Gsz)
-            .to_dense()
-            .byte()
-            .expand_as(dGs)
-        )
-        dGs = dGs[GM].view_as(Gv)
-
-        dhs = -dlam
-
-        dAs = bger(dnu, zhats) + bger(self.nus, dx)
-        AM = (
-            torch.cuda.sparse.DoubleTensor(self.Ai, Av[0].clone().fill_(1.0), self.Asz)
-            .to_dense()
-            .byte()
-            .expand_as(dAs)
-        )
-        dAs = dAs[AM].view_as(Av)
-
-        dbs = -dnu
-
-        dQs = 0.5 * (bger(dx, zhats) + bger(zhats, dx))
-        QM = (
-            torch.cuda.sparse.DoubleTensor(self.Qi, Qv[0].clone().fill_(1.0), self.Qsz)
-            .to_dense()
-            .byte()
-            .expand_as(dQs)
-        )
-        dQs = dQs[QM].view_as(Qv)
-
-        grads = (dQs, dps, dGs, dhs, dAs, dbs)
-
-        return grads

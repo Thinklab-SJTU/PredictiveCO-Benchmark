@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 
 from ortools.linear_solver import pywraplp  # pylint: disable=no-name-in-module
 

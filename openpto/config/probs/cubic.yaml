@@ -2,6 +2,7 @@ dataset:
   budget: 1
   num_items: 50
   prob_version: gen
+  num_fake_targets: 10
 
 solver:
   heuristic:

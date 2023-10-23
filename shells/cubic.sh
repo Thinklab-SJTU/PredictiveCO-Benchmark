@@ -1,4 +1,6 @@
-c
+GPU=0
+EPOCHS=100
+
 # Prediction-focused learning
 python rethink_exp/main_results.py --problem=cubic --opt_model mse      --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2
 

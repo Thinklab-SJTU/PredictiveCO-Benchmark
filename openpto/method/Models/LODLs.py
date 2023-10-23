@@ -421,7 +421,6 @@ class LODL(optModel):
         'decision-focused loss' from Wilder et. al. in the neighbourhood of Y
         """
         # Get samples from dataset
-        print("losslr, ", losslr, kwargs)
         Y, opt_objective, Yhats, objectives = dataset
         objectives = opt_objective - objectives
 
