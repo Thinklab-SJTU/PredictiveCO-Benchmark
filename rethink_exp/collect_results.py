@@ -47,6 +47,7 @@ def collect_ptr_ftn(data_name, prefix_name):
 
 global_data_names = [
     "knapsack-gen",
+    "knapsack-energy",
     "energy-energy",
     "budgetalloc-real",
     "cubic-gen",

@@ -185,6 +185,10 @@ class ExpManager:
                             self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
                         ),
                     )
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(self.args.log_dir, "checkpoints", "Ptr-best.pt"),
+                    )
             # Stop if model hasn't improved for patience steps
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
@@ -257,6 +261,10 @@ class ExpManager:
                         os.path.join(
                             self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
                         ),
+                    )
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(self.args.log_dir, "checkpoints", "Tr-best.pt"),
                     )
 
                 # Stop if model hasn't improved for patience steps

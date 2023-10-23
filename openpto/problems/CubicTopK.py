@@ -66,18 +66,18 @@ class CubicTopK(PTOProblem):
         return (
             self.Xs_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
-            [None for _ in range(len(self.train_idxs))],
+            self.Ys_train[self.train_idxs],
         )
 
     def get_val_data(self):
         return (
             self.Xs_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
-            [None for _ in range(len(self.val_idxs))],
+            self.Ys_train[self.val_idxs],
         )
 
     def get_test_data(self):
-        return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
+        return self.Xs_test, self.Ys_test, self.Ys_test
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
         assert Y.ndim == 3
