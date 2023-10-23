@@ -15,6 +15,6 @@ python rethink_exp/main_results.py --problem=energy --opt_model listLTR  --solve
 python rethink_exp/main_results.py --problem=energy --opt_model lodl     --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU}
 
 # prediction + decision
-python rethink_exp/main_results.py --problem=energy --opt_model blackbox --solver gurobi --n_ptr_epochs 20 --n_epochs 10 --gpu ${GPU}
-python rethink_exp/main_results.py --problem=energy --opt_model identity --solver gurobi --n_ptr_epochs 20 --n_epochs 10 --gpu ${GPU}
+python rethink_exp/main_results.py --problem=energy --opt_model blackbox --solver gurobi --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU}
+python rethink_exp/main_results.py --problem=energy --opt_model identity --solver gurobi --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU}
 
