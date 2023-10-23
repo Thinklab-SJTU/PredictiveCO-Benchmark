@@ -79,7 +79,7 @@ class CubicTopK(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         assert Y.ndim == 3
         assert Z.ndim == 2
         Y = to_tensor(Y)

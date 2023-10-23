@@ -355,7 +355,7 @@ class RMAB(PTOProblem):
         )
         return output_reshaped.mean(-1).mean(-1)
 
-    def get_objective(self, T, Pi, **kwargs):
+    def get_objective(self, T, Pi, aux_data=None, **kwargs):
         """
         For a given policy (Pi), returns the expected return for that policy.
         """

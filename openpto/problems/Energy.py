@@ -82,7 +82,7 @@ class Energy(PTOProblem):
             [None for _ in range(len(self.test_idxs))],
         )
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         1440 // self.q
         # print("Y_Shape",Y.shape)
         Y = Y.reshape(-1, 48)

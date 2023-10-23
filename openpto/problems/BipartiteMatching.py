@@ -202,7 +202,7 @@ class BipartiteMatching(PTOProblem):
     def get_twostageloss(self):
         return "bce"
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         """
         For a given set of predictions/labels (Y), returns the decision quality.
         The objective needs to be _maximised_.

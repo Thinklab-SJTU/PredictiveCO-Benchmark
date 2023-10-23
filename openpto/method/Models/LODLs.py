@@ -419,7 +419,7 @@ class LODL(optModel):
         val_frac=0.2,  # fraction of samples to use for testing
         val_freq=1,  # the number of training steps after which to check loss on val set
         print_freq=5,  # the number of val steps after which to print losses
-        patience=20,  # number of iterations to wait for the train loss to improve when learning
+        patience=50,  # number of iterations to wait for the train loss to improve when learning
         **kwargs,
     ):
         """

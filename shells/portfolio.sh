@@ -1,5 +1,5 @@
-GPU=-1
-EPOCHS=1
+GPU=0
+EPOCHS=300
 
 # # Prediction-focused learning
 python rethink_exp/main_results.py --problem=portfolio --opt_model mse      --solver cvxpy --n_epochs ${EPOCHS} --gpu ${GPU}

@@ -26,11 +26,11 @@ lodl:
   model_type: weightedmse
   serial: True
   reduction: sum
-  num_iters: 1
+  num_iters: 100
   losslr: 1e-3
   train_frac: 0.6
   test_frac: 0.2
-  patience: 20
+  patience: 25
   verbose: False
 mse:
   reduction: sum

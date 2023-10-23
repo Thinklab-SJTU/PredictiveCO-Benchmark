@@ -1,5 +1,5 @@
 GPU=0
-EPOCHS=100
+EPOCHS=300
 
 # Prediction-focused learning
 python rethink_exp/main_results.py --problem=bipartitematching --opt_model bce       --solver cvxpy --n_epochs ${EPOCHS} --gpu ${GPU} --instances 20 --testinstances 6 

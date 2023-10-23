@@ -34,7 +34,7 @@ class optGrbSolver(optSolver):
         self._model.update()
         self._model.optimize()
         others = {}
-        solution = np.array([self.z[k].x for k in self.z]).reshape(len(self.z), 1)
+        solution = np.array([self.z[k].x for k in self.z])
         return solution, self._model.objVal, others
 
     def copy(self):

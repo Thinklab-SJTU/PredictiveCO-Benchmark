@@ -240,19 +240,19 @@ class Knapsack(PTOProblem):
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, self.params_test
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         if self.prob_version == "energy":
-            assert Z.ndim == Y.ndim == 3
-            assert Y.shape == Z.shape
+            assert Y.shape[:-1] == Z.shape
+            assert Z.ndim + 1 == Y.ndim == 3
             if torch.is_tensor(Y):
                 Z = to_tensor(Z).to(Y.device)
-            return (Y * Z).sum(-1).sum(-1)
+            return (Y.squeeze(-1) * Z).sum(-1)
         elif self.prob_version == "gen":
-            assert Y.ndim + 1 == Z.ndim == 3
-            assert Y.shape == Z.shape[:-1]
+            assert Y.shape == Z.shape
+            assert Y.ndim == Z.ndim == 2
             if torch.is_tensor(Y):
                 Z = to_tensor(Z).to(Y.device)
-            return (Y * Z.squeeze(-1)).sum(-1).sum(-1)
+            return (Y * Z).sum(-1)
         else:
             raise KeyError(f"prob version {self.prob_version} not implemented")
 

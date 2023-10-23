@@ -1,5 +1,5 @@
 GPU=0
-EPOCHS=100
+EPOCHS=300
 
 # # Prediction-focused learning
 python rethink_exp/main_results.py --problem=knapsack --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU}
