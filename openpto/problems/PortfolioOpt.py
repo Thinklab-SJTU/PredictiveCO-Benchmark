@@ -462,30 +462,32 @@ class PortfolioOpt(PTOProblem):
     def _get_covar_mat(self, instance_idxs):
         return self.covar_mat.reshape((-1, *self.covar_mat.shape[2:]))[instance_idxs]
 
-    def get_decision(self, Y, aux_data, max_instances_per_batch=1500, **kwargs):
+    def get_decision(self, Y, aux_data=None, max_instances_per_batch=1500, **kwargs):
         # Get the sqrt of the covariance matrix
-        covar_mat = aux_data
+        covar_mat = self.covar_mat if aux_data is None else aux_data
         sqrt_covar = torch.linalg.cholesky(covar_mat)
 
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 2D at max
         assert Y.ndim <= 2
         if Y.ndim == 2:
-            results = []
+            sols, objs = list(), list()
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
-                result = self.opt(Y[start:end], sqrt_covar)[0]
-                results.append(result)
-            return torch.cat(results, dim=0)
+                sol = self.opt(Y[start:end], sqrt_covar[start:end])[0]
+                sols.append(sol)
+                obj = self.get_objective(Y[start:end], sqrt_covar[start:end])
+                objs.append(obj)
+            return torch.cat(sols, dim=0)
         else:
             return self.opt(Y, sqrt_covar)[0]
 
-    def get_objective(self, Y, Z, aux_data, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         # TODO: look at either torch.bmm or torch.matmul
-        covar_mat = aux_data
-        covar_mat_Z_t = (torch.linalg.cholesky(covar_mat) * Z.unsqueeze(dim=-2)).sum(
-            dim=-1
+        covar_mat = (
+            self.covar_mat if aux_data is None else torch.linalg.cholesky(aux_data)
         )
+        covar_mat_Z_t = (covar_mat * Z.unsqueeze(dim=-2)).sum(dim=-1)
         quad_term = covar_mat_Z_t.square().sum(dim=-1)
         obj = (Y * Z).sum(dim=-1) - self.alpha * quad_term
         return obj
