@@ -95,9 +95,9 @@ def print_metrics(
                 losses.append(
                     loss_fn(
                         problem,
-                        coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
-                        coeff_true=get_idxs(Ys, idx),  # Ys[[idx]],
-                        params=Ys_aux[idx],
+                        coeff_hat=get_idxs(preds, idx),
+                        coeff_true=get_idxs(Ys, idx),
+                        params=get_idxs(Ys_aux, idx),
                         partition=partition,
                         index=idx,
                         do_debug=do_debug,

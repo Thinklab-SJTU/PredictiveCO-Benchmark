@@ -164,7 +164,7 @@ class DFL(optModel):
         )
 
         sol_hat = to_tensor(sol_hat).to(problem.device)
-        obj_hat = problem.get_objective(coeff_hat, sol_hat, **problem.init_API())
+        obj_hat = problem.get_objective(coeff_hat, sol_hat, params, **problem.init_API())
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
         if self.optSolver.modelSense == GRB.MINIMIZE:

@@ -47,7 +47,7 @@ class blackbox(optModel):
         sols_hat = self.dbb.apply(
             coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
         )
-        objs_hat = problem.get_objective(coeff_hat, sols_hat, **hyperparams)
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
 
         # reduction
         if hyperparams["reduction"] == "mean":

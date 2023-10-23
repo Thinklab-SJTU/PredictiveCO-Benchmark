@@ -119,7 +119,7 @@ class Advertising(PTOProblem):
             if torch.is_tensor(Y_idx):
                 sol = to_tensor(sol)
             sols.append(sol)
-        objs = self.get_objective(Y, sols)
+        objs = self.get_objective(Y, sols, params)
         return sols, objs
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):

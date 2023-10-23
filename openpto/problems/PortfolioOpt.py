@@ -469,7 +469,9 @@ class PortfolioOpt(PTOProblem):
     def _get_covar_mat(self, instance_idxs):
         return self.covar_mat.reshape((-1, *self.covar_mat.shape[2:]))[instance_idxs]
 
-    def get_decision(self, Y, aux_data=None, max_instances_per_batch=1500, **kwargs):
+    def get_decision(
+        self, Y, aux_data=None, optSolver=None, max_instances_per_batch=1500, **kwargs
+    ):
         # Get the sqrt of the covariance matrix
         covar_mat = self.covar_mat if aux_data is None else aux_data
         sqrt_covar = torch.linalg.cholesky(covar_mat)
@@ -483,6 +485,7 @@ class PortfolioOpt(PTOProblem):
             sols, objs = list(), list()
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
+
                 sol = self.opt(Y[start:end], sqrt_covar[start:end])[0]
                 obj = self.get_objective(Y[start:end], sol, sqrt_covar[start:end])
                 sols.append(sol)
@@ -491,6 +494,7 @@ class PortfolioOpt(PTOProblem):
             sols = torch.cat(sols, dim=0)
         else:
             sols = self.opt(Y, sqrt_covar)[0]
+            objs = self.get_objective(Y, sol, sqrt_covar)
         return (
             sols,
             objs,
@@ -503,7 +507,6 @@ class PortfolioOpt(PTOProblem):
         covar_mat = (
             torch.linalg.cholesky(self.covar_mat) if aux_data is None else aux_data
         )
-        print("shape: ", covar_mat.shape, Y.shape, Z.shape)
         covar_mat_Z_t = (covar_mat * Z.unsqueeze(dim=-2)).sum(dim=-1)
         quad_term = covar_mat_Z_t.square().sum(dim=-1)
         obj = (Y * Z).sum(dim=-1) - self.alpha * quad_term

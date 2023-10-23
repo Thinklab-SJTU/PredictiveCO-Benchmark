@@ -100,6 +100,7 @@ class ExpManager:
         ############################# Load previous model #############################
         if self.args.trained_path != "":
             self.pred_model.load_state_dict(torch.load(self.args.trained_path))
+            self.logger.info(f"--- Loaded model from {self.args.trained_path}")
 
         ############################# Pretrain #############################
         # fetch pretrain data:
@@ -208,9 +209,9 @@ class ExpManager:
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,
-                    coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
-                    coeff_true=get_idxs(Y_train, idx),  # Y_train[[idx]],
-                    params=Y_train_aux[idx],
+                    coeff_hat=get_idxs(preds, idx),
+                    coeff_true=get_idxs(Y_train, idx),
+                    params=get_idxs(Y_train_aux, idx),
                     partition="train",
                     index=idx,
                     do_debug=do_debug,

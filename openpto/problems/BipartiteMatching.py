@@ -253,7 +253,7 @@ class BipartiteMatching(PTOProblem):
         if flag_numpy:
             sols = sols.numpy()
         # Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
-        objs = self.get_objective(Y, sols)
+        objs = self.get_objective(Y, sols, params)
         return sols, objs
 
     def init_API(self):
