@@ -112,7 +112,7 @@ class ExpManager:
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
-        total_train_time = 0
+        total_train_time = 0.0
         best = (float("inf"), None)
         time_since_best = 0
         train_logs = {

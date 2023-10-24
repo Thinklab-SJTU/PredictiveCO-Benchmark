@@ -149,8 +149,27 @@ def collect_ad():
         )
 
 
+def collect_gen():
+    cap_prefix_names = ["gen60", "gen90"]
+    for prefix_name in cap_prefix_names:
+        df = collect_results("knapsack-gen", prefix_name, global_model_names)
+        print("-" * 130)
+        print("knapsack gen", prefix_name)
+        print(df)
+        df.to_excel(
+            os.path.join(
+                "saved_records",
+                "knapsack-gen",
+                f"knapsack-gen-{prefix_name}-results.xlsx",
+            ),
+            index=False,
+            float_format="%.6f",
+        )
+
+
 if __name__ == "__main__":
     collect_benchmarks()
     collect_cap()
     collect_size()
     collect_ad()
+    collect_gen()

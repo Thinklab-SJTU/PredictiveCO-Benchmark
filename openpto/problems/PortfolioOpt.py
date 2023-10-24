@@ -365,7 +365,7 @@ class PortfolioOpt(PTOProblem):
 
         # Load data if it exists
         if not overwrite and os.path.exists(self.torch_file):
-            print(f"Portfolio:Loading pytorch data... {self.torch_file}")
+            print(f"Portfolio: Loading pytorch data... {self.torch_file}")
             (
                 feature_mat,
                 target_mat,
@@ -469,6 +469,9 @@ class PortfolioOpt(PTOProblem):
         covar_mat = self.covar_mat if aux_data is None else aux_data
         sqrt_covar = torch.linalg.cholesky(covar_mat)
 
+        # device
+        Y = Y.cpu()
+        sqrt_covar = sqrt_covar.cpu()
         # Split Y into reasonably sized chunks so that we don't run into memory issues
         # Assumption Y is only 2D at max
         assert Y.ndim <= 3
