@@ -11,6 +11,7 @@ import torch
 from cvxpylayers.torch import CvxpyLayer
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
+from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 quandl.ApiConfig.api_key = "3Uxzq4TZV5V9RghuRYsY"
@@ -44,9 +45,8 @@ class PortfolioOpt(PTOProblem):
         # Load train and test labels
         self.num_stocks = num_stocks
         self.Xs, self.Ys, self.covar_mat = self._load_instances(data_dir, num_stocks)
-        print("self Ys: ", self.Ys.shape)
         # Split data into train/val/test
-        #   Sanity check and initialisations
+        # Sanity check and initialisations
         total_days = self.Xs.shape[0]
         self.num_train_instances = num_train_instances
         self.num_test_instances = num_test_instances
@@ -362,13 +362,6 @@ class PortfolioOpt(PTOProblem):
             data_dir,
             "price_data_{}_{}_{}.pt".format(start_date.date(), end_date.date(), collapse),
         )
-        print(
-            "filenames: ",
-            self.raw_historical_price_file,
-            self.raw_symbol_file,
-            self.price_feature_file,
-            self.torch_file,
-        )
 
         # Load data if it exists
         if not overwrite and os.path.exists(self.torch_file):
@@ -501,12 +494,16 @@ class PortfolioOpt(PTOProblem):
         )
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
-        if Y.ndim == 3:
-            Y = Y.squeeze(-1)
         # TODO: look at either torch.bmm or torch.matmul
         covar_mat = (
             torch.linalg.cholesky(self.covar_mat) if aux_data is None else aux_data
         )
+        # convert tensor
+        Y = to_tensor(Y).to(covar_mat.device)
+        Z = to_tensor(Z).to(covar_mat.device)
+        if Y.ndim == 3:
+            Y = Y.squeeze(-1)
+        #
         covar_mat_Z_t = (covar_mat * Z.unsqueeze(dim=-2)).sum(dim=-1)
         quad_term = covar_mat_Z_t.square().sum(dim=-1)
         obj = (Y * Z).sum(dim=-1) - self.alpha * quad_term

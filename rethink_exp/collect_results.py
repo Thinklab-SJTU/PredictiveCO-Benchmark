@@ -10,16 +10,15 @@ def get_results(data_name, model_name, prefix_name):
     )
     if not os.path.exists(log_path):
         return np.zeros(4)
-    print(data_name, "-", model_name)
+
     with open(log_path, "r") as f:
         last_line = f.readlines()[-1].strip()
         result = last_line.split("  ")[-4:]
     try:
         result = [float(x) for x in result]
     except Exception:
-        print(result)
+        print(data_name, "-", model_name, result)
         return np.zeros(4)
-    print(result)
     return np.array(result)
 
 
