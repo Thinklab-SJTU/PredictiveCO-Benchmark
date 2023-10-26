@@ -55,11 +55,7 @@ if __name__ == "__main__":
 
     # Load loss function
     logger.info(f" Loading [{args.opt_model}] Loss Function...")
-    loss_fn = get_loss_fn(
-        args.opt_model,
-        problem,
-        **conf,
-    )(optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model])
+    loss_fn = get_loss_fn(args, optSolver, conf)
 
     #
     ipdim, opdim = problem.get_model_shape()

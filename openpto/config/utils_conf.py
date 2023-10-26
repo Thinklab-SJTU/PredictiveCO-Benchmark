@@ -32,6 +32,7 @@ def get_args():
         "--method_path", type=str, default="openpto/config/models/default.yaml"
     )
     parser.add_argument("--trained_path", type=str, default="")
+    parser.add_argument("--loss_path", type=str, default="")
     parser.add_argument(
         "--opt_model",
         type=str,
@@ -53,6 +54,7 @@ def get_args():
             "qptl",
             "lodl",
             "perturb",
+            "cpLayer",
         ],
         default="mse",
     )

@@ -1,0 +1,47 @@
+spo:
+  reduction: sum
+blackbox:
+  reduction: sum
+  lambd: 0.1
+identity:
+  reduction: sum
+qptl:
+  reduction: sum
+  tau: 1.0
+listLTR:
+  reduction: sum
+  tau: 1
+pairLTR:
+  reduction: sum
+pointLTR:
+  reduction: sum
+nce:
+  reduction: sum
+lodl:
+  num_samples: 1
+  sampling: random_hessian
+  sampling_std: -1
+  quadrank: 20
+  quadalpha: 0
+  model_type: weightedmse
+  serial: True
+  reduction: sum
+  num_iters: 1
+  losslr: 1e-3
+  train_frac: 0.6
+  test_frac: 0.2
+  patience: 25
+  verbose: False
+mse:
+  reduction: sum
+msesum:
+  alpha: 0.1
+bce:
+  reduction: sum
+ce:
+  reduction: sum
+dfl:
+  dflalpha: 0.1
+  reduction: sum
+perturb: 
+  reduction: sum

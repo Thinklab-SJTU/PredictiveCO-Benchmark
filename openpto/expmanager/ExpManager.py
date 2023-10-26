@@ -101,7 +101,6 @@ class ExpManager:
         if self.args.trained_path != "":
             self.pred_model.load_state_dict(torch.load(self.args.trained_path))
             self.logger.info(f"--- Loaded model from {self.args.trained_path}")
-
         ############################# Pretrain #############################
         # fetch pretrain data:
         if hasattr(problem, "get_pretrain_data"):
@@ -179,15 +178,17 @@ class ExpManager:
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
+                    # torch.save(
+                    #     self.pred_model.state_dict(),
+                    #     os.path.join(
+                    #         self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
+                    #     ),
+                    # )
                     torch.save(
                         self.pred_model.state_dict(),
                         os.path.join(
-                            self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
+                            self.args.log_dir, "checkpoints", "ptr_pred_best.pt"
                         ),
-                    )
-                    torch.save(
-                        self.pred_model.state_dict(),
-                        os.path.join(self.args.log_dir, "checkpoints", "Ptr-best.pt"),
                     )
             # Stop if model hasn't improved for patience steps
             if self.args.earlystopping and time_since_best > self.args.patience:
@@ -256,15 +257,15 @@ class ExpManager:
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
+                    # torch.save(
+                    #     self.pred_model.state_dict(),
+                    #     os.path.join(
+                    #         self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
+                    #     ),
+                    # )
                     torch.save(
                         self.pred_model.state_dict(),
-                        os.path.join(
-                            self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
-                        ),
-                    )
-                    torch.save(
-                        self.pred_model.state_dict(),
-                        os.path.join(self.args.log_dir, "checkpoints", "Tr-best.pt"),
+                        os.path.join(self.args.log_dir, "checkpoints", "tr_pred_best.pt"),
                     )
 
                 # Stop if model hasn't improved for patience steps

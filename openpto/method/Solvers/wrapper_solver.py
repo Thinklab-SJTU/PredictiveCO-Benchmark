@@ -24,6 +24,5 @@ def str2solver(args, conf, solver_str, prob_str, problem):
         "knapsack": {"gurobi": KPGrbSolver},
         "advertising": {"gurobi": AdGrbSolver, "ortools": AdOrToolSolver},
     }
-    # TODO: more problems
     solve_dict = {**problem.init_API(), **conf["solver"][solver_str]}
     return prob_solver_dict[prob_str][solver_str](**solve_dict)

@@ -1,75 +1,81 @@
-import os
-
-NUM_CPUS = os.cpu_count()
-
-
-def get_loss_fn(name, problem, **kwargs):
+def get_loss_fn(args, optSolver, conf):
+    name = args.opt_model
     if name == "mse":
         from openpto.method.Models.MSE import MSE
 
-        return MSE
+        ModelCalss = MSE
     elif name == "msesum":
         from openpto.method.Models.MSE import MSE_Sum
 
-        return MSE_Sum
+        ModelCalss = MSE_Sum
     elif name == "ce":
         from openpto.method.Models.MSE import CE
 
-        return CE
+        ModelCalss = CE
     elif name == "bce":
         from openpto.method.Models.MSE import BCE
 
-        return BCE
+        ModelCalss = BCE
     elif name == "mae":
         from openpto.method.Models.MSE import MAE
 
-        return MAE
+        ModelCalss = MAE
     elif name == "dfl":
         from openpto.method.Models.MSE import DFL
 
-        return DFL
+        ModelCalss = DFL
     elif name == "spo":
         from openpto.method.Models.SPO import SPO
 
-        return SPO
+        ModelCalss = SPO
     elif name == "pointLTR":
         from openpto.method.Models.LTR import pointwiseLTR
 
-        return pointwiseLTR
+        ModelCalss = pointwiseLTR
     elif name == "pairLTR":
         from openpto.method.Models.LTR import pairwiseLTR
 
-        return pairwiseLTR
+        ModelCalss = pairwiseLTR
     elif name == "listLTR":
         from openpto.method.Models.LTR import listwiseLTR
 
-        return listwiseLTR
+        ModelCalss = listwiseLTR
     elif name == "qptl":
         from openpto.method.Models.QPTL import QPTL
 
-        return QPTL
+        ModelCalss = QPTL
     elif name == "intopt":
         # from openpto.method.Models.Intopt import Intopt
-        return None
+        ModelCalss = None
     elif name == "nce":
         from openpto.method.Models.NCE import NCE
 
-        return NCE
+        ModelCalss = NCE
     elif name == "blackbox":
         from openpto.method.Models.Blackbox import blackbox
 
-        return blackbox
+        ModelCalss = blackbox
     elif name == "identity":
         from openpto.method.Models.Identity import negativeIdentity
 
-        return negativeIdentity
+        ModelCalss = negativeIdentity
     elif name == "lodl":
         from openpto.method.Models.LODLs import LODL
 
-        return LODL
+        ModelCalss = LODL
     elif name == "perturb":
         from openpto.method.Models.perturbed import perturbed
 
-        return perturbed
+        ModelCalss = perturbed
+    elif name == "cpLayer":
+        from openpto.method.Models.cpLayer import cpLayer
+
+        ModelCalss = cpLayer
     else:
         raise LookupError()
+    loss_dict = {
+        **conf["models"][args.opt_model],
+        "log_dir": args.log_dir,
+        "loss_path": args.loss_path,
+    }
+    return ModelCalss(optSolver, args.processes, args.solve_ratio, **loss_dict)
