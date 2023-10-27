@@ -1,62 +1,96 @@
-# #!/usr/bin/env python
-# # coding: utf-8
-# """
-# """
+#!/usr/bin/env python
+# coding: utf-8
+"""
+"""
 
-# import torch
+import torch
 
-# from openpto.method.Models.abcOptModel import optModel
-# from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
+from gurobipy import GRB
+
+from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import to_tensor
 
 
-# class QPTL(optModel):
-#     """ """
+class QPTL(optModel):
+    """ """
 
-#     def __init__(self, optSolver, processes=1, solve_ratio=1, lambd=0.1, **kwargs):
-#         """
-#         Args:
-#             optSolver (optModel): an  optimization model
-#             processes (int): number of processors, 1 for single-core, 0 for all of cores
-#             solve_ratio (float): the ratio of new solutions computed during training
-#         """
-#         super().__init__(optSolver, processes, solve_ratio)
-#         # smoothing parameter
-#         if lambd <= 0:
-#             raise ValueError("lambda is not positive.")
-#         self.lambd = lambd
+    def __init__(self, optSolver, processes=1, solve_ratio=1, tau=1, **kwargs):
+        """
+        Args:
+            optSolver (optModel): an  optimization model
+            processes (int): number of processors, 1 for single-core, 0 for all of cores
+            solve_ratio (float): the ratio of new solutions computed during training
+        """
+        super().__init__(optSolver, processes, solve_ratio)
+        self.tau = tau
 
-#     def forward(
-#         self,
-#         problem,
-#         coeff_hat,
-#         coeff_true,
-#         params,
-#         **hyperparams,
-#     ):
-#         """
-#         Forward pass
-#         """
-#         n_items = coeff_true.shape[1]
-#         Q = torch.eye(n_items) / hyperparams["tau"]
-#         # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
-#         # torch.diagflat(torch.ones(n_items)*-1)), 0)
-#         # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))
+    def forward(
+        self,
+        problem,
+        coeff_hat,
+        coeff_true,
+        params,
+        **hyperparams,
+    ):
+        """
+        Forward pass
+        """
 
-#         G = torch.from_numpy(weights).float()
-#         h = torch.tensor([capacity], dtype=torch.float)
+        # n_items = coeff_true.shape[1]
+        # Q = torch.eye(n_items) / hyperparams["tau"]
+        # # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
+        # # torch.diagflat(torch.ones(n_items)*-1)), 0)
+        # # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))
 
-#         c_true = -coeff_true
-#         c_pred = -coeff_hat
-#         solver = QPFunction(
-#             verbose=False, solver=QPSolvers.GUROBI, model_params=model_params_quad
-#         )
-#         x = solver(
-#             Q.expand(n_train, *Q.shape),
-#             c_pred.squeeze(),
-#             G.expand(n_train, *G.shape),
-#             h.expand(n_train, *h.shape),
-#             torch.Tensor(),
-#             torch.Tensor(),
-#         )
-#         loss = (x.squeeze() * c_true).mean()
-#         return loss
+        # G = torch.from_numpy(weights).float()
+        # h = torch.tensor([capacity], dtype=torch.float)
+
+        # c_true = -coeff_true
+        # c_pred = -coeff_hat
+        # solver = QPFunction(
+        #     verbose=False, solver=QPSolvers.GUROBI, model_params=model_params_quad
+        # )
+        # x = solver(
+        #     Q.expand(n_train, *Q.shape),
+        #     c_pred.squeeze(),
+        #     G.expand(n_train, *G.shape),
+        #     h.expand(n_train, *h.shape),
+        #     torch.Tensor(),
+        #     torch.Tensor(),
+        # )
+        # loss = (x.squeeze() * c_true).mean()
+
+        # get device
+        device = coeff_hat.device
+        # coeff_hat = coeff_hat.squeeze(-1)
+
+        # get true solution
+        sol_true, _ = problem.get_decision(
+            coeff_true,
+            params=params,
+            optSolver=self.optSolver,
+            isTrain=False,
+            **problem.init_API(),
+        )
+        sol_true = to_tensor(sol_true).to(device)
+
+        obj_cp = problem.get_objective(coeff_hat, sol_true)
+
+        # get loss
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            loss = obj_cp
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -obj_cp
+        else:
+            raise NotImplementedError
+
+        # reduction
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(loss)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(loss)
+        elif hyperparams["reduction"] == "none":
+            pass
+        else:
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        return loss

@@ -1,14 +1,25 @@
 import gurobipy as gp  # pylint: disable=no-name-in-module
 import numpy as np
+import torch
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 
 
 # optimization model
 class QPGrbSolver(optGrbSolver):
-    def __init__(self, modelSense):
+    def __init__(self, weights, capacity, modelSense, n_items, **kwargs):
         super().__init__()
         self.modelSense = modelSense
+        n_items = self.n_items
+        self.Q = torch.eye(n_items) / hyperparams["tau"]
+        # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
+        # torch.diagflat(torch.ones(n_items)*-1)), 0)
+        # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))
+
+        self.G = torch.from_numpy(weights).float()
+        self.h = torch.tensor([capacity], dtype=torch.float)
+        self.A = torch.Tensor()
+        self.b = torch.Tensor()
 
     """
     Parameters:
@@ -62,7 +73,13 @@ class QPGrbSolver(optGrbSolver):
                 equality_constraints.append(
                     model.addConstr(gp.quicksum(A[i, j] * x[j] for j in row) == b[i])
                 )
+        # TODO: CHECK IF NEED UPDATE
+        model.update()
 
+        return model
+
+    def solve(self, p, test=False):
+        model = self._getModel(self.Q, p, self.G, self.h, self.A, self.b)
         model.optimize()
 
         x_opt = np.array([x[i].x for i in range(len(x))])
@@ -71,10 +88,10 @@ class QPGrbSolver(optGrbSolver):
             [inequality_constraints[i].pi for i in range(len(inequality_constraints))]
         )
         np.array([equality_constraints[i].pi for i in range(len(equality_constraints))])
-        self.obj = model.ObjVal
 
-    def solve(self, Q, p, G, h, A, b, test=False):
-        self._getModel(Q, p, G, h, A, b)
+        self.obj = model.ObjVal
+        self.x = x_opt
+        return self.x, self.obj
 
     # def setObj(self):
     #     """

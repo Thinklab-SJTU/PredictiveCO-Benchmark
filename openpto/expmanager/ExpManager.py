@@ -133,6 +133,7 @@ class ExpManager:
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
         for ptr_epoch in range(self.args.n_ptr_epochs):
+            print(ptr_epoch)
             ###### one-shot training
             time_train_start = time.time()
             preds = self.pred_model(X_pretrain)
