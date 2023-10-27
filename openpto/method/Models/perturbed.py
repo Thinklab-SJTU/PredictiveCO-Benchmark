@@ -154,7 +154,6 @@ class perturbedOptFunc(torch.autograd.Function):
         # save solutions
         ctx.save_for_backward(ptb_sols, noises)
         # add other objects to ctx
-        ctx.optSolver = optSolver
         ctx.n_samples = n_samples
         ctx.sigma = sigma
         return e_sol

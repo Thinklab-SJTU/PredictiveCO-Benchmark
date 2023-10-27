@@ -3,12 +3,10 @@ import os
 import pdb
 import random
 
-import cvxpy as cp
 import pandas as pd
 import quandl
 import torch
 
-from cvxpylayers.torch import CvxpyLayer
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.utils_method import to_tensor
@@ -70,7 +68,7 @@ class PortfolioOpt(PTOProblem):
         # Create functions for optimisation
         # TODO: Try larger constant
         self.alpha = alpha
-        self.opt = self._create_cvxpy_problem(alpha=self.alpha)
+        # self.opt = self._create_cvxpy_problem(alpha=self.alpha)
 
         # Undo random seed setting
         self._set_seed()
@@ -78,6 +76,8 @@ class PortfolioOpt(PTOProblem):
     def init_API(self):
         return {
             "modelSense": GRB.MAXIMIZE,
+            "alpha": self.alpha,
+            "num_stocks": self.num_stocks,
         }
 
     def _load_instances(
@@ -417,21 +417,6 @@ class PortfolioOpt(PTOProblem):
             symbols,
         )
 
-    def _create_cvxpy_problem(
-        self,
-        alpha,
-    ):
-        x_var = cp.Variable(self.num_stocks)
-        L_sqrt_para = cp.Parameter((self.num_stocks, self.num_stocks))
-        p_para = cp.Parameter(self.num_stocks)
-        constraints = [x_var >= 0, x_var <= 1, cp.sum(x_var) == 1]
-        objective = cp.Maximize(
-            p_para.T @ x_var - alpha * cp.sum_squares(L_sqrt_para @ x_var)
-        )
-        problem = cp.Problem(objective, constraints)
-
-        return CvxpyLayer(problem, parameters=[p_para, L_sqrt_para], variables=[x_var])
-
     def get_train_data(self, **kwargs):
         return (
             self.Xs[self.train_idxs],
@@ -482,14 +467,14 @@ class PortfolioOpt(PTOProblem):
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
 
-                sol = self.opt(Y[start:end], sqrt_covar[start:end])[0]
+                sol = optSolver.solve(Y[start:end], sqrt_covar[start:end])[0]
                 obj = self.get_objective(Y[start:end], sol, sqrt_covar[start:end])
                 sols.append(sol)
                 objs.append(obj)
             objs = torch.cat(objs, dim=0)
             sols = torch.cat(sols, dim=0)
         else:
-            sols = self.opt(Y, sqrt_covar)[0]
+            sols = optSolver.solve(Y, sqrt_covar)[0]
             objs = self.get_objective(Y, sol, sqrt_covar)
         return (
             sols,

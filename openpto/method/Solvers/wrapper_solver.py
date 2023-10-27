@@ -11,10 +11,6 @@ from openpto.method.Solvers.ortools.ortools_ad import AdOrToolSolver
 
 ################################# Wrappers ################################################
 def solver_wrapper(args, conf, problem):
-    return str2solver(args, conf, args.solver, args.problem, problem)
-
-
-def str2solver(args, conf, solver_str, prob_str, problem):
     prob_solver_dict = {
         "budgetalloc": {"neural": budgetallocSolver},
         "bipartitematching": {"cvxpy": BmatchingSolver},
@@ -24,5 +20,5 @@ def str2solver(args, conf, solver_str, prob_str, problem):
         "knapsack": {"gurobi": KPGrbSolver},
         "advertising": {"gurobi": AdGrbSolver, "ortools": AdOrToolSolver},
     }
-    solve_dict = {**problem.init_API(), **conf["solver"][solver_str]}
-    return prob_solver_dict[prob_str][solver_str](**solve_dict)
+    solve_dict = {**problem.init_API(), **conf["solver"][args.solver]}
+    return prob_solver_dict[args.problem][args.solver](**solve_dict)

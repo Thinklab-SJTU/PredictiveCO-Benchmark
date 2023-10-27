@@ -20,36 +20,30 @@ class CpPortfolioSolver(optCPSolver):
         _model (GurobiPy model): Gurobi model
     """
 
-    def __init__(self, modelSense=None, isTrain=True, num_nodes=50, **kwargs):
+    def __init__(self, num_stocks, modelSense=None, alpha=1, **kwargs):
         super().__init__(modelSense)
-        self.num_nodes = num_nodes
+        print("alpha: ", alpha)
+        self.num_stocks = num_stocks
+        self.solver = self._create_cvxpy_problem(alpha)
 
     @property
     def num_vars(self):
-        return self.num_nodes * self.num_nodes
-
-    def _getModel(self, isTrain=True, num_nodes=50):
-        return self._create_cvxpy_problem(isTrain, num_nodes)
+        return self.num_stocks
 
     def _create_cvxpy_problem(
         self,
-        isTrain=True,
-        num_nodes=50,
-        gamma=0.1,
+        alpha,
     ):
-        # Variables
-        Z = cp.Variable((num_nodes, num_nodes), nonneg=True)
-        Y = cp.Parameter((num_nodes, num_nodes))
-
-        # Objective
-        matching_obj = cp.sum(cp.multiply(Z, Y))
-        reg = cp.norm(Z) if isTrain else 0
-        objective = cp.Maximize(matching_obj - gamma * reg)
-
-        # Flow Constraints
-        constraints = [cp.sum(Z, axis=0) == 1, cp.sum(Z, axis=1) == 1]
-
-        # Problem
+        x_var = cp.Variable(self.num_stocks)
+        L_sqrt_para = cp.Parameter((self.num_stocks, self.num_stocks))
+        p_para = cp.Parameter(self.num_stocks)
+        constraints = [x_var >= 0, x_var <= 1, cp.sum(x_var) == 1]
+        objective = cp.Maximize(
+            p_para.T @ x_var - alpha * cp.sum_squares(L_sqrt_para @ x_var)
+        )
         problem = cp.Problem(objective, constraints)
-        assert problem.is_dpp()
-        return CvxpyLayer(problem, parameters=[Y], variables=[Z])
+
+        return CvxpyLayer(problem, parameters=[p_para, L_sqrt_para], variables=[x_var])
+
+    def solve(self, Y, sqrt_covar):
+        return self.solver(Y, sqrt_covar)
