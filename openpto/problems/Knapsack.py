@@ -264,10 +264,7 @@ class Knapsack(PTOProblem):
 
         # determine solver
         if optSolver is None:
-            if params.ndim > 1:
-                params[0]
-            else:
-                pass
+            # optSolver = QPGrbSolver(**kwargs)
             optSolver = QPGrbSolver(**kwargs)
 
         sol, obj = [], []
