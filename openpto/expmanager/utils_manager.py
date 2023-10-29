@@ -34,7 +34,7 @@ def add_log(_log, iter_idx, metric, mode):
 def compare_result(metrics_idx, best):
     # smaller the better
     sense = metrics_idx["eval"]["sense"]
-    return metrics_idx["eval"]["value"].mean() * sense <= best[0].mean() * sense
+    return metrics_idx["eval"]["value"].mean() * sense < best[0].mean() * sense
 
 
 def save_dict(_dict, path):
@@ -109,7 +109,11 @@ def print_metrics(
                 Ys, Zs_hat, Ys_aux, **problem.init_API()
             )
             test_time = 0
-            optimal_dict = {"train":problem.z_train_opt, "val":problem.z_val_opt, "test":problem.z_test_opt}
+            optimal_dict = {
+                "train": problem.z_train_opt,
+                "val": problem.z_val_opt,
+                "test": problem.z_test_opt,
+            }
             # eval_result = {"value": torch.zeros_like(losses)}
             if partition == "test":
                 test_time = time.time() - time_test_start

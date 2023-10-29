@@ -37,7 +37,7 @@ class ExpManager:
         self.logger.info(f"--- Running on {self.device}")
         # prediction model
         self.pred_model = pred_model_wrapper(args, pred_model_args)
-        logger.info("self.pred_model: ", self.pred_model)
+        print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
@@ -188,7 +188,8 @@ class ExpManager:
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
 
-        if best[1]: self.pred_model = deepcopy(best[1])
+        if best[1]:
+            self.pred_model = deepcopy(best[1])
 
         ############################# Train #############################
         # optimizer:
@@ -258,8 +259,9 @@ class ExpManager:
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
                     break
-        
-        if best[1]: self.pred_model = deepcopy(best[1])
+
+        if best[1]:
+            self.pred_model = deepcopy(best[1])
 
         ############################# Evaluate final model #############################
         # Document how well this trained model does
