@@ -26,7 +26,7 @@ models:
     model_type: dense, weightedmse, quad, weightedmse, weightedmse++, weightedce, weightedmsesum, quad++
     serial: True
     reduction: sum
-    num_iters: 1
+    num_iters: 100
     losslr: 1e-3
   dfl:
     dflalpha: 0.1

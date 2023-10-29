@@ -18,7 +18,7 @@ pointLTR:
 nce:
   reduction: sum
 lodl:
-  num_samples: 500
+  num_samples: 50000
   sampling: random_hessian
   sampling_std: -1
   quadrank: 20

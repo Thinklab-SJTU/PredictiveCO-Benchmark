@@ -15,11 +15,7 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, rand_like, to_array
-
-
-def ndiv(a, b):
-    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array
 
 
 class ExpManager:
@@ -104,6 +100,7 @@ class ExpManager:
         ############################# Load previous model #############################
         if self.args.trained_path != "":
             self.pred_model.load_state_dict(torch.load(self.args.trained_path))
+            self.logger.info(f"--- Loaded model from {self.args.trained_path}")
 
         ############################# Pretrain #############################
         # fetch pretrain data:
@@ -188,6 +185,10 @@ class ExpManager:
                             self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
                         ),
                     )
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(self.args.log_dir, "checkpoints", "Ptr-best.pt"),
+                    )
             # Stop if model hasn't improved for patience steps
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
@@ -212,9 +213,9 @@ class ExpManager:
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,
-                    coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
-                    coeff_true=get_idxs(Y_train, idx),  # Y_train[[idx]],
-                    params=Y_train_aux[idx],
+                    coeff_hat=get_idxs(preds, idx),
+                    coeff_true=get_idxs(Y_train, idx),
+                    params=get_idxs(Y_train_aux, idx),
                     partition="train",
                     index=idx,
                     do_debug=do_debug,
@@ -260,6 +261,10 @@ class ExpManager:
                         os.path.join(
                             self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
                         ),
+                    )
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(self.args.log_dir, "checkpoints", "Tr-best.pt"),
                     )
 
                 # Stop if model hasn't improved for patience steps
@@ -317,14 +322,14 @@ class ExpManager:
         avg_train_time = ndiv(total_train_time, (self.args.n_ptr_epochs + n_epochs))
         avg_test_time = total_test_time
         self.logger.info(
-            f"[Random Obj]: {objs_rand.mean().item():.6f} "
-            f"[Optimal Obj]: {Objs_test_opt.mean().item():.6f} "
-            f"[{problem.get_eval_metric()}]: {eval_value.mean():.6f} "
-            f"[avg Train Time]: {avg_train_time:.6f} "
-            f"[avg Test Time]: {avg_test_time:.6f} "
+            f"[Random Obj]: {objs_rand.mean().item():.5f} "
+            f"[Optimal Obj]: {Objs_test_opt.mean().item():.5f} "
+            f"[{problem.get_eval_metric()}]: {eval_value.mean():.5f} "
+            f"[avg Train Time]: {avg_train_time:.5f} "
+            f"[avg Test Time]: {avg_test_time:.5f} "
         )
         self.logger.info(
-            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.6f}  {eval_value.mean():.6f}  "
-            f"{avg_train_time:.6f}  {avg_test_time:.6f}"
+            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.5f}  {eval_value.mean():.5f}  "
+            f"{avg_train_time:.5f}  {avg_test_time:.5f}"
         )
         return True

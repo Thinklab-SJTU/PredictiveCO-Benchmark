@@ -58,11 +58,11 @@ class NCE(optModel):
                 **problem.init_API(),
             )
         # convert tensor
-        cp = coeff_hat.detach().cpu().numpy()
+        coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sols_hat, _ = problem.get_decision(
-                cp, params, self.optSolver, **problem.init_API()
+                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sols_hat))
@@ -72,8 +72,8 @@ class NCE(optModel):
         # get obj
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
-        obj_cp = problem.get_objective(coeff_hat, sol_true)
-        objpool_cp = problem.get_objective(coeff_hat_pool, solpool)
+        obj_cp = problem.get_objective(coeff_hat, sol_true, params)
+        objpool_cp = problem.get_objective(coeff_hat_pool, solpool, params)
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = obj_cp - objpool_cp

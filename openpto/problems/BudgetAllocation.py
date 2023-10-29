@@ -27,7 +27,7 @@ class BudgetAllocation(PTOProblem):
         data_dir="./openpto/data/",
         **kwargs,
     ):
-        super(BudgetAllocation, self).__init__()
+        super(BudgetAllocation, self).__init__(data_dir)
         # Do some random seed fu
         self.rand_seed = rand_seed
         self._set_seed(self.rand_seed)
@@ -140,18 +140,22 @@ class BudgetAllocation(PTOProblem):
         return (
             self.Xs_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
-            [None for _ in range(len(self.train_idxs))],
+            torch.ones(self.num_targets).expand(len(self.train_idxs), -1),
         )
 
     def get_val_data(self):
         return (
             self.Xs_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
-            [None for _ in range(len(self.val_idxs))],
+            torch.ones(self.num_targets).expand(len(self.val_idxs), -1),
         )
 
     def get_test_data(self):
-        return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
+        return (
+            self.Xs_test,
+            self.Ys_test,
+            torch.ones(self.num_targets).expand(len(self.Ys_test), -1),
+        )
 
     def get_model_shape(self):
         return self.num_targets, self.num_targets
@@ -162,7 +166,7 @@ class BudgetAllocation(PTOProblem):
     def get_twostageloss(self):
         return "mse"
 
-    def get_objective(self, Y, Z, w=None, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         """
         For a given set of predictions/labels (Y), returns the decision quality.
         The objective needs to be _maximised_.
@@ -175,6 +179,7 @@ class BudgetAllocation(PTOProblem):
         assert Z.ndim + 1 == Y.ndim
 
         # Initialise weights to default value
+        w = None  # TODO: support customizing weights
         if w is None:
             w = torch.ones(Y.shape[-1])
         else:
@@ -196,6 +201,7 @@ class BudgetAllocation(PTOProblem):
         Z = torch.cat(
             [optSolver.solve(y, self.budget, Z_init=Z_init) for y in Y], dim=0
         ).view((*Y.shape[:-2], -1))
+        # Z = torch.ones(*Y.shape[:-1])
         final_sol = Z.cpu()
         final_obj = self.get_objective(Y, Z)
         return final_sol, final_obj

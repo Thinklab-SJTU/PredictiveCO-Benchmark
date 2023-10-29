@@ -43,7 +43,7 @@ class PTOProblem(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         raise NotImplementedError()
 
     @abstractmethod

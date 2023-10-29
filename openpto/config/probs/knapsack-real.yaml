@@ -1,0 +1,7 @@
+dataset:
+  prob_version: energy
+  capacity: 30
+
+solver:
+  gurobi:
+    kwargs: none

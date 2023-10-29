@@ -18,13 +18,13 @@ pointLTR:
 nce:
   reduction: sum
 lodl:
-  num_samples: 500
+  num_samples: 5000
   sampling: random_hessian
   sampling_std: -1
   quadrank: 20
   quadalpha: 0
   model_type: weightedmse
-  serial: True
+  serial: False
   reduction: sum
   num_iters: 100
   losslr: 1e-3

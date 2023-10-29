@@ -176,21 +176,24 @@ class BipartiteMatching(PTOProblem):
         return (
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
-            [None for _ in range(len(self.train_idxs))],
+            self.Ys[self.train_idxs],
+            #[None for _ in range(len(self.train_idxs))],
         )
 
     def get_val_data(self):
         return (
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
-            [None for _ in range(len(self.val_idxs))],
+            self.Ys[self.val_idxs],
+            #[None for _ in range(len(self.val_idxs))],
         )
 
     def get_test_data(self):
         return (
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],
-            [None for _ in range(len(self.test_idxs))],
+            self.Ys[self.test_idxs],
+            #[None for _ in range(len(self.test_idxs))],
         )
 
     def get_model_shape(self):
@@ -202,7 +205,7 @@ class BipartiteMatching(PTOProblem):
     def get_twostageloss(self):
         return "bce"
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         """
         For a given set of predictions/labels (Y), returns the decision quality.
         The objective needs to be _maximised_.
@@ -253,7 +256,7 @@ class BipartiteMatching(PTOProblem):
         if flag_numpy:
             sols = sols.numpy()
         # Y = Y.reshape(-1, self.num_nodes * self.num_nodes)
-        objs = self.get_objective(Y, sols)
+        objs = self.get_objective(Y, sols, params)
         return sols, objs
 
     def init_API(self):

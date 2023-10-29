@@ -43,6 +43,10 @@ def rand_like(obj, device="cpu"):
         return [torch.rand_like(ob, device=device) for ob in obj]
 
 
+def ndiv(a, b):
+    return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+
+
 def minus(a, b):
     if (torch.is_tensor(a) and torch.is_tensor(b)) or (isinstance(a, np.ndarray) and isinstance(b, np.ndarray)):
         return a - b

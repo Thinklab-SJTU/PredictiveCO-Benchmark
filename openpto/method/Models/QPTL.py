@@ -4,7 +4,8 @@
 """
 
 import torch
-
+from gurobipy import GRB 
+from openpto.method.utils_method import to_tensor
 from openpto.method.Models.abcOptModel import optModel
 from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
 
@@ -12,7 +13,7 @@ from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
 class QPTL(optModel):
     """ """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, lambd=0.1, **kwargs):
+    def __init__(self, optSolver, processes=1, solve_ratio=1, tau=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
@@ -20,10 +21,7 @@ class QPTL(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
         """
         super().__init__(optSolver, processes, solve_ratio)
-        # smoothing parameter
-        if lambd <= 0:
-            raise ValueError("lambda is not positive.")
-        self.lambd = lambd
+        self.tau = tau
 
     def forward(
         self,
@@ -36,27 +34,63 @@ class QPTL(optModel):
         """
         Forward pass
         """
-        n_items = coeff_true.shape[1]
-        Q = torch.eye(n_items) / hyperparams["tau"]
-        # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
-        # torch.diagflat(torch.ones(n_items)*-1)), 0)
-        # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))
+        
+        # n_items = coeff_true.shape[1]
+        # Q = torch.eye(n_items) / hyperparams["tau"]
+        # # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
+        # # torch.diagflat(torch.ones(n_items)*-1)), 0)
+        # # h = torch.cat((torch.tensor([capacity],dtype=torch.float),torch.ones(n_items),torch.zeros(n_items)))
 
-        G = torch.from_numpy(weights).float()
-        h = torch.tensor([capacity], dtype=torch.float)
+        # G = torch.from_numpy(weights).float()
+        # h = torch.tensor([capacity], dtype=torch.float)
 
-        c_true = -coeff_true
-        c_pred = -coeff_hat
-        solver = QPFunction(
-            verbose=False, solver=QPSolvers.GUROBI, model_params=model_params_quad
+        # c_true = -coeff_true
+        # c_pred = -coeff_hat
+        # solver = QPFunction(
+        #     verbose=False, solver=QPSolvers.GUROBI, model_params=model_params_quad
+        # )
+        # x = solver(
+        #     Q.expand(n_train, *Q.shape),
+        #     c_pred.squeeze(),
+        #     G.expand(n_train, *G.shape),
+        #     h.expand(n_train, *h.shape),
+        #     torch.Tensor(),
+        #     torch.Tensor(),
+        # )
+        # loss = (x.squeeze() * c_true).mean()
+        
+        # get device
+        device = coeff_hat.device
+        # coeff_hat = coeff_hat.squeeze(-1)
+        
+        # get true solution
+        sol_true, _ = problem.get_decision(
+            coeff_true,
+            params=params,
+            optSolver=self.optSolver,
+            isTrain=False,
+            **problem.init_API(),
         )
-        x = solver(
-            Q.expand(n_train, *Q.shape),
-            c_pred.squeeze(),
-            G.expand(n_train, *G.shape),
-            h.expand(n_train, *h.shape),
-            torch.Tensor(),
-            torch.Tensor(),
-        )
-        loss = (x.squeeze() * c_true).mean()
+        sol_true = to_tensor(sol_true).to(device)
+    
+        obj_cp = problem.get_objective(coeff_hat, sol_true)
+        
+        
+        # get loss
+        if self.optSolver.modelSense == GRB.MINIMIZE:
+            loss = obj_cp
+        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            loss = -obj_cp
+        else:
+            raise NotImplementedError
+        
+        # reduction
+        if hyperparams["reduction"] == "mean":
+            loss = torch.mean(loss)
+        elif hyperparams["reduction"] == "sum":
+            loss = torch.sum(loss)
+        elif hyperparams["reduction"] == "none":
+            pass
+        else:
+            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         return loss

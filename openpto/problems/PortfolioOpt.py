@@ -9,6 +9,7 @@
 # import torch
 
 # from cvxpylayers.torch import CvxpyLayer
+# from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 # from openpto.problems.PTOProblem import PTOProblem
 
@@ -32,6 +33,7 @@
 #         val_frac=0.2,  # fraction of training data reserved for test
 #         rand_seed=0,  # for reproducibility
 #         alpha=1,  # risk aversion constant
+#         prob_version="real",
 #         data_dir="openpto/data",  # directory to store data
 #     ):
 #         super(PortfolioOpt, self).__init__()
@@ -42,7 +44,7 @@
 #         # Load train and test labels
 #         self.num_stocks = num_stocks
 #         self.Xs, self.Ys, self.covar_mat = self._load_instances(data_dir, num_stocks)
-
+#         print("self Ys: ", self.Ys.shape)
 #         # Split data into train/val/test
 #         #   Sanity check and initialisations
 #         total_days = self.Xs.shape[0]
@@ -73,6 +75,11 @@
 #         # Undo random seed setting
 #         self._set_seed()
 
+#     def init_API(self):
+#         return {
+#             "modelSense": GRB.MAXIMIZE,
+#         }
+
 #     def _load_instances(
 #         self,
 #         data_dir,
@@ -89,7 +96,7 @@
 #         total_stocks = len(symbols)
 #         stocks_subset = random.sample(range(total_stocks), stocks_per_instance)
 #         feature_mat = feature_mat[:, stocks_subset]
-#         target_mat = target_mat[:, stocks_subset].squeeze()
+#         target_mat = target_mat[:, stocks_subset]
 #         future_mat = future_mat[:, stocks_subset]
 
 #         # Calculate covariances
@@ -355,6 +362,13 @@
 #             data_dir,
 #             "price_data_{}_{}_{}.pt".format(start_date.date(), end_date.date(), collapse),
 #         )
+#         print(
+#             "filenames: ",
+#             self.raw_historical_price_file,
+#             self.raw_symbol_file,
+#             self.price_feature_file,
+#             self.torch_file,
+#         )
 
 #         # Load data if it exists
 #         if not overwrite and os.path.exists(self.torch_file):
@@ -379,7 +393,7 @@
 #             ]
 #             target_mat = torch.tensor(
 #                 self._get_price_feature_matrix(price_feature_df[target_names])
-#             )
+#             ).unsqueeze(-1)
 #             future_mat = torch.tensor(
 #                 self._get_price_feature_matrix(price_feature_df[covariance_names])
 #             )
@@ -455,30 +469,45 @@
 #     def _get_covar_mat(self, instance_idxs):
 #         return self.covar_mat.reshape((-1, *self.covar_mat.shape[2:]))[instance_idxs]
 
-#     def get_decision(self, Y, aux_data, max_instances_per_batch=1500, **kwargs):
+#     def get_decision(
+#         self, Y, aux_data=None, optSolver=None, max_instances_per_batch=1500, **kwargs
+#     ):
 #         # Get the sqrt of the covariance matrix
-#         covar_mat = aux_data
+#         covar_mat = self.covar_mat if aux_data is None else aux_data
 #         sqrt_covar = torch.linalg.cholesky(covar_mat)
 
 #         # Split Y into reasonably sized chunks so that we don't run into memory issues
 #         # Assumption Y is only 2D at max
-#         assert Y.ndim <= 2
-#         if Y.ndim == 2:
-#             results = []
+#         assert Y.ndim <= 3
+#         if Y.ndim == 3 or Y.ndim == 2:
+#             if Y.ndim == 3:
+#                 Y = Y.squeeze(-1)
+#             sols, objs = list(), list()
 #             for start in range(0, Y.shape[0], max_instances_per_batch):
 #                 end = min(Y.shape[0], start + max_instances_per_batch)
-#                 result = self.opt(Y[start:end], sqrt_covar)[0]
-#                 results.append(result)
-#             return torch.cat(results, dim=0)
-#         else:
-#             return self.opt(Y, sqrt_covar)[0]
 
-#     def get_objective(self, Y, Z, aux_data, **kwargs):
-#         # TODO: look at either torch.bmm or torch.matmul
-#         covar_mat = aux_data
-#         covar_mat_Z_t = (torch.linalg.cholesky(covar_mat) * Z.unsqueeze(dim=-2)).sum(
-#             dim=-1
+#                 sol = self.opt(Y[start:end], sqrt_covar[start:end])[0]
+#                 obj = self.get_objective(Y[start:end], sol, sqrt_covar[start:end])
+#                 sols.append(sol)
+#                 objs.append(obj)
+#             objs = torch.cat(objs, dim=0)
+#             sols = torch.cat(sols, dim=0)
+#         else:
+#             sols = self.opt(Y, sqrt_covar)[0]
+#             objs = self.get_objective(Y, sol, sqrt_covar)
+#         return (
+#             sols,
+#             objs,
 #         )
+
+#     def get_objective(self, Y, Z, aux_data=None, **kwargs):
+#         if Y.ndim == 3:
+#             Y = Y.squeeze(-1)
+#         # TODO: look at either torch.bmm or torch.matmul
+#         covar_mat = (
+#             torch.linalg.cholesky(self.covar_mat) if aux_data is None else aux_data
+#         )
+#         covar_mat_Z_t = (covar_mat * Z.unsqueeze(dim=-2)).sum(dim=-1)
 #         quad_term = covar_mat_Z_t.square().sum(dim=-1)
 #         obj = (Y * Z).sum(dim=-1) - self.alpha * quad_term
 #         return obj

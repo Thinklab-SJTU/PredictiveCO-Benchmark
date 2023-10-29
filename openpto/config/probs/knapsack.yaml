@@ -1,6 +1,5 @@
 dataset:
   prob_version: gen
-  # generate knapsack data
   # generate_weight: True
   unit_weight: False
   noise_level: 0
@@ -12,4 +11,4 @@ dataset:
 
 solver:
   gurobi:
-    kwargs: none
+    kwargs: None

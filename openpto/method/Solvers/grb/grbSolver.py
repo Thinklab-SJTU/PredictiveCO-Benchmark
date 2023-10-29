@@ -3,8 +3,9 @@
 """
 Abstract optimization model based on GurobiPy
 """
-
 from copy import copy
+
+import numpy as np
 
 from openpto.method.Solvers.abcOptSolver import optSolver
 
@@ -33,7 +34,8 @@ class optGrbSolver(optSolver):
         self._model.update()
         self._model.optimize()
         others = {}
-        return [self.z[k].x for k in self.z], self._model.objVal, others
+        solution = np.array([self.z[k].x for k in self.z])
+        return solution, self._model.objVal, others
 
     def copy(self):
         """

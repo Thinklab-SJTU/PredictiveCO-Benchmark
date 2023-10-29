@@ -47,7 +47,7 @@ class blackbox(optModel):
         sols_hat = self.dbb.apply(
             coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
         )
-        objs_hat = problem.get_objective(coeff_hat, sols_hat, **hyperparams)
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
 
         # reduction
         if hyperparams["reduction"] == "mean":
@@ -110,7 +110,7 @@ class blackboxFunc(torch.autograd.Function):
         # convert tenstor
         coeff_hat_array = coeff_hat.detach().cpu().numpy()
         sols_hat, _ = problem.get_decision(
-            coeff_hat_array, params, optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, optSolver, **problem.init_API()
         )
         # save to ctx (np.ndarray version)
         ctx.coeff_hat_array = coeff_hat_array
@@ -151,7 +151,9 @@ class blackboxFunc(torch.autograd.Function):
         else:
             cq = coeff_hat_array + lambd * dl
         # second np call
-        sols_lamb, _ = problem.get_decision(cq, params, optSolver, **problem.init_API())
+        sols_lamb, _ = problem.get_decision(
+            to_tensor(cq), params, optSolver, **problem.init_API()
+        )
         grad = minus(sols_lamb, sols_hat) / lambd
         # convert to tensor
         grad = to_device(to_tensor(grad), device)

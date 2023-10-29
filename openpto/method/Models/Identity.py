@@ -38,7 +38,7 @@ class negativeIdentity(optModel):
             params,
             self.optSolver,
         )
-        objs_hat = problem.get_objective(coeff_hat, sols_hat)
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, params)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(objs_hat)
@@ -85,7 +85,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         sols_hat, _ = problem.get_decision(
-            coeff_hat_array, params, optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, optSolver, **problem.init_API()
         )
         sols_hat = to_device(to_tensor(sols_hat), device)
         # add other objects to ctx

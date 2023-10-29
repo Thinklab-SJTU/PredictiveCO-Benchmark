@@ -54,9 +54,10 @@ class Energy(PTOProblem):
         x = np.concatenate((x_train, x_test), axis=0)
         y = np.concatenate((y_train, y_test), axis=0)
         x, y = sklearn.utils.shuffle(x, y, random_state=self.rand_seed)
+        self.train_idxs = range(0, 550)
         self.val_idxs = range(550, 650)
         self.test_idxs = range(650, x.shape[0])
-        self.train_idxs = range(0, 550)
+
         self.Xs = torch.from_numpy(x).to(torch.float32)
         self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
 
@@ -64,24 +65,24 @@ class Energy(PTOProblem):
         return (
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
-            [None for _ in range(len(self.train_idxs))],
+            self.Ys[self.train_idxs],
         )
 
     def get_val_data(self):
         return (
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
-            [None for _ in range(len(self.val_idxs))],
+            self.Ys[self.val_idxs],
         )
 
     def get_test_data(self):
         return (
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],
-            [None for _ in range(len(self.test_idxs))],
+            self.Ys[self.test_idxs],
         )
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         1440 // self.q
         # print("Y_Shape",Y.shape)
         Y = Y.reshape(-1, 48)
@@ -224,7 +225,6 @@ class Energy(PTOProblem):
         length = int(len(df) / 48)  # 792
         gids = [gid for gid in range(length) for i in range(grouplength)]
         df.insert(0, "groupID", gids)
-
         return df
 
     def problem_data_reading(self, filename):

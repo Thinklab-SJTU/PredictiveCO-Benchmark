@@ -13,8 +13,8 @@ class CubicTopK(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=100,  # number of instances to use from the dataset to train
-        num_test_instances=100,  # number of instances to use from the dataset to test
+        num_train_instances=400,  # number of instances to use from the dataset to train
+        num_test_instances=400,  # number of instances to use from the dataset to test
         num_items=50,  # number of targets to consider
         budget=1,  # number of items that can be picked
         val_frac=0.2,  # fraction of training data reserved for validation
@@ -66,20 +66,20 @@ class CubicTopK(PTOProblem):
         return (
             self.Xs_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
-            [None for _ in range(len(self.train_idxs))],
+            self.Ys_train[self.train_idxs],
         )
 
     def get_val_data(self):
         return (
             self.Xs_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
-            [None for _ in range(len(self.val_idxs))],
+            self.Ys_train[self.val_idxs],
         )
 
     def get_test_data(self):
-        return self.Xs_test, self.Ys_test, [None for _ in range(len(self.Ys_test))]
+        return self.Xs_test, self.Ys_test, self.Ys_test
 
-    def get_objective(self, Y, Z, **kwargs):
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
         assert Y.ndim == 3
         assert Z.ndim == 2
         Y = to_tensor(Y)

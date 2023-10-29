@@ -46,14 +46,16 @@ def collect_ptr_ftn(data_name, prefix_name):
 
 
 global_data_names = [
-    "knapsack-gen",
+    #"knapsack-gen",
+    #"knapsack-energy",
     "energy-energy",
-    "budgetalloc-real",
-    "cubic-gen",
+    #"budgetalloc-real",
+    #"cubic-gen",
     "bipartitematching-cora",
 ]
 global_model_names = [
-    "bce",
+    "mse",
+    #"bce"
     "dfl",
     "blackbox",
     "identity",
@@ -151,6 +153,6 @@ def collect_ad():
 
 if __name__ == "__main__":
     collect_benchmarks()
-    collect_cap()
-    collect_size()
-    collect_ad()
+    #collect_cap()
+    #collect_size()
+    #collect_ad()

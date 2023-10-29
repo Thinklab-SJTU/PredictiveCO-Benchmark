@@ -1,7 +1,8 @@
 dataset:
   num_stocks: 50
   alpha: 0.1
+  prob_version: real
 
 solver:
-  gurobi:
+  cvxpy:
     kwargs: none

@@ -122,12 +122,7 @@ class RandomTopK(PTOProblem):
             [None for _ in range(len(self.test))],
         )
 
-    def get_objective(
-        self,
-        Y,
-        Z,
-        alpha=1,
-    ):
+    def get_objective(self, Y, Z, alpha=1, aux_data=None, **kwargs):
         """
         For a given set of predictions/labels (Y), returns the decision quality.
         The objective needs to be _maximised_.

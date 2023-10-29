@@ -95,9 +95,9 @@ def print_metrics(
                 losses.append(
                     loss_fn(
                         problem,
-                        coeff_hat=get_idxs(preds, idx),  # preds[[idx]],
-                        coeff_true=get_idxs(Ys, idx),  # Ys[[idx]],
-                        params=Ys_aux[idx],
+                        coeff_hat=get_idxs(preds, idx),
+                        coeff_true=get_idxs(Ys, idx),
+                        params=get_idxs(Ys_aux, idx),
                         partition=partition,
                         index=idx,
                         do_debug=do_debug,
@@ -106,31 +106,29 @@ def print_metrics(
                 )
 
             losses = torch.stack(losses).flatten()
-            objective_hat = torch.zeros_like(losses).cpu()
+            objective_hat = problem.get_objective(
+                Ys, Zs_hat, Ys_aux, **problem.init_API()
+            )
+            test_time = 0
             if partition == "train":
-                test_time = 0
                 # eval_result = {"value": torch.zeros_like(losses)}
-                eval_result = get_eval_results(
-                    problem, Ys, problem.z_train_opt, Zs_hat, Ys_aux
-                )
-                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
+                optimal_z = problem.z_train_opt
             elif partition == "val":
-                test_time = 0
-                eval_result = get_eval_results(
-                    problem, Ys, problem.z_val_opt, Zs_hat, Ys_aux
-                )
-                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
+                optimal_z = problem.z_val_opt
             elif partition == "test":
                 test_time = time.time() - time_test_start
-                eval_result = get_eval_results(
-                    problem, Ys, problem.z_test_opt, Zs_hat, Ys_aux
-                )
-                objective_hat = problem.get_objective(Ys, Zs_hat, **problem.init_API())
+                optimal_z = problem.z_test_opt
             else:
                 raise ValueError(f"Unknown partition {partition}")
+            eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
 
             # Print
-            loss = losses.mean().item()
+            if model_args["reduction"] == "mean":
+                loss = losses.mean().item()
+            elif model_args["reduction"] == "sum":
+                loss = losses.sum().item()
+            else:
+                raise KeyError(f"Not implemented reduction {model_args['reduction']}")
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
                 "loss": loss,
@@ -142,8 +140,8 @@ def print_metrics(
                 "eval": eval_result,
             }
             logger.info(
-                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():>10.6f}, {'Loss':>5}: {loss:>12.6f} "
-                f"{f'Pred Loss: {pred_loss:.6f}, {problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.6f}"
+                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():>10.5f}, {'Loss':>5}: {loss:>12.5f} "
+                f"{f'Pred Loss: {pred_loss:>12.5f}, {problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.5f}"
             )
         logger.info("----\n")
     return metrics

@@ -42,17 +42,15 @@ class pointwiseLTR(optModel):
             _, Y_train, Y_train_aux = problem.get_train_data()
             self.solpool, _ = problem.get_decision(
                 Y_train,
-                params=Y_train_aux[:1],
+                params=Y_train_aux,
                 optSolver=self.optSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
-        # convert tensor
-        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
-                coeff_hat_array, params, self.optSolver, **problem.init_API()
+                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -65,8 +63,8 @@ class pointwiseLTR(optModel):
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
         #
-        objpool_c = problem.get_objective(coeff_true, solpool)
-        objpool_c_hat = problem.get_objective(coeff_hat, solpool)
+        objpool_c = problem.get_objective(coeff_true, solpool, params)
+        objpool_c_hat = problem.get_objective(coeff_hat, solpool, params)
         # squared loss
         loss = (objpool_c - objpool_c_hat).square().mean(axis=0)
         # reduction
@@ -113,12 +111,10 @@ class pairwiseLTR(optModel):
                 isTrain=False,
                 **problem.init_API(),
             )
-        # convert tensor
-        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
-                coeff_hat_array, params, self.optSolver, **problem.init_API()
+                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -130,8 +126,8 @@ class pairwiseLTR(optModel):
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
         coeff_true_pool = coeff_true.expand(*expand_shape)
         # obj for solpool
-        objpool_c_true = problem.get_objective(coeff_true_pool, solpool)
-        objpool_c_hat_pool = problem.get_objective(coeff_hat_pool, solpool)
+        objpool_c_true = problem.get_objective(coeff_true_pool, solpool, params)
+        objpool_c_hat_pool = problem.get_objective(coeff_hat_pool, solpool, params)
         # TODO: currently, only support batch-1 training
         # init loss
         loss = []
@@ -209,12 +205,10 @@ class listwiseLTR(optModel):
                 isTrain=False,
                 **problem.init_API(),
             )
-        # convert tensor
-        coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve #TODO: if sol pool reasonable?
         if np.random.uniform() <= self.solve_ratio:
             sol_hat, _ = problem.get_decision(
-                coeff_hat_array, params, self.optSolver, **problem.init_API()
+                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
             )
             # add into solpool
             self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -226,8 +220,8 @@ class listwiseLTR(optModel):
         coeff_hat = coeff_hat.expand(*expand_shape)
         coeff_true = coeff_true.expand(*expand_shape)
         # obj for solpool
-        objpool_c = problem.get_objective(coeff_true, solpool)
-        objpool_c_hat = problem.get_objective(coeff_hat, solpool)
+        objpool_c = problem.get_objective(coeff_true, solpool, params)
+        objpool_c_hat = problem.get_objective(coeff_hat, solpool, params)
         # cross entropy loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = -(

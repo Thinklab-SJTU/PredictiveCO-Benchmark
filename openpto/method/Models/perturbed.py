@@ -74,7 +74,7 @@ class perturbed(optModel):
             self.solve_ratio,
             self,
         )
-        objs_hat = problem.get_objective(coeff_hat, sols_hat, **hyperparams)
+        objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(objs_hat)
