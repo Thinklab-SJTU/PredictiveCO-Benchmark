@@ -31,7 +31,7 @@ class PortfolioOpt(PTOProblem):
         num_stocks=50,  # number of stocks per instance to choose from
         val_frac=0.2,  # fraction of training data reserved for test
         rand_seed=0,  # for reproducibility
-        alpha=1,  # risk aversion constant
+        alpha=0.1,  # risk aversion constant
         prob_version="real",
         data_dir="openpto/data",  # directory to store data
     ):

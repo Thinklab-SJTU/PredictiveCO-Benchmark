@@ -24,7 +24,7 @@ lodl:
   quadrank: 20
   quadalpha: 0
   model_type: weightedmse
-  serial: False
+  serial: True
   reduction: sum
   num_iters: 100
   losslr: 1e-3
