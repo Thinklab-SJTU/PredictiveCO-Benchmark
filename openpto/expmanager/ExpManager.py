@@ -133,7 +133,6 @@ class ExpManager:
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
         for ptr_epoch in range(self.args.n_ptr_epochs):
-            print(ptr_epoch)
             ###### one-shot training
             time_train_start = time.time()
             preds = self.pred_model(X_pretrain)
@@ -179,12 +178,6 @@ class ExpManager:
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
-                    # torch.save(
-                    #     self.pred_model.state_dict(),
-                    #     os.path.join(
-                    #         self.args.log_dir, "checkpoints", f"Ptr-EP{ptr_epoch}.pt"
-                    #     ),
-                    # )
                     torch.save(
                         self.pred_model.state_dict(),
                         os.path.join(
@@ -195,8 +188,8 @@ class ExpManager:
             if self.args.earlystopping and time_since_best > self.args.patience:
                 break
 
-        if best[1] is not None:
-            self.pred_model = best[1]
+        if best[1]:
+            self.pred_model = deepcopy(best[1])
 
         ############################# Train #############################
         # optimizer:
@@ -258,12 +251,6 @@ class ExpManager:
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
                     # save
-                    # torch.save(
-                    #     self.pred_model.state_dict(),
-                    #     os.path.join(
-                    #         self.args.log_dir, "checkpoints", f"Tr-EP{iter_idx}.pt"
-                    #     ),
-                    # )
                     torch.save(
                         self.pred_model.state_dict(),
                         os.path.join(self.args.log_dir, "checkpoints", "tr_pred_best.pt"),
@@ -273,8 +260,8 @@ class ExpManager:
                 if self.args.earlystopping and time_since_best > self.args.patience:
                     break
 
-        if best[1] is not None:
-            self.pred_model = best[1]
+        if best[1]:
+            self.pred_model = deepcopy(best[1])
 
         ############################# Evaluate final model #############################
         # Document how well this trained model does

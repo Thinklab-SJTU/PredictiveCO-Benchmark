@@ -34,7 +34,7 @@ def add_log(_log, iter_idx, metric, mode):
 def compare_result(metrics_idx, best):
     # smaller the better
     sense = metrics_idx["eval"]["sense"]
-    return metrics_idx["eval"]["value"].mean() * sense <= best[0].mean() * sense
+    return metrics_idx["eval"]["value"].mean() * sense < best[0].mean() * sense
 
 
 def save_dict(_dict, path):
@@ -90,7 +90,6 @@ def print_metrics(
 
             # Loss and Error
             losses = []
-            preds = model(Xs)
             for idx in range(len(Xs)):
                 losses.append(
                     loss_fn(
@@ -110,16 +109,15 @@ def print_metrics(
                 Ys, Zs_hat, Ys_aux, **problem.init_API()
             )
             test_time = 0
-            if partition == "train":
-                # eval_result = {"value": torch.zeros_like(losses)}
-                optimal_z = problem.z_train_opt
-            elif partition == "val":
-                optimal_z = problem.z_val_opt
-            elif partition == "test":
+            optimal_dict = {
+                "train": problem.z_train_opt,
+                "val": problem.z_val_opt,
+                "test": problem.z_test_opt,
+            }
+            # eval_result = {"value": torch.zeros_like(losses)}
+            if partition == "test":
                 test_time = time.time() - time_test_start
-                optimal_z = problem.z_test_opt
-            else:
-                raise ValueError(f"Unknown partition {partition}")
+            optimal_z = optimal_dict[partition]
             eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
 
             # Print
