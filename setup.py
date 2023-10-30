@@ -2,6 +2,9 @@ from setuptools import find_packages, setup
 
 REQUIRES = """
 ruamel.yaml
+chardet
+requests
+quandl
 """
 
 

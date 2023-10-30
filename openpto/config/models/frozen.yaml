@@ -18,7 +18,7 @@ pointLTR:
 nce:
   reduction: sum
 lodl:
-  num_samples: 5000
+  num_samples: 1
   sampling: random_hessian
   sampling_std: -1
   quadrank: 20
@@ -26,7 +26,7 @@ lodl:
   model_type: weightedmse
   serial: True
   reduction: sum
-  num_iters: 100
+  num_iters: 0
   losslr: 1e-3
   train_frac: 0.6
   test_frac: 0.2

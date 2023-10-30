@@ -12,7 +12,7 @@ from gurobipy import GRB  # pylint: disable=no-name-in-module
 from torch.multiprocessing import Pool
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Models.MSE import MSE
+from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.dense import dense_nn
 from openpto.method.Solvers.utils_solver import starmap_with_kwargs
 from openpto.method.utils_method import to_tensor
@@ -37,7 +37,11 @@ class LODL(optModel):
             solve_ratio (float): the ratio of new solutions computed during training
         """
         super().__init__(optSolver, processes, solve_ratio)
-        self.loss_fn = None
+        self.obj_fn = None
+        self.log_dir = kwargs["log_dir"]
+        self.loss_path = kwargs["loss_path"]
+        if self.loss_path:
+            print("loading from: ", self.loss_path)
 
     def forward(
         self,
@@ -50,9 +54,9 @@ class LODL(optModel):
         """
         Forward pass
         """
-        if self.loss_fn is None:
-            self.loss_fn = self._get_learned_loss(problem, **hyperparams)
-        return self.loss_fn(coeff_hat, coeff_true, **hyperparams)
+        if self.obj_fn is None:
+            self.obj_fn = self._get_learned_loss(problem, **hyperparams)
+        return self.obj_fn(coeff_hat, coeff_true, **hyperparams)
 
     def _get_learned_loss(
         self,
@@ -407,8 +411,8 @@ class LODL(optModel):
 
         return (Y, opt_objective, Yhats, objectives)
 
-    @staticmethod
     def _learn_loss(
+        self,
         problem,  # The problem domain
         dataset,  # The data set on which to train SL
         model_type,  # The model we're trying to fit
@@ -460,6 +464,9 @@ class LODL(optModel):
             model = QuadraticPlusPlus(Y, **kwargs)
         else:
             raise LookupError()
+        self.lodl_model = model
+        if self.loss_path:
+            self.lodl_model.load_state_dict(torch.load(self.loss_path))
 
         # Use GPU if available
         device = problem.device
@@ -473,28 +480,36 @@ class LODL(optModel):
             objectives_val.to(device),
             objectives_test.to(device),
         )
-        model = model.to(device)
+        self.lodl_model = self.lodl_model.to(device)
 
         # Fit a model to the points
-        optimizer = torch.optim.Adam(model.parameters(), lr=losslr)
+        optimizer = torch.optim.Adam(self.lodl_model.parameters(), lr=losslr)
         best = (float("inf"), None)
         time_since_best = 0
+        # get loss func
+        twostage_criterion = str2twoStageLoss(problem)
         for iter_idx in range(num_iters):
             # Define update step using "closure" function
             def loss_closure():
                 optimizer.zero_grad()
-                pred = model(Yhats_train).flatten()
+                pred = self.lodl_model(Yhats_train).flatten()
                 if not (pred >= -1e-3).all().item():
                     print(f"WARNING: Prediction value < 0: {pred.min()}")
-                loss = MSE()(problem, pred, objectives_train, reduction="sum")  # .sum()
+                loss = twostage_criterion(
+                    problem, pred, objectives_train, reduction="sum"
+                )
+                # loss = MSE()(problem, pred, objectives_train, reduction="sum")
                 loss.backward()
                 return loss
 
             # Perform validation
             if iter_idx % val_freq == 0:
                 # Get performance on val dataset
-                pred_val = model(Yhats_val).flatten()
-                loss_val = MSE()(problem, pred_val, objectives_val, reduction="sum")
+                pred_val = self.lodl_model(Yhats_val).flatten()
+                # loss_val = MSE()(problem, pred_val, objectives_val, reduction="sum")
+                loss_val = twostage_criterion(
+                    problem, pred_val, objectives_val, reduction="sum"
+                )
 
                 # Print statistics
                 if verbose and iter_idx % (val_freq * print_freq) == 0:
@@ -511,7 +526,12 @@ class LODL(optModel):
             # Make an update step
             optimizer.step(loss_closure)
             time_since_best += 1
-        model = best[1]
+        self.lodl_model = best[1]
+        # save model
+        torch.save(
+            self.lodl_model.state_dict(),
+            os.path.join(self.log_dir, "checkpoints", "tr_loss_best.pt"),
+        )
         # If needed, PSDify
         # TODO: Figure out a better way to do this?
         # pdb.set_trace()
@@ -519,11 +539,11 @@ class LODL(optModel):
         #     model.PSDify()
 
         # Get final loss on train samples
-        pred_train = model(Yhats_train).flatten()
+        pred_train = self.lodl_model(Yhats_train).flatten()
         train_loss = torch.nn.L1Loss()(pred_train, objectives_train).item()
 
         # Get loss on holdout samples
-        pred_test = model(Yhats_test).flatten()
+        pred_test = self.lodl_model(Yhats_test).flatten()
         loss = torch.nn.L1Loss()(pred_test, objectives_test)
         test_loss = loss.item()
 
@@ -534,7 +554,7 @@ class LODL(optModel):
         # Y_flat = Y.flatten()
         # Y_idx = random.randrange(Yhats_flat.shape[-1])
         # sample_idx = (Yhats_flat[:, Y_idx] - Y_flat[Y_idx]).square() > 0
-        # pred = model(Yhats_train)
+        # pred = self.lodl_model(Yhats_train)
         # plt.scatter((Yhats_flat - Y_flat)[sample_idx, Y_idx].tolist(), objectives_train[sample_idx].tolist(), label='true')
         # plt.scatter((Yhats_flat - Y_flat)[sample_idx, Y_idx].tolist(), pred[sample_idx].tolist(), label='pred')
         # plt.legend(loc='upper right')
@@ -547,14 +567,14 @@ class LODL(optModel):
         # Y_range = 1
         # scale = torch.linspace(-Y_range, Y_range, 1000)
         # Yhats_flat = scale.unsqueeze(-1) * direction.unsqueeze(0) + Y_flat.unsqueeze(0)
-        # pred = model(Yhats_flat)
+        # pred = self.lodl_model(Yhats_flat)
         # true_dl = problem.get_objective(problem.get_decision(Yhats_flat), Yhats_flat) - problem.get_objective(problem.get_decision(Y_flat), Y_flat)
         # plt.scatter(scale.tolist(), true_dl.tolist(), label='true')
         # plt.scatter(scale.tolist(), pred.tolist(), label='pred')
         # plt.legend(loc='upper right')
         # plt.show()
 
-        return model, train_loss, test_loss
+        return self.lodl_model, train_loss, test_loss
 
 
 ############ func utils ##############

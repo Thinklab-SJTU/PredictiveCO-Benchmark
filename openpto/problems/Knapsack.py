@@ -5,7 +5,7 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.preprocessing import StandardScaler
-
+from openpto.method.Solvers.grb.grb_qpsolver import QPGrbSolver
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
@@ -264,13 +264,9 @@ class Knapsack(PTOProblem):
 
         # determine solver
         if optSolver is None:
-            if params.ndim > 1:
-                params[0]
-            else:
-                pass
-            # TODO
             optSolver = KPGrbSolver(**kwargs)
-          
+            #optSolver = KPGrbSolver(**kwargs)
+
         sol, obj = [], []
         for i in range(len(Y)):
             # solve
@@ -285,6 +281,7 @@ class Knapsack(PTOProblem):
             "weights": self.weights,
             "capacity": self.capacity,
             "modelSense": GRB.MAXIMIZE,
+            "n_items": self.num_items,
         }
 
     def get_model_shape(self):

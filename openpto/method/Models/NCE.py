@@ -38,6 +38,7 @@ class NCE(optModel):
         # get device
         device = coeff_hat.device
         # coeff_hat = coeff_hat.squeeze(-1)
+
         # get true solution
         sol_true, _ = problem.get_decision(
             coeff_true,
@@ -47,6 +48,7 @@ class NCE(optModel):
             **problem.init_API(),
         )
         sol_true = to_tensor(sol_true).to(device)
+
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()
@@ -57,8 +59,6 @@ class NCE(optModel):
                 isTrain=True,
                 **problem.init_API(),
             )
-        # convert tensor
-        coeff_hat.detach().cpu().numpy()
         # solve
         if np.random.uniform() <= self.solve_ratio:
             sols_hat, _ = problem.get_decision(
@@ -69,6 +69,7 @@ class NCE(optModel):
             # remove duplicate
             self.solpool = np.unique(self.solpool, axis=0)
         solpool = to_tensor(self.solpool).to(device)
+
         # get obj
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
@@ -81,6 +82,7 @@ class NCE(optModel):
             loss = objpool_cp - obj_cp
         else:
             raise NotImplementedError
+
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)

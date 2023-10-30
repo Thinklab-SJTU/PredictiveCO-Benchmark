@@ -66,6 +66,7 @@ class Energy(PTOProblem):
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
             self.Ys[self.train_idxs],
+            # [None for _ in range(len(self.train_idxs))],
         )
 
     def get_val_data(self):
@@ -73,6 +74,7 @@ class Energy(PTOProblem):
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
             self.Ys[self.val_idxs],
+            # [None for _ in range(len(self.val_idxs))],
         )
 
     def get_test_data(self):
@@ -80,6 +82,7 @@ class Energy(PTOProblem):
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],
             self.Ys[self.test_idxs],
+            # [None for _ in range(len(self.test_idxs))],
         )
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):

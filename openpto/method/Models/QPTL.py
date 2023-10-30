@@ -4,10 +4,11 @@
 """
 
 import torch
-from gurobipy import GRB 
-from openpto.method.utils_method import to_tensor
+
+from gurobipy import GRB
+
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.Models.qpthlocal.qp import QPFunction, QPSolvers
+from openpto.method.utils_method import to_tensor
 
 
 class QPTL(optModel):
@@ -34,7 +35,6 @@ class QPTL(optModel):
         """
         Forward pass
         """
-        
         # n_items = coeff_true.shape[1]
         # Q = torch.eye(n_items) / hyperparams["tau"]
         # # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
@@ -58,11 +58,11 @@ class QPTL(optModel):
         #     torch.Tensor(),
         # )
         # loss = (x.squeeze() * c_true).mean()
-        
+
         # get device
         device = coeff_hat.device
         # coeff_hat = coeff_hat.squeeze(-1)
-        
+
         # get true solution
         sol_true, _ = problem.get_decision(
             coeff_true,
@@ -72,10 +72,9 @@ class QPTL(optModel):
             **problem.init_API(),
         )
         sol_true = to_tensor(sol_true).to(device)
-    
+
         obj_cp = problem.get_objective(coeff_hat, sol_true)
-        
-        
+
         # get loss
         if self.optSolver.modelSense == GRB.MINIMIZE:
             loss = obj_cp
@@ -83,7 +82,6 @@ class QPTL(optModel):
             loss = -obj_cp
         else:
             raise NotImplementedError
-        
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)

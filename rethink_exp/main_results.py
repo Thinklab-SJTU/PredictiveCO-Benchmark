@@ -55,17 +55,12 @@ if __name__ == "__main__":
 
     # Load loss function
     logger.info(f" Loading [{args.opt_model}] Loss Function...")
-    loss_fn = get_loss_fn(
-        args.opt_model,
-        problem,
-        **conf,
-    )(optSolver, args.processes, args.solve_ratio, **conf["models"][args.opt_model])
+    loss_fn = get_loss_fn(args, optSolver, conf)
 
-    #
-    ipdim, opdim = problem.get_model_shape()
+    # load exp manager
     pred_model_args = {
-        "ipdim": ipdim,
-        "opdim": opdim,
+        "ipdim": problem.get_model_shape()[0],
+        "opdim": problem.get_model_shape()[1],
         "out_act": problem.get_output_activation(),
     }
     exp = ExpManager(pred_model_args, args=args, conf=conf, logger=logger)

@@ -83,7 +83,15 @@ class BCE(optModel):
             loss_list = list()
             for Y_idx in range(len(coeff_true)):
                 loss_list.append(torch.nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))
-            return torch.stack(loss_list).mean()
+            loss = torch.stack(loss_list)
+            if hyperparams["reduction"] == "mean":
+                loss = torch.mean(loss)
+            elif hyperparams["reduction"] == "sum":
+                loss = torch.sum(loss)
+            elif hyperparams["reduction"] == "none":
+                pass
+            else:
+                raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
         else:
             raise ValueError("coeff_true is not a tensor or list")
 
@@ -164,7 +172,7 @@ class DFL(optModel):
         )
 
         sol_hat = to_tensor(sol_hat).to(problem.device)
-        obj_hat = problem.get_objective(coeff_hat, sol_hat, params, **problem.init_API())
+        obj_hat = problem.get_objective(coeff_hat, sol_hat, params, **problem.init_API()).to(problem.device)
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
         if self.optSolver.modelSense == GRB.MINIMIZE:
@@ -173,4 +181,25 @@ class DFL(optModel):
             loss = -obj_hat + self.dflalpha * twostage_loss
         else:
             raise ValueError(f"Unknown model sense {self.optSolver.modelSense}")
+        # debug
+        if (
+            hyperparams["do_debug"]
+            and hyperparams["partition"] == "train"
+            and loss.requires_grad
+        ):
+            objs_hat_grad = torch.autograd.grad(loss, obj_hat, retain_graph=True)
+            coeff_hat_grad = torch.autograd.grad(loss, coeff_hat, retain_graph=True)
+            twostage_grad = torch.autograd.grad(loss, twostage_loss, retain_graph=True)
+
+            def hook_fn(grad):
+                print("gradient through the path:", grad)
+
+            # coeff_hat_grad[0].register_hook(hook_fn)
+            # sols_hat_grad = torch.autograd.grad(loss, sol_hat, retain_graph=True)[0]
+            print(
+                "dbb grad: ",
+                objs_hat_grad[0].shape,
+                coeff_hat_grad[0].shape,
+                twostage_grad,
+            )
         return loss
