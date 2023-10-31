@@ -174,6 +174,7 @@ class OptimiseSubmodular(torch.autograd.Function):
             dfdZ = torch.autograd.grad(f, Z_local, create_graph=True)[0]
             # Hessian
             dfdZ_dZ = OptimiseSubmodular._get_elementwise_derivative(dfdZ, Z_local)
+            print("dfdZ_dZ device: ", dfdZ_dZ.device)
             # Cross-Term
             dfdZ_dYhat = OptimiseSubmodular._get_elementwise_derivative(dfdZ, Yhat_local)
 
@@ -182,7 +183,7 @@ class OptimiseSubmodular(torch.autograd.Function):
         if torch.logical_and(Z > EPS, Z < 1 - EPS).any():
             lambda_sum = torch.mean(dfdZ[torch.logical_and(Z > EPS, Z < 1 - EPS)])
         else:
-            lambda_sum = torch.tensor(0).float()
+            lambda_sum = torch.tensor(0).float().to(Z.device)
         #   dual variable for constraint Z <= 1
         lambda_upper = torch.where(Z > 1 - EPS, dfdZ - lambda_sum, torch.zeros_like(Z))
         #   dual variable for constraint Z >= 0
