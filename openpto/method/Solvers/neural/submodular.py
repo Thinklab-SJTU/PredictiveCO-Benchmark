@@ -174,7 +174,6 @@ class OptimiseSubmodular(torch.autograd.Function):
             dfdZ = torch.autograd.grad(f, Z_local, create_graph=True)[0].to(Z.device)
             # Hessian
             dfdZ_dZ = OptimiseSubmodular._get_elementwise_derivative(dfdZ, Z_local)
-            print("dfdZ_dZ device: ", dfdZ_dZ.device)
             # Cross-Term
             dfdZ_dYhat = OptimiseSubmodular._get_elementwise_derivative(dfdZ, Yhat_local)
 

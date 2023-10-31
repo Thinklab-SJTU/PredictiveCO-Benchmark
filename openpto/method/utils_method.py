@@ -16,6 +16,8 @@ def to_array(Y):
         return Y.detach().cpu().numpy()
     elif isinstance(Y, list) and torch.is_tensor(Y[0]):
         return [item.detach().cpu().numpy() for item in Y]
+    elif isinstance(Y, list) and isinstance(Y[0], np.ndarray):
+        return [item.detach().cpu().numpy() for item in Y]
     else:
         return Y
 

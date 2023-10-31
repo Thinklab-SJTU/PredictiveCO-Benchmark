@@ -139,7 +139,7 @@ class ICONGrbSolver(optGrbSolver):
         Model.setParam("Method", self.method)
         Model.optimize()
 
-        # solver = np.zeros(N)
+        solver = np.zeros(N)
 
         if Model.status in [GRB.Status.OPTIMAL]:
             try:
