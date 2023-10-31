@@ -133,5 +133,6 @@ saved_*/*
 openpto/data/
 shs/
 visual/*
+*.pdf
 
 *.pyc
