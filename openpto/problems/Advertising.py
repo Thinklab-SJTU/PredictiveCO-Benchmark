@@ -236,7 +236,7 @@ def get_data_instances(mode, data12, data_dir):
             # if len(lines)<2:
             #     feat_his = np.concatenate((np.zeros(41), feat_his))
             # aggregate
-            uid_all.append(uid[0])
+            uid_all.append(uid)  # [0])
             push_history_all.append(push_history)
             label_all.append(label)
             channels_his_all.append(channels_his)

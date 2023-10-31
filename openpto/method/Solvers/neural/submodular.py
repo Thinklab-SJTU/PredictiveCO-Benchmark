@@ -171,7 +171,7 @@ class OptimiseSubmodular(torch.autograd.Function):
             # Objective
             f = get_obj(Yhat_local, Z_local)
             # Gradient
-            dfdZ = torch.autograd.grad(f, Z_local, create_graph=True)[0]
+            dfdZ = torch.autograd.grad(f, Z_local, create_graph=True)[0].to(Z.device)
             # Hessian
             dfdZ_dZ = OptimiseSubmodular._get_elementwise_derivative(dfdZ, Z_local)
             print("dfdZ_dZ device: ", dfdZ_dZ.device)
@@ -185,9 +185,13 @@ class OptimiseSubmodular(torch.autograd.Function):
         else:
             lambda_sum = torch.tensor(0).float().to(Z.device)
         #   dual variable for constraint Z <= 1
-        lambda_upper = torch.where(Z > 1 - EPS, dfdZ - lambda_sum, torch.zeros_like(Z))
+        lambda_upper = torch.where(
+            Z > 1 - EPS, dfdZ - lambda_sum, torch.zeros_like(Z, device=Z.device)
+        )
         #   dual variable for constraint Z >= 0
-        lambda_lower = torch.where(Z < EPS, dfdZ - lambda_sum, torch.zeros_like(Z))
+        lambda_lower = torch.where(
+            Z < EPS, dfdZ - lambda_sum, torch.zeros_like(Z, device=Z.device)
+        )
         #   collect value of dual variables
         lam = torch.hstack((lambda_sum, lambda_upper, lambda_lower))
         diag_lambda = torch.diag(lam)
@@ -206,7 +210,7 @@ class OptimiseSubmodular(torch.autograd.Function):
         dgdZ_upper = torch.eye(num_var)
         #   gradient of constraints Z >= 0 <--> -Z <= 0
         dgdZ_lower = -torch.eye(num_var)
-        dgdZ = torch.vstack((dgdZ_sum, dgdZ_upper, dgdZ_lower))
+        dgdZ = torch.vstack((dgdZ_sum, dgdZ_upper, dgdZ_lower)).to(Z.device)
 
         # Putting it together, coefficient matrix for the linear system
         A = torch.vstack(
@@ -216,13 +220,13 @@ class OptimiseSubmodular(torch.autograd.Function):
             ]
         )
         # add alpha * I to improve conditioning
-        A = A + alpha * torch.eye(num_var + num_constr)
+        A = A + alpha * torch.eye(num_var + num_constr).to(Z.device)
 
         # RHS of the linear system, mostly partial derivative of grad f wrt Yhat
         b = torch.vstack(
             [
                 torch.hstack([dfdZ_dYhat.view((num_var, Yhat.numel()))]),
-                torch.hstack([torch.zeros((num_constr, Yhat.numel()))]),
+                torch.hstack([torch.zeros((num_constr, Yhat.numel())).to(Z.device)]),
             ]
         )
 

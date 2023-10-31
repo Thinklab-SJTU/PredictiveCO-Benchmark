@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from openpto.method.utils_method import to_array
+from openpto.method.utils_method import ndiv, to_array
 
 
 def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
@@ -41,8 +41,8 @@ def treatment_func(labels, sols_hat, aux_data):
         treat_label = label_idx[treat_mask]
         control_label = label_idx[~treat_mask]
         # print("treat_label: ", treat_label.shape, control_label.shape)
-        ctr_treat = sum(treat_label) / len(treat_label)
-        ctr_control = sum(control_label) / len(control_label)
+        ctr_treat = ndiv(sum(treat_label), len(treat_label))
+        ctr_control = ndiv(sum(control_label), len(control_label))
         # print("len(treat_label): ", sum(treat_label), len(treat_label))
         # print("len(control_label): ", sum(control_label), len(control_label))
         # collect

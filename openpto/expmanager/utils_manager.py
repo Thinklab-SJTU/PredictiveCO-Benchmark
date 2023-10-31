@@ -78,7 +78,6 @@ def print_metrics(
             preds = model(Xs)
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
-
             # Decision Quality
             Zs_hat, _ = problem.get_decision(
                 preds,

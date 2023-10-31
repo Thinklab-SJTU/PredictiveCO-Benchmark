@@ -92,6 +92,7 @@ class BCE(optModel):
                 pass
             else:
                 raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+            return loss
         else:
             raise ValueError("coeff_true is not a tensor or list")
 

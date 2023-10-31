@@ -23,6 +23,8 @@ def to_array(Y):
 def to_tensor(Y):
     if torch.is_tensor(Y):
         return Y
+    elif isinstance(Y, list) and torch.is_tensor(Y[0]):
+        return Y
     elif isinstance(Y, list) and isinstance(Y[0], np.ndarray):
         return [torch.from_numpy(np.array(item).astype(np.float32)) for item in Y]
     else:
@@ -44,6 +46,8 @@ def rand_like(obj, device="cpu"):
 
 
 def ndiv(a, b):
+    if b == 0:
+        return 0
     return np.divide(a, b, out=np.zeros_like(a), where=b != 0)
 
 
