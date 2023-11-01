@@ -26,7 +26,7 @@ if __name__ == "__main__":
     args = get_args()
     conf = load_conf(args.config_path, args.method_path, args.problem)
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     # set seed
     setup_seed(args.seed)
 
