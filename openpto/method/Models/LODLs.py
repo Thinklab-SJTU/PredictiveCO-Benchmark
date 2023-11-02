@@ -103,6 +103,7 @@ class LODL(optModel):
             for entry in zip([Y_train, Y_val], [Y_train_aux, Y_val_aux], ["train", "val"])
         ]
         if num_extra_samples > 0:
+            print("num_extra_samples: ", num_extra_samples)
             SL_dataset = {
                 partition: [(Y, None, None, None) for Y in Ys]
                 for Ys, partition in zip([Y_train, Y_val], ["train", "val"])
