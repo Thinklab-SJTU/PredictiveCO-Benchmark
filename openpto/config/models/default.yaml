@@ -45,3 +45,5 @@ dfl:
   reduction: sum
 perturb: 
   reduction: sum
+cpLayer:
+  reduction: sum

@@ -13,3 +13,8 @@ dataset:
 solver:
   gurobi:
     kwargs: None
+  qptl:
+    kwargs: None
+  cvxpy:
+    kwargs: None  
+    

@@ -36,7 +36,7 @@ class cpLayer(optModel):
         """
         Forward pass
         """
-        (sols_hat,) = problem.get_decision(
+        sols_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
             optSolver=self.optSolver,

@@ -64,7 +64,7 @@ def get_args():
     parser.add_argument(
         "--solver",
         type=str,
-        choices=["gurobi", "neural", "heuristic", "cvxpy", "ortools", "qptl"],
+        choices=["gurobi", "neural", "heuristic", "cvxpy", "ortools", "qptl",],
         default="gurobi",
     )
     parser.add_argument("--gpu", type=str, default="-1", help="Visible GPU")

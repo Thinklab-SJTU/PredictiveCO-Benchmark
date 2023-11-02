@@ -248,6 +248,8 @@ class Knapsack(PTOProblem):
                 Z = to_tensor(Z).to(Y.device)
             return (Y.squeeze(-1) * Z).sum(-1)
         elif self.prob_version == "gen":
+            #print("Y_shape",Y.shape)
+            #print("Z_shape",Z.shape)
             assert Y.shape == Z.shape
             assert Y.ndim == Z.ndim == 2
             if torch.is_tensor(Y):
@@ -267,14 +269,25 @@ class Knapsack(PTOProblem):
             optSolver = KPGrbSolver(**kwargs)
             #optSolver = KPGrbSolver(**kwargs)
 
-        sol, obj = [], []
-        for i in range(len(Y)):
-            # solve
-            solp, objp, other = optSolver.solve(Y[i])
-            sol.append(solp)
-            obj.append(objp)
-        sols_array, objs_array = np.array(sol), np.array(obj)
-        return sols_array, objs_array
+        if optSolver.__class__.__name__ =="CpKPSolver":
+            sol = []
+            for i in range(len(Y)):
+                # solve
+                solp= optSolver.solve(Y[i])
+                solp = solp[0].cpu().reshape(-1)
+                sol.append(solp)
+            sol = torch.vstack(sol)
+            obj = self.get_objective(Y, sol)
+            return sol, obj
+        else:
+            sol, obj = [], []
+            for i in range(len(Y)):
+                # solve
+                solp, objp, other = optSolver.solve(Y[i])
+                sol.append(solp)
+                obj.append(objp)
+            sols_array, objs_array = np.array(sol), np.array(obj)
+            return sols_array, objs_array
 
     def init_API(self):
         return {
@@ -282,6 +295,7 @@ class Knapsack(PTOProblem):
             "capacity": self.capacity,
             "modelSense": GRB.MAXIMIZE,
             "n_items": self.num_items,
+            "tau": 1,
         }
 
     def get_model_shape(self):

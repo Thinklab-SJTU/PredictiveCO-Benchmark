@@ -137,46 +137,46 @@ class ICONGrbSolver(optGrbSolver):
 
         Model.setObjective(obj_expr, GRB.MINIMIZE)
         Model.setParam("Method", self.method)
-        # Model.optimize()
+        Model.optimize()
 
         solver = np.zeros(N)
 
-        # if Model.status in [GRB.Status.OPTIMAL]:
-        #     try:
-        #         task_on = np.zeros((nbTasks, nbMachines, N))
-        #         for (f, m, t), var in x.items():
-        #             try:
-        #                 task_on[f, m, t] = var.X
-        #             except AttributeError:
-        #                 task_on[f, m, t] = 0.0
-        #                 print("AttributeError: b' Unable to retrieve attribute 'X'")
-        #                 print("__________Something WRONG___________________________")
+        if Model.status in [GRB.Status.OPTIMAL]:
+            try:
+                task_on = np.zeros((nbTasks, nbMachines, N))
+                for (f, m, t), var in x.items():
+                    try:
+                        task_on[f, m, t] = var.X
+                    except AttributeError:
+                        task_on[f, m, t] = 0.0
+                        print("AttributeError: b' Unable to retrieve attribute 'X'")
+                        print("__________Something WRONG___________________________")
 
-        #         for t in range(N):
-        #             solver[t] = sum(
-        #                 np.sum(task_on[f, :, max(0, t - D[f] + 1) : t + 1]) * P[f]
-        #                 for f in Tasks
-        #             )
+                for t in range(N):
+                    solver[t] = sum(
+                        np.sum(task_on[f, :, max(0, t - D[f] + 1) : t + 1]) * P[f]
+                        for f in Tasks
+                    )
 
-        #         solver = solver * q / 60
-        #         self.model.reset(0)
-        #         # print(solver)
-        #         return solver
-        #     except NameError:
-        #         print("\n__________Something wrong_______ \n ")
-        #         # make sure cut is removed! (modifies model)
-        #         self.model.reset(0)
-        #         # print(solver)
-        #         return solver
+                solver = solver * q / 60
+                self.model.reset(0)
+                # print(solver)
+                return solver
+            except NameError:
+                print("\n__________Something wrong_______ \n ")
+                # make sure cut is removed! (modifies model)
+                self.model.reset(0)
+                # print(solver)
+                return solver
 
-        # elif Model.status == GRB.Status.INF_OR_UNBD:
-        #     print("Model is infeasible or unbounded")
-        # elif Model.status == GRB.Status.INFEASIBLE:
-        #     print("Model is infeasible")
-        # elif Model.status == GRB.Status.UNBOUNDED:
-        #     print("Model is unbounded")
-        # else:
-        #     print("Optimization ended with status %d" % Model.status)
+        elif Model.status == GRB.Status.INF_OR_UNBD:
+            print("Model is infeasible or unbounded")
+        elif Model.status == GRB.Status.INFEASIBLE:
+            print("Model is infeasible")
+        elif Model.status == GRB.Status.UNBOUNDED:
+            print("Model is unbounded")
+        else:
+            print("Optimization ended with status %d" % Model.status)
         self.model.reset(0)
 
         return solver
