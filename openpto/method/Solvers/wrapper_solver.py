@@ -1,4 +1,5 @@
 from openpto.method.Solvers.cvxpy.cp_bmatching import BmatchingSolver
+from openpto.method.Solvers.cvxpy.cp_kp import CpKPSolver
 from openpto.method.Solvers.cvxpy.cp_port import CpPortfolioSolver
 from openpto.method.Solvers.grb.grb_advertise import AdGrbSolver
 from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
@@ -18,7 +19,7 @@ def solver_wrapper(args, conf, problem):
         "portfolio": {"cvxpy": CpPortfolioSolver},
         "cubic": {"heuristic": TopKSolver, "neural": softTopkSolver},
         "energy": {"gurobi": ICONGrbSolver},
-        "knapsack": {"gurobi": KPGrbSolver, "qptl": QPGrbSolver},
+        "knapsack": {"gurobi": KPGrbSolver, "qptl": QPGrbSolver, "cvxpy": CpKPSolver},
         "advertising": {"gurobi": AdGrbSolver, "ortools": AdOrToolSolver},
     }
     solve_dict = {**problem.init_API(), **conf["solver"][args.solver]}

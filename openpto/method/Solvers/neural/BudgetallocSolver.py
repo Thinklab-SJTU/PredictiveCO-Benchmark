@@ -10,13 +10,14 @@ from openpto.method.Solvers.neural.submodular import OptimiseSubmodular
 class budgetallocSolver(optSolver):
     """ """
 
-    def __init__(self, modelSense, n_vars, get_objective, num_iters, **kwargs):
+    def __init__(self, modelSense, n_vars, get_objective, num_iters, budget, **kwargs):
         super().__init__(modelSense)
         self.n_vars = n_vars
+        self.budget = budget
         self.opt = SubmodularOptimizer(get_obj=get_objective, num_iters=num_iters)
 
-    def solve(self, y, budget, Z_init=None):
-        return self.opt(y, budget, Z_init=Z_init)
+    def solve(self, y, Z_init=None):
+        return self.opt(y, self.budget, Z_init=Z_init)
 
 
 class SubmodularOptimizer(torch.nn.Module):

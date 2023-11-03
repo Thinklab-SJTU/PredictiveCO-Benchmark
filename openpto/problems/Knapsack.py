@@ -6,7 +6,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 from sklearn.preprocessing import StandardScaler
 
-from openpto.method.Solvers.grb.grb_qpsolver import QPGrbSolver
+from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.utils_method import to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
@@ -264,18 +264,32 @@ class Knapsack(PTOProblem):
 
         # determine solver
         if optSolver is None:
-            # optSolver = QPGrbSolver(**kwargs)
-            optSolver = QPGrbSolver(**kwargs)
+            optSolver = KPGrbSolver(**kwargs)
+            # optSolver = KPGrbSolver(**kwargs)
 
-        sol, obj = [], []
-        for i in range(len(Y)):
-            # solve
-            optSolver.setObj(Y[i])
-            solp, objp, other = optSolver.solve()
-            sol.append(solp)
-            obj.append(objp)
-        sols_array, objs_array = np.array(sol), np.array(obj)
-        return sols_array, objs_array
+        if optSolver.__class__.__name__ == "CpKPSolver":
+            sol = []
+            for i in range(len(Y)):
+                # solve
+                solp = optSolver.solve(Y[i], isTrain)
+                # print("solp",solp)
+                if isinstance(solp, np.ndarray):
+                    solp = torch.tensor(solp)
+                else:
+                    solp = solp[0].cpu().reshape(-1)
+                sol.append(solp)
+            sol = torch.vstack(sol)
+            obj = self.get_objective(Y, sol)
+            return sol, obj
+        else:
+            sol, obj = [], []
+            for i in range(len(Y)):
+                # solve
+                solp, objp, other = optSolver.solve(Y[i])
+                sol.append(solp)
+                obj.append(objp)
+            sols_array, objs_array = np.array(sol), np.array(obj)
+            return sols_array, objs_array
 
     def init_API(self):
         return {
@@ -283,6 +297,7 @@ class Knapsack(PTOProblem):
             "capacity": self.capacity,
             "modelSense": GRB.MAXIMIZE,
             "n_items": self.num_items,
+            "tau": 1,
         }
 
     def get_model_shape(self):

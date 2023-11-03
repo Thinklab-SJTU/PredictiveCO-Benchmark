@@ -40,3 +40,16 @@ class KPGrbSolver(optGrbSolver):
             raise ValueError("Size of cost vector cannot match vars.")
         obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
         self._model.setObjective(obj)
+
+    def solve(self, y, **kwargs):
+        """
+        A method to solve model
+
+        Returns:
+            tuple: optimal solution (list) and objective value (float)
+        """
+        self.setObj(y)
+        self._model.update()
+        self._model.optimize()
+        others = {}
+        return [self.z[k].x for k in self.z], self._model.objVal, others

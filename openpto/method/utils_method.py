@@ -54,6 +54,12 @@ def ndiv(a, b):
 
 
 def minus(a, b):
-    if isinstance(a, list) and isinstance(b, list):
+    if (torch.is_tensor(a) and torch.is_tensor(b)) or (
+        isinstance(a, np.ndarray) and isinstance(b, np.ndarray)
+    ):
+        return a - b
+    elif isinstance(a, list) and isinstance(b, list):
         a, b = torch.stack(a), torch.stack(b)
-    return a - b
+        return a - b
+    else:
+        raise NotImplementedError

@@ -35,7 +35,6 @@ class QPTL(optModel):
         """
         Forward pass
         """
-
         # n_items = coeff_true.shape[1]
         # Q = torch.eye(n_items) / hyperparams["tau"]
         # # G = torch.cat((torch.from_numpy(weights).float(), torch.diagflat(torch.ones(n_items)),
@@ -83,7 +82,6 @@ class QPTL(optModel):
             loss = -obj_cp
         else:
             raise NotImplementedError
-
         # reduction
         if hyperparams["reduction"] == "mean":
             loss = torch.mean(loss)

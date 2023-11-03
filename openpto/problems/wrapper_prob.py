@@ -12,7 +12,8 @@ from openpto.problems.BudgetAllocation import BudgetAllocation
 from openpto.problems.CubicTopK import CubicTopK
 from openpto.problems.Energy import Energy
 from openpto.problems.Knapsack import Knapsack
-from openpto.problems.PortfolioOpt import PortfolioOpt
+
+# from openpto.problems.PortfolioOpt import PortfolioOpt
 
 
 ################################# Wrappers ################################################
@@ -31,7 +32,7 @@ def str2prob(prob_str):
         "budgetalloc": BudgetAllocation,
         "cubic": CubicTopK,
         "bipartitematching": BipartiteMatching,
-        "portfolio": PortfolioOpt,
+        # "portfolio": PortfolioOpt,
         "knapsack": Knapsack,
         "energy": Energy,
         "advertising": Advertising,

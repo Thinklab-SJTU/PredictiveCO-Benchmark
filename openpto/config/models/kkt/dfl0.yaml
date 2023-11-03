@@ -41,7 +41,7 @@ bce:
 ce:
   reduction: sum
 dfl:
-  dflalpha: 0.1
+  dflalpha: 0
   reduction: sum
 perturb: 
   reduction: sum

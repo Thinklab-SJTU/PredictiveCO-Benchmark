@@ -47,10 +47,10 @@ def collect_ptr_ftn(data_name, prefix_name):
 global_data_names = [
     "knapsack-gen",
     "knapsack-energy",
-    # "energy-energy",
-    # "budgetalloc-real",
+    "energy-energy",
+    "budgetalloc-real",
     "cubic-gen",
-    # "bipartitematching-cora",
+    "bipartitematching-cora",
 ]
 global_model_names = [
     "mse",

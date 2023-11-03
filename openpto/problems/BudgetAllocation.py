@@ -211,6 +211,7 @@ class BudgetAllocation(PTOProblem):
             "modelSense": GRB.MAXIMIZE,
             "n_vars": self.Ys_train.shape[1],
             "get_objective": self.get_objective,
+            "budget": self.budget
             # "sol_shape":torch.ones(self.Ys_train.shape[1]).shape,
         }
 

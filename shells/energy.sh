@@ -2,7 +2,7 @@ GPU=0
 EPOCHS=300
 
 # Prediction-focused learning
-python rethink_exp/main_results.py --problem=energy --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU}
+python rethink_exp/main_results.py --problem=energy --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --data_dir ${DIR}
 
 # Decisoin-focused learning
 
