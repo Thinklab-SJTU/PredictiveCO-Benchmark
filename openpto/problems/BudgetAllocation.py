@@ -198,9 +198,9 @@ class BudgetAllocation(PTOProblem):
             Z_init = torch.rand(Y.shape[1:-1])
         Z_init = to_tensor(Z_init).to(self.device)
         Y = to_tensor(Y).to(self.device)
-        Z = torch.cat(
-            [optSolver.solve(y, self.budget, Z_init=Z_init) for y in Y], dim=0
-        ).view((*Y.shape[:-2], -1))
+        Z = torch.cat([optSolver.solve(y, Z_init=Z_init) for y in Y], dim=0).view(
+            (*Y.shape[:-2], -1)
+        )
         # Z = torch.ones(*Y.shape[:-1])
         final_sol = Z.cpu()
         final_obj = self.get_objective(Y, Z)
