@@ -37,7 +37,7 @@ class CpKPSolver(optCPSolver):
     ):
         x_var = cp.Variable(len(self.weights))
         p_para = cp.Parameter(len(self.weights))
-        constraints = [x_var >= 0, x_var <= 1]
+        constraints = [x_var >= 0, x_var <= 1, self.weights @ x_var <= self.capacity]
         # TODO: discrete
         objective = cp.Maximize(
             p_para.T @ x_var
@@ -51,7 +51,7 @@ class CpKPSolver(optCPSolver):
     ):
         x_var = cp.Variable(len(self.weights),boolean=True)
         #p_para = self.Y
-        constraints = [x_var >= 0, x_var <= 1]
+        constraints = [self.weights @ x_var <= self.capacity]
         # TODO: discrete
         objective = cp.Maximize(
             p_para.T @ x_var
