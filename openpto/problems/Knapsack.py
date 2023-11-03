@@ -248,8 +248,6 @@ class Knapsack(PTOProblem):
                 Z = to_tensor(Z).to(Y.device)
             return (Y.squeeze(-1) * Z).sum(-1)
         elif self.prob_version == "gen":
-            #print("Y_shape",Y.shape)
-            #print("Z_shape",Z.shape)
             assert Y.shape == Z.shape
             assert Y.ndim == Z.ndim == 2
             if torch.is_tensor(Y):
@@ -273,8 +271,12 @@ class Knapsack(PTOProblem):
             sol = []
             for i in range(len(Y)):
                 # solve
-                solp= optSolver.solve(Y[i])
-                solp = solp[0].cpu().reshape(-1)
+                solp= optSolver.solve(Y[i],isTrain)
+                #print("solp",solp)
+                if isinstance(solp,np.ndarray): 
+                    solp=torch.tensor(solp)
+                else:
+                    solp = solp[0].cpu().reshape(-1)
                 sol.append(solp)
             sol = torch.vstack(sol)
             obj = self.get_objective(Y, sol)
