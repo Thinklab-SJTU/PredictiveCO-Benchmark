@@ -5,6 +5,9 @@ ruamel.yaml
 chardet
 requests
 quandl
+cvxpylayers
+ortools==9.4.1874
+ruamel.yaml==0.17.21
 """
 
 

@@ -135,5 +135,6 @@ shs/
 # visual/*
 *.pdf
 *.ipynb
+/visual
 
 *.pyc
