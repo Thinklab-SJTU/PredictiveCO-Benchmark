@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import numpy as np
@@ -22,12 +23,14 @@ class Advertising(PTOProblem):
             raw_data_dir = "/mnt/nas/dataset_share/genghaoyu/OR/Xinye/"
             data12_train, data12_test = gen_opt_data(raw_data_dir)
 
-            print("--- train mock data")
-            processed_train = get_data_instances("train", data12_train, data_dir)
-            generate_mock(data_dir, "train", processed_train)
-            print("--- test mock data")
-            processed_test = get_data_instances("test", data12_test, data_dir)
-            generate_mock(data_dir, "test", processed_test)
+            if not os.path.exists(f"{data_dir}/train_mock.pickle"):
+                print("--- train mock data")
+                processed_train = get_data_instances("train", data12_train, data_dir)
+                generate_mock(data_dir, "train", processed_train)
+            if not os.path.exists(f"{data_dir}/test_mock.pickle"):
+                print("--- test mock data")
+                processed_test = get_data_instances("test", data12_test, data_dir)
+                generate_mock(data_dir, "test", processed_test)
             #
             self.pretrain_X, self.pretrain_Y, self.pretrain_aux = self.load_data(
                 f"{data_dir}/train.pickle"
