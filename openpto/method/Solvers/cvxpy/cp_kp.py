@@ -24,9 +24,8 @@ class CpKPSolver(optCPSolver):
         super().__init__(modelSense)
         self.weights = weights
         self.capacity = capacity
-        self.Y = weights
         self.solver_train = self._create_cvxpy_problem_train()
-        # self.solver_test = self._create_cvxpy_problem_test()
+
 
     @property
     def num_vars(self):
@@ -43,14 +42,13 @@ class CpKPSolver(optCPSolver):
         problem = cp.Problem(objective, constraints)
         return CvxpyLayer(problem, parameters=[p_para], variables=[x_var])
 
-    def _create_cvxpy_problem_test(
+    def solver_test(
         self,
         p_para,
     ):
+        self.weights = self.weights.cpu()
         x_var = cp.Variable(len(self.weights), boolean=True)
-        # p_para = self.Y
         constraints = [self.weights @ x_var <= self.capacity]
-        # TODO: discrete
         objective = cp.Maximize(p_para.T @ x_var)
         problem = cp.Problem(objective, constraints)
         problem.solve()
@@ -58,8 +56,7 @@ class CpKPSolver(optCPSolver):
         return x_var.value
 
     def solve(self, Y, isTrain=True):
-        self.Y = Y
         if isTrain:
             return self.solver_train(Y)
         else:
-            return self._create_cvxpy_problem_test(Y)
+            return self.solver_test(Y)

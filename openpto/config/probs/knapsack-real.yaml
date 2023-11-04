@@ -5,3 +5,5 @@ dataset:
 solver:
   gurobi:
     kwargs: none
+  cvxpy:
+    kwargs: None  
