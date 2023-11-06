@@ -2,6 +2,7 @@ import inspect
 import json
 import time
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -79,13 +80,19 @@ def print_metrics(
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
-            Zs_hat, _ = problem.get_decision(
-                preds,
-                params=Ys_aux,
-                optSolver=optSolver,
-                isTrain=isTrain,
-                **problem.init_API(),
-            )
+            objective_hat = torch.zeros_like(pred_loss)
+            Zs_hat = torch.zeros_like(pred_loss)
+            if partition != "train":
+                Zs_hat, _ = problem.get_decision(
+                    preds,
+                    params=Ys_aux,
+                    optSolver=optSolver,
+                    isTrain=isTrain,
+                    **problem.init_API(),
+                )
+                objective_hat = problem.get_objective(
+                    Ys, Zs_hat, Ys_aux, **problem.init_API()
+                )
 
             # Loss and Error
             losses = []
@@ -104,9 +111,6 @@ def print_metrics(
                 )
 
             losses = torch.stack(losses).flatten()
-            objective_hat = problem.get_objective(
-                Ys, Zs_hat, Ys_aux, **problem.init_API()
-            )
             test_time = 0
             optimal_dict = {
                 "train": problem.z_train_opt,
@@ -117,7 +121,9 @@ def print_metrics(
             if partition == "test":
                 test_time = time.time() - time_test_start
             optimal_z = optimal_dict[partition]
-            eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
+            eval_result = {"value": np.zeros(len(Ys))}
+            if partition != "train":
+                eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
 
             # Print
             if model_args["reduction"] == "mean":
