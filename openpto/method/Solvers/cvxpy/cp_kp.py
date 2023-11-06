@@ -26,7 +26,6 @@ class CpKPSolver(optCPSolver):
         self.capacity = capacity
         self.solver_train = self._create_cvxpy_problem_train()
 
-
     @property
     def num_vars(self):
         return len(self.weights)
@@ -56,6 +55,7 @@ class CpKPSolver(optCPSolver):
         return x_var.value
 
     def solve(self, Y, isTrain=True):
+        Y = Y.squeeze(-1)
         if isTrain:
             return self.solver_train(Y)
         else:

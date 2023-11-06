@@ -41,7 +41,7 @@ class Knapsack(PTOProblem):
         self._set_seed(rand_seed)
         # Obtain data
         if prob_version == "energy":
-            self.get_energy_data()
+            self.get_energy_data(val_frac)
         elif prob_version == "gen":
             self.num_items = num_items
             weights, feats, profits = self.genData(
@@ -81,7 +81,7 @@ class Knapsack(PTOProblem):
             raise ValueError("Not a valid problem version: {}".format(prob_version))
         # default sovler
 
-    def get_energy_data(self):
+    def get_energy_data(self, val_frac):
         self.num_items = 48
         x_train, y_train, x_test, y_test = self.get_energy(
             fname=f"{self.data_dir}/prices2013.dat"
@@ -97,8 +97,8 @@ class Knapsack(PTOProblem):
         # y = np.concatenate((y_train, y_test), axis=0)
         # self.test_idxs = range(650, x.shape[0])
         x, y = sklearn.utils.shuffle(x_train, y_train, random_state=self.rand_seed)
-        self.train_idxs = range(0, int(len(x) * 0.8))
-        self.val_idxs = range(int(len(x) * 0.8), len(x))
+        self.train_idxs = range(0, int(len(x) * (1 - val_frac)))
+        self.val_idxs = range(int(len(x) * (1 - val_frac)), len(x))
         self.Xs_train = to_tensor(x)
         self.Ys_train = to_tensor(y)
         # test
