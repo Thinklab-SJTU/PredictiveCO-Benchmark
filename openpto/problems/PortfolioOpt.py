@@ -1,6 +1,5 @@
 import datetime as dt
 import os
-import pdb
 import random
 
 import pandas as pd
@@ -507,5 +506,3 @@ if __name__ == "__main__":
 
     Z_train = problem.get_decision(Y_train, aux_data=Y_train_aux)
     obj = problem.get_objective(Y_train, Z_train, aux_data=Y_train_aux)
-
-    pdb.set_trace()

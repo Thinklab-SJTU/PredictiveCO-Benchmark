@@ -3,9 +3,15 @@ from setuptools import find_packages, setup
 REQUIRES = """
 ruamel.yaml
 chardet
+pickle
 requests
 quandl
+cvxpy
 cvxpylayers
+gurobipy
+torch
+numpy
+pandas
 ortools==9.4.1874
 ruamel.yaml==0.17.21
 """
