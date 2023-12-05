@@ -19,14 +19,14 @@ class pointwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver, processes=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
@@ -48,14 +48,13 @@ class pointwiseLTR(optModel):
                 **problem.init_API(),
             )
         # solve
-        if np.random.uniform() <= self.solve_ratio:
-            sol_hat, _ = problem.get_decision(
-                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
-            )
-            # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol_hat))
-            # remove duplicate
-            self.solpool = np.unique(self.solpool, axis=0)
+        sol_hat, _ = problem.get_decision(
+            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+        )
+        # add into solpool
+        self.solpool = np.concatenate((self.solpool, sol_hat))
+        # remove duplicate
+        self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = to_tensor(self.solpool).to(coeff_hat.device)
         # obj for solpool as score
@@ -85,14 +84,14 @@ class pairwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver, processes=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
@@ -112,14 +111,13 @@ class pairwiseLTR(optModel):
                 **problem.init_API(),
             )
         # solve
-        if np.random.uniform() <= self.solve_ratio:
-            sol_hat, _ = problem.get_decision(
-                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
-            )
-            # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol_hat))
-            # remove duplicate
-            self.solpool = np.unique(self.solpool, axis=0)
+        sol_hat, _ = problem.get_decision(
+            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+        )
+        # add into solpool
+        self.solpool = np.concatenate((self.solpool, sol_hat))
+        # remove duplicate
+        self.solpool = np.unique(self.solpool, axis=0)
         solpool = to_tensor(self.solpool).to(coeff_hat.device)
         # transform to tensor
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
@@ -174,14 +172,14 @@ class listwiseLTR(optModel):
     Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, tau=1.0, **kwargs):
+    def __init__(self, optSolver, processes=1, tau=1.0, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes)
 
         if tau <= 0:
             raise ValueError("tau is not positive.")
@@ -206,14 +204,13 @@ class listwiseLTR(optModel):
                 **problem.init_API(),
             )
         # solve #TODO: if sol pool reasonable?
-        if np.random.uniform() <= self.solve_ratio:
-            sol_hat, _ = problem.get_decision(
-                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
-            )
-            # add into solpool
-            self.solpool = np.concatenate((self.solpool, sol_hat))
-            # remove duplicate
-            self.solpool = np.unique(self.solpool, axis=0)
+        sol_hat, _ = problem.get_decision(
+            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+        )
+        # add into solpool
+        self.solpool = np.concatenate((self.solpool, sol_hat))
+        # remove duplicate
+        self.solpool = np.unique(self.solpool, axis=0)
         # convert tensor
         solpool = to_tensor(self.solpool).to(coeff_hat.device)
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))

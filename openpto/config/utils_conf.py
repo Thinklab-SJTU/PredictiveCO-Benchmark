@@ -97,7 +97,6 @@ def get_args():
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--n_hidden", type=int, default=32)
     # solver
-    parser.add_argument("--solve_ratio", type=float, default=1.0)
     parser.add_argument("--processes", type=int, default=1)
     #
     args = parser.parse_args()

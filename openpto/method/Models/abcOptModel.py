@@ -6,10 +6,9 @@ from torch import nn
 class optModel(nn.Module):
     """ """
 
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver=None, processes=1, **kwargs):
         super(optModel, self).__init__()
         self.optSolver = optSolver
-        self.solve_ratio = solve_ratio
         # TODO: multi-process
         # number of processes
         # if processes not in range(mp.cpu_count() + 1):

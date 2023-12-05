@@ -28,15 +28,15 @@ class LODL(optModel):
     Reference: <https://arxiv.org/abs/1912.02175>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver, processes=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
             processes (int): number of processors, 1 for single-core, 0 for all of cores
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes)
         self.obj_fn = None
         self.log_dir = kwargs["log_dir"]
         self.loss_path = kwargs["loss_path"]

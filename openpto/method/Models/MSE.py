@@ -7,8 +7,8 @@ from openpto.method.utils_method import to_device, to_tensor
 
 
 class MSE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes)
 
     @staticmethod
     def forward(
@@ -35,8 +35,8 @@ class MSE(optModel):
 
 
 class MAE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes, **kwargs)
 
     @staticmethod
     def forward(
@@ -63,8 +63,8 @@ class MAE(optModel):
 
 
 class BCE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes, **kwargs)
 
     @staticmethod
     def forward(
@@ -98,8 +98,8 @@ class BCE(optModel):
 
 
 class CE(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes, **kwargs)
 
     @staticmethod
     def forward(
@@ -115,8 +115,8 @@ class CE(optModel):
 
 
 class MSE_Sum(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes, **kwargs)
 
     @staticmethod
     def forward(
@@ -144,8 +144,8 @@ class MSE_Sum(optModel):
 
 
 class DFL(optModel):
-    def __init__(self, optSolver=None, processes=1, solve_ratio=1, **kwargs):
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+    def __init__(self, optSolver=None, processes=1, **kwargs):
+        super().__init__(optSolver, processes, **kwargs)
         self.dflalpha = kwargs["dflalpha"]
 
     def forward(

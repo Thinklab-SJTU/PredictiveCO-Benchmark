@@ -19,14 +19,14 @@ class NCE(optModel):
     Reference: <https://www.ijcai.org/proceedings/2021/390>
     """
 
-    def __init__(self, optSolver, processes=1, solve_ratio=1, **kwargs):
+    def __init__(self, optSolver, processes=1, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
             processes (int): number of processors, 1 for single-core, 0 for all of cores
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio, **kwargs)
+        super().__init__(optSolver, processes, **kwargs)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars))
@@ -60,14 +60,13 @@ class NCE(optModel):
                 **problem.init_API(),
             )
         # solve
-        if np.random.uniform() <= self.solve_ratio:
-            sols_hat, _ = problem.get_decision(
-                coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
-            )
-            # add into solpool
-            self.solpool = np.concatenate((self.solpool, sols_hat))
-            # remove duplicate
-            self.solpool = np.unique(self.solpool, axis=0)
+        sols_hat, _ = problem.get_decision(
+            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+        )
+        # add into solpool
+        self.solpool = np.concatenate((self.solpool, sols_hat))
+        # remove duplicate
+        self.solpool = np.unique(self.solpool, axis=0)
         solpool = to_tensor(self.solpool).to(device)
 
         # get obj
@@ -108,49 +107,48 @@ class NCE(optModel):
 #     Reference: <https://www.ijcai.org/proceedings/2021/390>
 #     """
 
-#     def __init__(self, optSolver, processes=1, solve_ratio=1):
+#     def __init__(self, optSolver, processes=1):
 #         """
 #         Args:
 #             optSolver (optModel): an  optimization model
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
-#             solve_ratio (float): the ratio of new solutions computed during training
+#
 #         """
-#         super().__init__(optSolver, processes, solve_ratio)
+#         super().__init__(optSolver, processes)
 #         # solution pool
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
-#     def forward(self, coeff_hat, sol_true, reduction="mean"):
-#         """
-#         Forward pass
-#         """
-#         # get device
-#         device = coeff_hat.device
-#         # convert tensor
-#         cp = coeff_hat.detach().cpu().numpy()
-#         # solve
-#         if np.random.uniform() <= self.solve_ratio:
-#             sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
-#             # add into solpool
-#             self.solpool = np.concatenate((self.solpool, sols_hat))
-#             # remove duplicate
-#             self.solpool = np.unique(self.solpool, axis=0)
-#         solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
-#         # get current obj
-#         obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)
-#         # get obj for solpool
-#         objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
-#         # get loss
-#         if self.optSolver.modelSense == GRB.MINIMIZE:
-#             loss, _ = (obj_cp - objpool_cp).max(axis=1)
-#         if self.optSolver.modelSense == GRB.MAXIMIZE:
-#             loss, _ = (objpool_cp - obj_cp).max(axis=1)
-#         # reduction
-#         if hyperparams["reduction"] == "mean":
-#             loss = torch.mean(loss)
-#         elif hyperparams["reduction"] == "sum":
-#             loss = torch.sum(loss)
-#         elif hyperparams["reduction"] == "none":
-#             pass
-#         else:
-#             raise ValueError("No reduction '{}'.".format(reduction))
-#         return loss
+# def forward(self, coeff_hat, sol_true, reduction="mean"):
+#     """
+#     Forward pass
+#     """
+#     # get device
+#     device = coeff_hat.device
+#     # convert tensor
+#     cp = coeff_hat.detach().cpu().numpy()
+#     # solve
+#     sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
+#     # add into solpool
+#     self.solpool = np.concatenate((self.solpool, sols_hat))
+#     # remove duplicate
+#     self.solpool = np.unique(self.solpool, axis=0)
+#     solpool = torch.from_numpy(self.solpool.astype(np.float32)).to(device)
+#     # get current obj
+#     obj_cp = torch.einsum("bd,bd->b", coeff_hat, sol_true).unsqueeze(1)
+#     # get obj for solpool
+#     objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
+#     # get loss
+#     if self.optSolver.modelSense == GRB.MINIMIZE:
+#         loss, _ = (obj_cp - objpool_cp).max(axis=1)
+#     if self.optSolver.modelSense == GRB.MAXIMIZE:
+#         loss, _ = (objpool_cp - obj_cp).max(axis=1)
+#     # reduction
+#     if hyperparams["reduction"] == "mean":
+#         loss = torch.mean(loss)
+#     elif hyperparams["reduction"] == "sum":
+#         loss = torch.sum(loss)
+#     elif hyperparams["reduction"] == "none":
+#         pass
+#     else:
+#         raise ValueError("No reduction '{}'.".format(reduction))
+#     return loss

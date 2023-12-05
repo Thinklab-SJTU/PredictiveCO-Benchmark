@@ -23,7 +23,6 @@ class perturbed(optModel):
         self,
         optSolver,
         processes=1,
-        solve_ratio=1,
         n_samples=10,
         sigma=1.0,
         seed=135,
@@ -36,9 +35,9 @@ class perturbed(optModel):
             sigma (float): the amplitude of the perturbation
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             seed (int): random state seed
-            solve_ratio (float): the ratio of new solutions computed during training
+
         """
-        super().__init__(optSolver, processes, solve_ratio)
+        super().__init__(optSolver, processes)
         # number of samples
         self.n_samples = n_samples
         # perturbation amplitude
@@ -71,7 +70,6 @@ class perturbed(optModel):
             self.processes,
             self.pool,
             self.rnd,
-            self.solve_ratio,
             self,
         )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
@@ -109,7 +107,6 @@ class perturbedOptFunc(torch.autograd.Function):
         processes,
         pool,
         rnd,
-        solve_ratio,
         module,
     ):
         """
@@ -123,7 +120,7 @@ class perturbedOptFunc(torch.autograd.Function):
             processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             rnd (RondomState): numpy random state
-            solve_ratio (float): the ratio of new solutions computed during training
+
             module (optModel): perturbedOpt module
 
         Returns:
@@ -196,7 +193,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #         sigma=1.0,
 #         processes=1,
 #         seed=135,
-#         solve_ratio=1,
 #         dataset=None,
 #     ):
 #         """
@@ -206,10 +202,10 @@ class perturbedOptFunc(torch.autograd.Function):
 #             sigma (float): the amplitude of the perturbation
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             seed (int): random state seed
-#             solve_ratio (float): the ratio of new solutions computed during training
+#
 #             dataset (None/optDataset): the training data
 #         """
-#         super().__init__(optSolver, processes, solve_ratio)
+#         super().__init__(optSolver, processes)
 #         # number of samples
 #         self.n_samples = n_samples
 #         # perturbation amplitude
@@ -232,7 +228,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #             self.processes,
 #             self.pool,
 #             self.rnd,
-#             self.solve_ratio,
 #             self,
 #         )
 #         # reduction
@@ -263,7 +258,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #         processes,
 #         pool,
 #         rnd,
-#         solve_ratio,
 #         module,
 #     ):
 #         """
@@ -278,7 +272,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             pool (ProcessPool): process pool object
 #             rnd (RondomState): numpy random state
-#             solve_ratio (float): the ratio of new solutions computed during training
+#
 #             module (optModel): perturbedFenchelYoung module
 
 #         Returns:
@@ -294,16 +288,12 @@ class perturbedOptFunc(torch.autograd.Function):
 #         ptb_c = cp + sigma * noises
 #         # solve with perturbation
 #         rand_sigma = np.random.uniform()
-#         if rand_sigma <= solve_ratio:
-#             ptb_sols = _solve_in_pass(ptb_c, optSolver, processes, pool)
-#             if solve_ratio < 1:
-#                 sols = ptb_sols.reshape(-1, cp.shape[1])
-#                 # add into solpool
-#                 module.solpool = np.concatenate((module.solpool, sols))
-#                 # remove duplicate
-#                 module.solpool = np.unique(module.solpool, axis=0)
-#         else:
-#             ptb_sols = _cache_in_pass(ptb_c, optSolver, module.solpool)
+#         ptb_sols = _solve_in_pass(ptb_c, optSolver, processes, pool)
+#         sols = ptb_sols.reshape(-1, cp.shape[1])
+#         # add into solpool
+#         module.solpool = np.concatenate((module.solpool, sols))
+#         # remove duplicate
+#         module.solpool = np.unique(module.solpool, axis=0)
 #         # solution expectation
 #         e_sol = ptb_sols.mean(axis=1)
 #         # difference
