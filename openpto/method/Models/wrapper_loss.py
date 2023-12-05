@@ -78,4 +78,4 @@ def get_loss_fn(args, optSolver, conf):
         "log_dir": args.log_dir,
         "loss_path": args.loss_path,
     }
-    return ModelCalss(optSolver, args.processes, **loss_dict)
+    return ModelCalss(optSolver, **loss_dict)

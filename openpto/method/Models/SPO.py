@@ -18,14 +18,12 @@ class SPO(optModel):
     Reference: <https://doi.org/10.1287/mnsc.2020.3922>
     """
 
-    def __init__(self, optSolver, processes=1, **kwargs):
+    def __init__(self, optSolver, **kwargs):
         """
         Args:
             optSolver (optSolver): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
         self.spo_func = SPOPlusFunc()
 
     def forward(

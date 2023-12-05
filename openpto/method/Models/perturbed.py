@@ -22,7 +22,6 @@ class perturbed(optModel):
     def __init__(
         self,
         optSolver,
-        processes=1,
         n_samples=10,
         sigma=1.0,
         seed=135,
@@ -33,11 +32,10 @@ class perturbed(optModel):
             optSolver (optModel): an  optimization model
             n_samples (int): number of Monte-Carlo samples
             sigma (float): the amplitude of the perturbation
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
             seed (int): random state seed
 
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
         # number of samples
         self.n_samples = n_samples
         # perturbation amplitude
@@ -67,7 +65,6 @@ class perturbed(optModel):
             params,
             self.n_samples,
             self.sigma,
-            self.processes,
             self.pool,
             self.rnd,
             self,
@@ -104,7 +101,6 @@ class perturbedOptFunc(torch.autograd.Function):
         params,
         n_samples,
         sigma,
-        processes,
         pool,
         rnd,
         module,
@@ -117,7 +113,6 @@ class perturbedOptFunc(torch.autograd.Function):
             optSolver (optModel): an  optimization model
             n_samples (int): number of Monte-Carlo samples
             sigma (float): the amplitude of the perturbation
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
             pool (ProcessPool): process pool object
             rnd (RondomState): numpy random state
 
@@ -191,7 +186,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #         optSolver,
 #         n_samples=10,
 #         sigma=1.0,
-#         processes=1,
 #         seed=135,
 #         dataset=None,
 #     ):
@@ -200,12 +194,11 @@ class perturbedOptFunc(torch.autograd.Function):
 #             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
-#             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             seed (int): random state seed
 #
 #             dataset (None/optDataset): the training data
 #         """
-#         super().__init__(optSolver, processes)
+#         super().__init__(optSolver)
 #         # number of samples
 #         self.n_samples = n_samples
 #         # perturbation amplitude
@@ -225,7 +218,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #             self.optSolver,
 #             self.n_samples,
 #             self.sigma,
-#             self.processes,
 #             self.pool,
 #             self.rnd,
 #             self,
@@ -255,7 +247,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #         optSolver,
 #         n_samples,
 #         sigma,
-#         processes,
 #         pool,
 #         rnd,
 #         module,
@@ -269,7 +260,6 @@ class perturbedOptFunc(torch.autograd.Function):
 #             optSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
-#             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #             pool (ProcessPool): process pool object
 #             rnd (RondomState): numpy random state
 #
@@ -288,7 +278,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         ptb_c = cp + sigma * noises
 #         # solve with perturbation
 #         rand_sigma = np.random.uniform()
-#         ptb_sols = _solve_in_pass(ptb_c, optSolver, processes, pool)
+#         ptb_sols = _solve_in_pass(ptb_c, optSolver, pool)
 #         sols = ptb_sols.reshape(-1, cp.shape[1])
 #         # add into solpool
 #         module.solpool = np.concatenate((module.solpool, sols))
@@ -320,7 +310,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         return grad * grad_output, None, None, None, None, None, None, None, None, None
 
 
-# def _solve_in_pass(ptb_c, optSolver, processes, pool):
+# def _solve_in_pass(ptb_c, optSolver, pool):
 #     """
 #     A function to solve optimization in the forward pass
 #     """

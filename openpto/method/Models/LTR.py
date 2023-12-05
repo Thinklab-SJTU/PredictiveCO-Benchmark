@@ -19,14 +19,12 @@ class pointwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, **kwargs):
+    def __init__(self, optSolver, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
@@ -84,14 +82,12 @@ class pairwiseLTR(optModel):
     Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
     """
 
-    def __init__(self, optSolver, processes=1, **kwargs):
+    def __init__(self, optSolver, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
@@ -172,14 +168,12 @@ class listwiseLTR(optModel):
     Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
     """
 
-    def __init__(self, optSolver, processes=1, tau=1.0, **kwargs):
+    def __init__(self, optSolver, tau=1.0, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
 
         if tau <= 0:
             raise ValueError("tau is not positive.")

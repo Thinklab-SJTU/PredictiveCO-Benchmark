@@ -12,14 +12,12 @@ class negativeIdentity(optModel):
     Reference: <https://arxiv.org/abs/2205.15213>
     """
 
-    def __init__(self, optSolver, processes=1, **kwargs):
+    def __init__(self, optSolver, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes)
+        super().__init__(optSolver)
         self.nid = negativeIdentityFunc()
 
     def forward(

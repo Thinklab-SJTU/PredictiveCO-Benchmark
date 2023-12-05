@@ -19,14 +19,12 @@ class NCE(optModel):
     Reference: <https://www.ijcai.org/proceedings/2021/390>
     """
 
-    def __init__(self, optSolver, processes=1, **kwargs):
+    def __init__(self, optSolver, **kwargs):
         """
         Args:
             optSolver (optModel): an  optimization model
-            processes (int): number of processors, 1 for single-core, 0 for all of cores
-
         """
-        super().__init__(optSolver, processes, **kwargs)
+        super().__init__(optSolver, **kwargs)
         # solution pool
         n_vars = optSolver.num_vars
         self.solpool = np.empty((0, n_vars))
@@ -107,14 +105,13 @@ class NCE(optModel):
 #     Reference: <https://www.ijcai.org/proceedings/2021/390>
 #     """
 
-#     def __init__(self, optSolver, processes=1):
+#     def __init__(self, optSolver=1):
 #         """
 #         Args:
 #             optSolver (optModel): an  optimization model
-#             processes (int): number of processors, 1 for single-core, 0 for all of cores
 #
 #         """
-#         super().__init__(optSolver, processes)
+#         super().__init__(optSolver)
 #         # solution pool
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
@@ -127,7 +124,7 @@ class NCE(optModel):
 #     # convert tensor
 #     cp = coeff_hat.detach().cpu().numpy()
 #     # solve
-#     sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.processes, self.pool)
+#     sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.pool)
 #     # add into solpool
 #     self.solpool = np.concatenate((self.solpool, sols_hat))
 #     # remove duplicate
