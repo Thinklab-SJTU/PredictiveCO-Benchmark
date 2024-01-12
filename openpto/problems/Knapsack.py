@@ -34,7 +34,7 @@ class Knapsack(PTOProblem):
         noise_width=0,
         capacity=1,
         data_dir="./openpto/data/",
-        kwargs={},
+        **kwargs,
     ):
         super(Knapsack, self).__init__(data_dir)
         self.capacity = capacity
@@ -84,7 +84,6 @@ class Knapsack(PTOProblem):
             )
         elif prob_version == "gen-ood":
             self.num_items = num_items
-            print("mean, var", mean, var)
             train_weights, train_feats, train_profits = self.genData(
                 num_train_instances,
                 num_features,
@@ -97,23 +96,29 @@ class Knapsack(PTOProblem):
                 seed=rand_seed,
             )
             # # change test distribution
-            # train_feats, test_feats = (
-            #     feats[:num_train_instances],
-            #     feats[num_train_instances:],
-            # )
-            # train_profits, test_profits = (
-            #     profits[:num_train_instances],
-            #     profits[num_train_instances:],
-            # )
+            mean_ood, var_ood = kwargs["mean_ood"], kwargs["var_ood"]
+            test_weights, test_feats, test_profits = self.genData(
+                num_test_instances,
+                num_features,
+                num_items,
+                mean_ood,
+                var_ood,
+                dim=knapsack_dim,
+                poly_deg=poly_deg,
+                noise_width=noise_width,
+                seed=rand_seed,
+            )
+            print("mean, var:", mean, var)
+            print("mean ood, var ood:", mean_ood, var_ood)
             # train set
-            self.weights = weights
-            self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
+            self.weights = train_weights
+            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances, -1)
             self.Xs_train, self.Ys_train = (
                 train_feats,
                 train_profits,
             )  # (bz, feature_dim), (bz, n_items)
             # test set
-            self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
+            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances, -1)
             self.Xs_test, self.Ys_test = test_feats, test_profits
             # Split training data into train/val
             assert 0 < val_frac < 1
