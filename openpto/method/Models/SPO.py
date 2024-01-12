@@ -15,14 +15,11 @@ from openpto.method.utils_method import to_tensor
 
 class SPO(optModel):
     """
-    Reference: <https://doi.org/10.1287/mnsc.2020.3922>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optSolver): an  optimization model
-        """
+        """ """
         super().__init__(optSolver)
         self.spo_func = SPOPlusFunc()
 

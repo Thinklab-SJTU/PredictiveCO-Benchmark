@@ -16,14 +16,11 @@ from openpto.method.utils_method import to_tensor
 class NCE(optModel):
     """
     Code from:
-    Reference: <https://www.ijcai.org/proceedings/2021/390>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(optSolver, **kwargs)
         # solution pool
         n_vars = optSolver.num_vars
@@ -102,7 +99,7 @@ class NCE(optModel):
 
 #     Thus, allows us to design an algorithm based on stochastic gradient descent.
 
-#     Reference: <https://www.ijcai.org/proceedings/2021/390>
+#     Reference:
 #     """
 
 #     def __init__(self, optSolver=1):

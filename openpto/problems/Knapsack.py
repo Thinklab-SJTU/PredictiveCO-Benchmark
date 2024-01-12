@@ -28,6 +28,8 @@ class Knapsack(PTOProblem):
         prob_version="gen",  # "energy" or "gen"
         knapsack_dim=1,
         num_features=5,
+        mean=0,
+        var=1,
         poly_deg=1,
         noise_width=0,
         capacity=1,
@@ -44,10 +46,13 @@ class Knapsack(PTOProblem):
             self.get_energy_data(val_frac)
         elif prob_version == "gen":
             self.num_items = num_items
+            print("mean, var", mean, var)
             weights, feats, profits = self.genData(
                 num_train_instances + num_test_instances,
                 num_features,
                 num_items,
+                mean,
+                var,
                 dim=knapsack_dim,
                 poly_deg=poly_deg,
                 noise_width=noise_width,
@@ -61,6 +66,45 @@ class Knapsack(PTOProblem):
                 profits[:num_train_instances],
                 profits[num_train_instances:],
             )
+            # train set
+            self.weights = weights
+            self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
+            self.Xs_train, self.Ys_train = (
+                train_feats,
+                train_profits,
+            )  # (bz, feature_dim), (bz, n_items)
+            # test set
+            self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
+            self.Xs_test, self.Ys_test = test_feats, test_profits
+            # Split training data into train/val
+            assert 0 < val_frac < 1
+            self.val_idxs = range(0, int(val_frac * num_train_instances))
+            self.train_idxs = range(
+                int(val_frac * num_train_instances), num_train_instances
+            )
+        elif prob_version == "gen-ood":
+            self.num_items = num_items
+            print("mean, var", mean, var)
+            train_weights, train_feats, train_profits = self.genData(
+                num_train_instances,
+                num_features,
+                num_items,
+                mean,
+                var,
+                dim=knapsack_dim,
+                poly_deg=poly_deg,
+                noise_width=noise_width,
+                seed=rand_seed,
+            )
+            # # change test distribution
+            # train_feats, test_feats = (
+            #     feats[:num_train_instances],
+            #     feats[num_train_instances:],
+            # )
+            # train_profits, test_profits = (
+            #     profits[:num_train_instances],
+            #     profits[num_train_instances:],
+            # )
             # train set
             self.weights = weights
             self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
@@ -247,7 +291,7 @@ class Knapsack(PTOProblem):
             if torch.is_tensor(Y):
                 Z = to_tensor(Z).to(Y.device)
             return (Y.squeeze(-1) * Z).sum(-1)
-        elif self.prob_version == "gen":
+        elif self.prob_version in ["gen", "gen-ood"]:
             assert Y.shape == Z.shape
             assert Y.ndim == Z.ndim == 2
             if torch.is_tensor(Y):
@@ -301,7 +345,7 @@ class Knapsack(PTOProblem):
         }
 
     def get_model_shape(self):
-        if self.prob_version == "gen":
+        if self.prob_version in ["gen", "gen-ood"]:
             return self.Xs_train.shape[-1], self.num_items
         else:
             return self.Xs_train.shape[-1], 1
@@ -311,7 +355,15 @@ class Knapsack(PTOProblem):
 
     @staticmethod
     def genData(
-        num_instances, num_features, num_items, dim=1, poly_deg=1, noise_width=0, seed=135
+        num_instances,
+        num_features,
+        num_items,
+        mean=0,
+        var=1,
+        dim=1,
+        poly_deg=1,
+        noise_width=0,
+        seed=135,
     ):
         #     A function to generate synthetic data and features for knapsack
 
@@ -346,7 +398,7 @@ class Knapsack(PTOProblem):
         # random matrix parameter B
         B = rnd.binomial(1, 0.5, (m, p))
         # feature vectors
-        feats = rnd.normal(0, 1, (n, p))
+        feats = rnd.normal(mean, var, (n, p))
         # value of items
         profits = np.zeros((n, m), dtype=int)
         for i in range(n):

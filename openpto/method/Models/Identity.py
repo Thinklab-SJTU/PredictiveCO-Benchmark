@@ -9,14 +9,11 @@ from openpto.method.utils_method import to_device, to_tensor
 
 class negativeIdentity(optModel):
     """
-    Reference: <https://arxiv.org/abs/2205.15213>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(optSolver)
         self.nid = negativeIdentityFunc()
 

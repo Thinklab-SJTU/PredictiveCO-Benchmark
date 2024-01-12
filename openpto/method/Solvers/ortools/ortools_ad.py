@@ -69,8 +69,7 @@ class AdOrToolSolver(optSolver):
             # solver.Objective().Value()
             pass
         else:
-            print("No solution found.")
-            assert 0
+            raise ValueError("No solution found.")
 
         # print(f'Problem solved in {(solver.wall_time()/1000):.3f} seconds')
         return sol2vec(x, num_users, num_channels)

@@ -8,7 +8,7 @@ from openpto.problems.PTOProblem import PTOProblem
 
 
 class RandomTopK(PTOProblem):
-    """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
+    """ """
 
     def __init__(
         self,

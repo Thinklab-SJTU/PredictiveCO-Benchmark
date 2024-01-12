@@ -9,11 +9,7 @@ from copy import deepcopy
 
 
 class optSolver(object):
-    """1
-
-    Attributes:
-        _model (GurobiPy model): Gurobi model
-    """
+    """ """
 
     def __init__(self, modelSense):
         # default sense

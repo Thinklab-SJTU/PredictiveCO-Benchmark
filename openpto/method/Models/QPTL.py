@@ -15,10 +15,7 @@ class QPTL(optModel):
     """ """
 
     def __init__(self, optSolver, tau=1, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(optSolver)
         self.tau = tau
 

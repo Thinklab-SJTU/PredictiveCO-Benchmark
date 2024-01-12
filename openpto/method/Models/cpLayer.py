@@ -17,11 +17,7 @@ class cpLayer(optModel):
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-            lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-        """
+        """ """
         super().__init__(optSolver)
 
     def forward(

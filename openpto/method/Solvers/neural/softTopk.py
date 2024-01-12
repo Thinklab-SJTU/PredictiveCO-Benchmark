@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class SoftTopk(torch.nn.Module):
     """
-    Source: Code from https://proceedings.neurips.cc/paper/2020/file/ec24a54d62ce57ba93a531b460fa8d18-Paper.pdf
+    Code from:
     """
 
     def __init__(self, epsilon=0.01, max_iter=200):

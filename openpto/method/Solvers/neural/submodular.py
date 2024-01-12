@@ -3,11 +3,7 @@ import torch
 
 
 class OptimiseSubmodular(torch.autograd.Function):
-    """
-    pytorch function for differentiable submodular maximization. The forward pass
-    computes the optimal Z for a given set of predicted labels Yhat. The backward pass differentiates
-    that optimal Z wrt Yhat.
-    """
+    """ """
 
     @staticmethod
     def forward(

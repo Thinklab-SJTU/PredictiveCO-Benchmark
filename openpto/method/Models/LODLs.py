@@ -25,15 +25,11 @@ NUM_CPUS = os.cpu_count()
 
 class LODL(optModel):
     """
-    Reference: <https://arxiv.org/abs/1912.02175>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-            lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-        """
+        """ """
         super().__init__(optSolver)
         self.obj_fn = None
         self.log_dir = kwargs["log_dir"]

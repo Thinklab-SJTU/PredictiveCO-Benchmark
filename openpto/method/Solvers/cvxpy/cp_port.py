@@ -13,12 +13,7 @@ from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
 
 
 class CpPortfolioSolver(optCPSolver):
-    """
-    This is an abstract class for Gurobi-based optimization model
-
-    Attributes:
-        _model (GurobiPy model): Gurobi model
-    """
+    """ """
 
     def __init__(self, num_stocks, modelSense=None, alpha=1, **kwargs):
         super().__init__(modelSense)

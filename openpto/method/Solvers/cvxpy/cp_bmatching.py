@@ -13,12 +13,7 @@ from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
 
 
 class BmatchingSolver(optCPSolver):
-    """
-    This is an abstract class for Gurobi-based optimization model
-
-    Attributes:
-        _model (GurobiPy model): Gurobi model
-    """
+    """ """
 
     def __init__(self, modelSense=None, isTrain=True, num_nodes=50, **kwargs):
         super().__init__(modelSense)

@@ -16,7 +16,7 @@ from openpto.problems.PTOProblem import PTOProblem
 
 # TODO: Remove default
 class RMAB(PTOProblem):
-    """A 2-state 2-action RMAB problem cobbled together from multiple sources."""
+    """ """
 
     def __init__(
         self,

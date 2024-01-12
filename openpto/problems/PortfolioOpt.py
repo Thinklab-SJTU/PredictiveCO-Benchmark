@@ -15,13 +15,7 @@ quandl.ApiConfig.api_key = "3Uxzq4TZV5V9RghuRYsY"
 
 
 class PortfolioOpt(PTOProblem):
-    """A class that implements the Portfolio Optimization problem from
-    Wang, Kai, et al. "Automatically learning compact quality-aware surrogates
-    for optimization problems." Advances in Neural Information Processing
-    Systems 33 (2020): 9586-9596.
-
-    The code is largely adapted from: https://github.com/guaguakai/surrogate-optimization-learning/
-    """
+    """ """
 
     def __init__(
         self,

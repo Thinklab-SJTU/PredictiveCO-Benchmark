@@ -11,7 +11,7 @@ from openpto.problems.PTOProblem import PTOProblem
 
 
 class BudgetAllocation(PTOProblem):
-    """The budget allocation predict-then-optimise problem from Wilder et. al. (2019)"""
+    """ """
 
     def __init__(
         self,
@@ -91,7 +91,7 @@ class BudgetAllocation(PTOProblem):
         # Load the dataset
         with open(f"{self.data_dir}/budget_allocation_data.pkl", "rb") as f:
             Yfull, _ = pickle.load(f, encoding="bytes")
-        Yfull = np.array(Yfull)  # [2000,100, 500]
+        Yfull = np.array(Yfull)  # [1000,100, 500]
 
         # Whittle the dataset down to the right size
         def whittle(matrix, size, dim):

@@ -14,16 +14,10 @@ from openpto.method.utils_method import minus, to_device, to_tensor
 
 
 class blackbox(optModel):
-    """
-    Reference: <https://arxiv.org/abs/1912.02175>
-    """
+    """ """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-            lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-        """
+        """ """
         super().__init__(optSolver)
         # smoothing parameter
         if kwargs["lambd"] <= 0:

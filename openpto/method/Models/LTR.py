@@ -16,14 +16,11 @@ from openpto.method.utils_method import to_tensor
 
 class pointwiseLTR(optModel):
     """
-    Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(optSolver)
         # solution pool
         n_vars = optSolver.num_vars
@@ -79,7 +76,7 @@ class pointwiseLTR(optModel):
 class pairwiseLTR(optModel):
     """
 
-    Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
+    Reference:
     """
 
     def __init__(self, optSolver, **kwargs):
@@ -164,15 +161,12 @@ class pairwiseLTR(optModel):
 
 class listwiseLTR(optModel):
     """
-    Reference: <https://proceedings.mlr.press/v162/mandi22a.html>
-    Code from: https://github.com/khalil-research/PyEPO/blob/NCE/pkg/pyepo/func/rank.py
+    Reference:
+    Code from:
     """
 
     def __init__(self, optSolver, tau=1.0, **kwargs):
-        """
-        Args:
-            optSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(optSolver)
 
         if tau <= 0:

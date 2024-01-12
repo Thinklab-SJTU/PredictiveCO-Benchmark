@@ -139,7 +139,6 @@ class QPGrbSolver(optGrbSolver):
 
         x_opt = np.array([x[i].x for i in range(len(x))])
         # print("x_opt: ", x_opt)
-        # assert 0
         # -(self.G @ x_opt - self.h)
         # np.array(
         #     [inequality_constraints[i].pi for i in range(len(inequality_constraints))]

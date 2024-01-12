@@ -14,9 +14,7 @@ from openpto.problems.PTOProblem import PTOProblem
 
 
 class Energy(PTOProblem):
-    """
-    Knapsack problem
-    """
+    """ """
 
     def __init__(
         self,

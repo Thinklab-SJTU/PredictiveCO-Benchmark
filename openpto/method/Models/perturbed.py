@@ -15,8 +15,7 @@ from openpto.method.Models.abcOptModel import optModel
 
 class perturbed(optModel):
     """
-
-    Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
+    Reference:
     """
 
     def __init__(
@@ -178,7 +177,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #     and solutions with less computation. Thus, allows us to design an algorithm
 #     based on stochastic gradient descent.
 
-#     Reference: <https://papers.nips.cc/paper/2020/hash/6bb56208f672af0dd65451f869fedfd9-Abstract.html>
+#     Reference:
 #     """
 
 #     def __init__(
