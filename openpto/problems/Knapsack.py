@@ -431,3 +431,8 @@ class Knapsack(PTOProblem):
 
     def get_twostageloss(self):
         return "mse"
+
+    def genEnv(
+        self,
+    ):
+        return True
