@@ -1,10 +1,3 @@
-import os
-
-import numpy as np
-
-from decorators import input_to_numpy
-from utils import TrainingIterator
-
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -23,7 +16,6 @@ class TSP(PTOProblem):
     ):
         super(TSP, self).__init__()
         self._set_seed(rand_seed)
-
 
     def get_train_data(self, **kwargs):
         raise NotImplementedError()

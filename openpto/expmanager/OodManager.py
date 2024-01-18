@@ -13,10 +13,11 @@ from openpto.expmanager.utils_manager import (
     prob_to_gpu,
     save_pd,
 )
+from openpto.method.Generalize.EERM import EERM
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array
-from openpto.method.Generalize import EERM
+from openpto.method.utils_method import ndiv, rand_like, to_array
+
 
 class OodManager:
     """
@@ -102,13 +103,7 @@ class OodManager:
         if self.args.trained_path != "":
             self.ood_model.load_state_dict(torch.load(self.args.trained_path))
             self.logger.info(f"--- Loaded model from {self.args.trained_path}")
-        ############################# Pretrain #############################
-        # fetch pretrain data:
-        if hasattr(problem, "get_pretrain_data"):
-            X_pretrain, Y_pretrain, Y_pretrain_aux = problem.get_pretrain_data()
-        else:
-            X_pretrain, Y_pretrain, Y_pretrain_aux = X_train, Y_train, Y_train_aux
-
+        ############################# Load previous model #############################
         # optimizer:
         self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
@@ -131,67 +126,75 @@ class OodManager:
         }
         # loss function
         twostage_criterion = str2twoStageLoss(problem)
-        self.logger.info("Pretraining Prediction Model...")
-        self.ood_model.train()
-        for ptr_epoch in range(self.args.n_ptr_epochs):
-            ###### one-shot training
-            time_train_start = time.time()
-            # TODO: get forward and loss
-            preds = self.pred_model(X_pretrain)
-            loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            # update time
-            time_since_best += 1
-            total_train_time += time.time() - time_train_start
+        # ############################# Pretrain #############################
+        # # fetch pretrain data:
+        # self.logger.info("Pretraining Prediction Model...")
+        # if hasattr(problem, "get_pretrain_data"):
+        #     X_pretrain, Y_pretrain, Y_pretrain_aux = problem.get_pretrain_data()
+        # else:
+        #     X_pretrain, Y_pretrain, Y_pretrain_aux = X_train, Y_train, Y_train_aux
 
-            if do_debug:
-                torch.save(
-                    preds.detach().cpu(),
-                    os.path.join(
-                        self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
-                    ),
-                )
-            ###### Check metrics on val set
-            if ptr_epoch % self.args.valfreq == 0:
-                # Compute metrics
-                datasets = [
-                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
-                    (X_val, Y_val, Y_val_aux, "val"),
-                ]
-                metrics = print_metrics(
-                    datasets,
-                    self.ood_model,
-                    problem,
-                    twostage_criterion,
-                    twostage_criterion,
-                    optSolver,
-                    f"Ptr iter {ptr_epoch},",
-                    self.logger,
-                    do_debug=do_debug,
-                    **self.model_args,
-                )
-                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
-                add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
-                # Save model if it's the best one
-                if best[1] is None or compare_result(metrics["val"], best):
-                    best = (metrics["val"]["eval"]["value"], deepcopy(self.ood_model))
-                    time_since_best = 0
-                    # save
-                    torch.save(
-                        self.ood_model.state_dict(),
-                        os.path.join(
-                            self.args.log_dir, "checkpoints", "ptr_pred_best.pt"
-                        ),
-                    )
-            # Stop if model hasn't improved for patience steps
-            if self.args.earlystopping and time_since_best > self.args.patience:
-                break
+        # self.ood_model.train()
+        # for ptr_epoch in range(self.args.n_ptr_epochs):
+        #     ###### one-shot training
+        #     time_train_start = time.time()
+        #     # TODO: get forward and loss
+        #     preds = self.pred_model(X_pretrain)
+        #     loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
 
-        if best[1]:
-            self.ood_model = deepcopy(best[1])
+        #     self.optimizer.zero_grad()
+        #     loss.backward()
+        #     self.optimizer.step()
+        #     # update time
+        #     time_since_best += 1
+        #     total_train_time += time.time() - time_train_start
+
+        #     if do_debug:
+        #         torch.save(
+        #             preds.detach().cpu(),
+        #             os.path.join(
+        #                 self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+        #             ),
+        #         )
+        #     ###### Check metrics on val set
+        #     if ptr_epoch % self.args.valfreq == 0:
+        #         # Compute metrics
+        #         datasets = [
+        #             (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
+        #             (X_val, Y_val, Y_val_aux, "val"),
+        #         ]
+        #         metrics = print_metrics(
+        #             datasets,
+        #             self.ood_model,
+        #             problem,
+        #             twostage_criterion,
+        #             twostage_criterion,
+        #             optSolver,
+        #             f"Ptr iter {ptr_epoch},",
+        #             self.logger,
+        #             do_debug=do_debug,
+        #             **self.model_args,
+        #         )
+        #         add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+        #         add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
+        #         # Save model if it's the best one
+        #         if best[1] is None or compare_result(metrics["val"], best):
+        #             best = (metrics["val"]["eval"]["value"], deepcopy(self.ood_model))
+        #             time_since_best = 0
+        #             # save
+        #             torch.save(
+        #                 self.ood_model.state_dict(),
+        #                 os.path.join(
+        #                     self.args.log_dir, "checkpoints", "ptr_pred_best.pt"
+        #                 ),
+        #             )
+        #     # Stop if model hasn't improved for patience steps
+        #     if self.args.earlystopping and time_since_best > self.args.patience:
+        #         break
+
+        # if best[1]:
+        #     self.ood_model = deepcopy(best[1])
 
         ############################# Train #############################
         # optimizer:
@@ -205,22 +208,18 @@ class OodManager:
             # TODO: batch train or individually train?
             # currently, only support individually train
             time_train_start = time.time()
-            losses = []
-            preds = self.ood_model(X_train)
-            for idx in range(len(X_train)):
-                loss_idx = loss_fn(
-                    problem,
-                    coeff_hat=get_idxs(preds, idx),
-                    coeff_true=get_idxs(Y_train, idx),
-                    params=get_idxs(Y_train_aux, idx),
-                    partition="train",
-                    index=idx,
-                    do_debug=do_debug,
-                    **self.model_args,
-                )
-                losses.append(loss_idx)
-
-            loss = torch.stack(losses).sum()
+            loss = self.ood_model(
+                X_train,
+                Y_train,
+                Y_train_aux,
+                loss_fn,
+                problem,
+                self.args.n_envs,
+                do_debug,
+                self.args.beta,
+                "train",
+                **self.model_args,
+            )
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

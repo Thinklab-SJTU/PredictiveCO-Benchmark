@@ -3,7 +3,6 @@ from setuptools import find_packages, setup
 REQUIRES = """
 ruamel.yaml
 chardet
-pickle
 requests
 quandl
 cvxpy
@@ -18,6 +17,9 @@ ruamel.yaml==0.17.21
 
 
 def get_install_requires():
+    # with open("requirements.txt", encoding="utf-8") as f:
+    #     REQUIRES = f.read()
+
     reqs = [req for req in REQUIRES.split("\n") if len(req) > 0]
     return reqs
 

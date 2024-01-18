@@ -1,7 +1,3 @@
-from openpto.method.Generalize import EERM
-
-
-
 ################################# Wrappers ################################################
 # def solver_wrapper(args, conf, problem):
 #     prob_solver_dict = {

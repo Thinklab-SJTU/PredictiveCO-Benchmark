@@ -97,6 +97,9 @@ def get_args():
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--n_hidden", type=int, default=32)
     #
+    # generalization model
+    parser.add_argument("--n_envs", type=int, default=1)
+    parser.add_argument("--beta", type=float, default=1.0)
     args = parser.parse_args()
 
     args.data_dir = os.path.join(args.data_dir, args.problem)
