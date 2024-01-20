@@ -451,7 +451,7 @@ class Knapsack(PTOProblem):
         num_train_instances,
     ):
         config = self.env_config[f"env{env_id}"]
-        print("config: ", config)
+        # print("config: ", config)
         # print("mean, var", mean, var)
         _, Xs_train, Ys_train = self.genData(
             num_train_instances,

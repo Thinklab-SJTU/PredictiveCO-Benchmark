@@ -25,7 +25,7 @@ class EERM(nn.Module):
         partition="train",
         **model_args,
     ):
-        print("n_envs: ", n_envs)
+        # print("n_envs: ", n_envs)
         Loss = list()
         for env_id in range(n_envs):
             # gen env data
@@ -49,7 +49,7 @@ class EERM(nn.Module):
                 env_loss.append(loss_idx)
             env_loss = torch.stack(env_loss).sum()
             Loss.append(env_loss.view(-1))
-        print("Loss: ", len(Loss), Loss)
+        # print("Loss: ", len(Loss), Loss)
         Loss = torch.cat(Loss, dim=0)
         Var, Mean = torch.var_mean(Loss)
         outer_loss = Var + beta * Mean
