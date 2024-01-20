@@ -63,50 +63,29 @@ class Energy(PTOProblem):
         return (
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
-            self.Ys[self.train_idxs],
-            # [None for _ in range(len(self.train_idxs))],
+            self.Ys[self.train_idxs],  # placeholder not used
         )
 
     def get_val_data(self):
         return (
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
-            self.Ys[self.val_idxs],
-            # [None for _ in range(len(self.val_idxs))],
+            self.Ys[self.val_idxs],  # placeholder not used
         )
 
     def get_test_data(self):
         return (
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],
-            self.Ys[self.test_idxs],
-            # [None for _ in range(len(self.test_idxs))],
+            self.Ys[self.test_idxs],  # placeholder not used
         )
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
-        1440 // self.q
-        # print("Y_Shape",Y.shape)
         Y = Y.reshape(-1, 48)
-        # ins_num = len(Y)
-        # ans_list = []
-        # if torch.is_tensor(Y):
-        #     Y = Y.cpu()
-        #     Z = Z.cpu()
-        # for i in range(ins_num):
-        #     ans =(Y[i]*Z[i]).sum()
-        #     ans_list.append(ans)
-        # # print(ans_list)
-        # if isinstance(Y, np.ndarray):
-        #     ans_list = np.array(ans_list)
-        # else:
-        #     ans_list = torch.stack(ans_list)
         if torch.is_tensor(Y):
             Y = Y.cpu()
             Z = Z.cpu()
         return (Y * Z).sum(-1)
-        # print(ans_list)
-        # print(ans_list.shape)
-        # return ans_list
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):

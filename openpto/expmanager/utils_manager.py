@@ -93,7 +93,6 @@ def print_metrics(
                 objective_hat = problem.get_objective(
                     Ys, Zs_hat, Ys_aux, **problem.init_API()
                 )
-
             # Loss and Error
             losses = []
             for idx in range(len(Xs)):

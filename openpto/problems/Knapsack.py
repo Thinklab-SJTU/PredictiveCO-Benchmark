@@ -20,24 +20,33 @@ class Knapsack(PTOProblem):
         self,
         num_train_instances=100,  # number of instances to use from the dataset to train
         num_test_instances=500,  # number of instances to use from the dataset to test
-        num_items=100,  # number of targets to consider
         val_frac=0.2,  # fraction of training data reserved for validation
-        unit_weight=False,
-        noise_level=0,
         rand_seed=0,  # for reproducibility
         prob_version="gen",  # "energy" or "gen"
-        knapsack_dim=1,
-        num_features=5,
-        mean=0,
-        var=1,
-        poly_deg=1,
-        noise_width=0,
-        capacity=1,
+        # num_items=100,  # number of targets to consider
+        # knapsack_dim=1,
+        # num_features=5,
+        # mean=0,
+        # var=1,
+        # poly_deg=1,
+        # noise_width=0,
+        # capacity=1,
+        # distr="normal",
         data_dir="./openpto/data/",
         **kwargs,
     ):
         super(Knapsack, self).__init__(data_dir)
-        self.capacity = capacity
+        self.kwargs = kwargs
+        self.rand_seed = rand_seed
+        num_items = kwargs["num_items"]
+        knapsack_dim, num_features = kwargs["knapsack_dim"], kwargs["num_features"]
+        mean, var = kwargs["mean"], kwargs["var"]
+        poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        distr = kwargs["distr"]
+        if "envs" in kwargs:
+            self.env_config = kwargs["envs"]
+            print("self.env_config: ", self.env_config)
+        self.capacity = kwargs["capacity"]
         self.prob_version = prob_version
         self.rand_seed = rand_seed
         self._set_seed(rand_seed)
@@ -56,6 +65,7 @@ class Knapsack(PTOProblem):
                 dim=knapsack_dim,
                 poly_deg=poly_deg,
                 noise_width=noise_width,
+                distr=distr,
                 seed=rand_seed,
             )
             train_feats, test_feats = (
@@ -93,6 +103,7 @@ class Knapsack(PTOProblem):
                 dim=knapsack_dim,
                 poly_deg=poly_deg,
                 noise_width=noise_width,
+                distr=distr,
                 seed=rand_seed,
             )
             # # change test distribution
@@ -106,6 +117,7 @@ class Knapsack(PTOProblem):
                 dim=knapsack_dim,
                 poly_deg=poly_deg,
                 noise_width=noise_width,
+                distr=distr,
                 seed=rand_seed,
             )
             print("mean, var:", mean, var)
@@ -232,8 +244,6 @@ class Knapsack(PTOProblem):
         y_train = y[: grouplength * train_len]
         X_1gtest = X1g[grouplength * train_len :]
         y_test = y[grouplength * train_len :]
-
-        # print(len(X1g_train),len(X1g_test),len(X),len(X1g_train)+len(X1g_test))
         return (X_1gtrain, y_train, X_1gtest, y_test)
 
     def get_energy_pandas(self, fname=None):
@@ -321,7 +331,6 @@ class Knapsack(PTOProblem):
             for i in range(len(Y)):
                 # solve
                 solp = optSolver.solve(Y[i], isTrain)
-                # print("solp",solp)
                 if isinstance(solp, np.ndarray):
                     solp = torch.tensor(solp)
                 else:
@@ -368,6 +377,7 @@ class Knapsack(PTOProblem):
         dim=1,
         poly_deg=1,
         noise_width=0,
+        distr="normal",
         seed=135,
     ):
         #     A function to generate synthetic data and features for knapsack
@@ -403,7 +413,10 @@ class Knapsack(PTOProblem):
         # random matrix parameter B
         B = rnd.binomial(1, 0.5, (m, p))
         # feature vectors
-        feats = rnd.normal(mean, var, (n, p))
+        if distr == "normal":
+            feats = rnd.normal(mean, var, (n, p))
+        else:
+            raise NotImplementedError
         # value of items
         profits = np.zeros((n, m), dtype=int)
         for i in range(n):
@@ -434,5 +447,22 @@ class Knapsack(PTOProblem):
 
     def genEnv(
         self,
+        env_id,
+        num_train_instances,
     ):
-        return True
+        config = self.env_config[f"env{env_id}"]
+        print("config: ", config)
+        # print("mean, var", mean, var)
+        _, Xs_train, Ys_train = self.genData(
+            num_train_instances,
+            self.kwargs["num_features"],
+            self.num_items,
+            config["mean"],
+            config["var"],
+            dim=self.kwargs["knapsack_dim"],
+            poly_deg=self.kwargs["poly_deg"],
+            noise_width=self.kwargs["noise_width"],
+            distr=self.kwargs["distr"],
+            seed=self.rand_seed,
+        )  # (bz, feature_dim), (bz, n_items)
+        return Xs_train, Ys_train

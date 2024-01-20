@@ -1,0 +1,53 @@
+dataset:
+  prob_version: gen-ood
+  noise_width: 0.5
+  poly_deg: 4
+  knapsack_dim: 1
+  num_items: 20
+  capacity: 30
+  num_features: 5
+  distr: normal
+  mean: 0
+  var: 1
+  mean_ood: 10
+  var_ood: 10
+  envs:
+    env0:
+        mean: 1
+        var: 1
+    env1:
+      mean: 2
+      var: 1
+    env2:
+      mean: 4
+      var: 1
+    env3:
+      mean: 8
+      var: 1
+    env4:
+      mean: 16
+      var: 1
+    env5:
+      mean: 32
+      var: 1
+    env6:
+      mean: 64
+      var: 1
+    env7:
+      mean: 128
+      var: 1
+    env8:
+      mean: 256
+      var: 1
+    env9:
+      mean: 512
+      var: 1
+      
+solver:
+  gurobi:
+    kwargs: None
+  qptl:
+    kwargs: None
+  cvxpy:
+    kwargs: None  
+    

@@ -1,8 +1,6 @@
 dataset:
   prob_version: gen
-  # generate_weight: True
-  unit_weight: False
-  noise_level: 0
+  num_features: 5
   noise_width: 0.5
   poly_deg: 4
   knapsack_dim: 1

@@ -140,7 +140,7 @@ class OodManager:
         #     ###### one-shot training
         #     time_train_start = time.time()
         #     # TODO: get forward and loss
-        #     preds = self.pred_model(X_pretrain)
+        #     preds, _ = self.pred_model(X_pretrain)
         #     loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
 
         #     self.optimizer.zero_grad()
