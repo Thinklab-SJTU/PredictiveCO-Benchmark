@@ -7,10 +7,10 @@ dataset:
   capacity: 30
   num_features: 5
   distr: normal
-  mean: 0
-  var: 1
-  mean_ood: 10
-  var_ood: 10
+  mean: 10
+  var: 10
+  mean_ood: 0
+  var_ood: 1
   envs:
     env0:
         mean: 1

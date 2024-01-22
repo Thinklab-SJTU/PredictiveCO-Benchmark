@@ -4,6 +4,45 @@ import torch.nn as nn
 from openpto.method.utils_method import get_idxs, to_device
 
 
+class ERM(nn.Module):
+    def __init__(self, pred_model):
+        super(ERM, self).__init__()
+        self.pred_model = pred_model
+
+    def inference(self, X):
+        return self.pred_model(X)
+
+    def forward(
+        self,
+        X_train,
+        Y_train,
+        Y_train_aux,
+        loss_fn,
+        problem,
+        n_envs,
+        do_debug,
+        beta,
+        partition="train",
+        **model_args,
+    ):
+        preds = self.pred_model(X_train)
+        env_loss = list()
+        for idx in range(len(X_train)):
+            loss_idx = loss_fn(
+                problem,
+                coeff_hat=get_idxs(preds, idx),
+                coeff_true=get_idxs(Y_train, idx),
+                params=get_idxs(Y_train_aux, idx),
+                partition=partition,
+                index=idx,
+                do_debug=do_debug,
+                **model_args,
+            )
+            env_loss.append(loss_idx)
+        loss = torch.stack(env_loss).sum()
+        return loss
+
+
 class EERM(nn.Module):
     def __init__(self, pred_model):
         super(EERM, self).__init__()
@@ -27,7 +66,6 @@ class EERM(nn.Module):
     ):
         # print("n_envs: ", n_envs)
         device = X_train.device
-        print("device: ", device)
         Loss = list()
         # original train data
         preds = self.pred_model(X_train)

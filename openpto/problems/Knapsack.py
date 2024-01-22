@@ -94,7 +94,7 @@ class Knapsack(PTOProblem):
             )
         elif prob_version == "gen-ood":
             self.num_items = num_items
-            train_weights, train_feats, train_profits = self.genData(
+            ver0_weights, self.ood_Xs_train, self.ood_Ys_train = self.genData(
                 num_train_instances,
                 num_features,
                 num_items,
@@ -105,11 +105,11 @@ class Knapsack(PTOProblem):
                 noise_width=noise_width,
                 distr=distr,
                 seed=rand_seed,
-            )
-            # # change test distribution
+            )  # (bz, feature_dim), (bz, n_items)
+            ## OOD test distribution
             mean_ood, var_ood = kwargs["mean_ood"], kwargs["var_ood"]
-            test_weights, test_feats, test_profits = self.genData(
-                num_test_instances,
+            ver1_weights, ver1_feats, ver1_profits = self.genData(
+                num_train_instances + num_test_instances,
                 num_features,
                 num_items,
                 mean_ood,
@@ -120,18 +120,21 @@ class Knapsack(PTOProblem):
                 distr=distr,
                 seed=rand_seed,
             )
+            self.Xs_train, self.Xs_test = (
+                ver1_feats[:num_train_instances],
+                ver1_feats[num_train_instances:],
+            )
+            self.Ys_train, self.Ys_test = (
+                ver1_profits[:num_train_instances],
+                ver1_profits[num_train_instances:],
+            )
+            # test set
             print("mean, var:", mean, var)
             print("mean ood, var ood:", mean_ood, var_ood)
-            # train set
-            self.weights = train_weights
-            self.params_train = train_weights.unsqueeze(0).expand(num_train_instances, -1)
-            self.Xs_train, self.Ys_train = (
-                train_feats,
-                train_profits,
-            )  # (bz, feature_dim), (bz, n_items)
-            # test set
-            self.params_test = test_weights.unsqueeze(0).expand(num_test_instances, -1)
-            self.Xs_test, self.Ys_test = test_feats, test_profits
+            # other parameters
+            self.weights = ver1_weights
+            self.params_train = ver1_weights.unsqueeze(0).expand(num_train_instances, -1)
+            self.params_test = ver1_weights.unsqueeze(0).expand(num_test_instances, -1)
             # Split training data into train/val
             assert 0 < val_frac < 1
             self.val_idxs = range(0, int(val_frac * num_train_instances))
@@ -140,7 +143,6 @@ class Knapsack(PTOProblem):
             )
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
-        # default sovler
 
     def get_energy_data(self, val_frac):
         self.num_items = 48
@@ -282,19 +284,37 @@ class Knapsack(PTOProblem):
         df.insert(0, "groupID", gids)
         return df
 
-    def get_train_data(self):
-        return (
-            self.Xs_train[self.train_idxs],
-            self.Ys_train[self.train_idxs],
-            self.params_train[self.train_idxs],
-        )
+    def get_train_data(self, train_mode="iid"):
+        if train_mode == "iid":
+            return (
+                self.Xs_train[self.train_idxs],
+                self.Ys_train[self.train_idxs],
+                self.params_train[self.train_idxs],
+            )
+        elif train_mode == "ood":
+            return (
+                self.ood_Xs_train[self.train_idxs],
+                self.ood_Ys_train[self.train_idxs],
+                self.params_train[self.train_idxs],
+            )
+        else:
+            raise NotImplementedError
 
-    def get_val_data(self):
-        return (
-            self.Xs_train[self.val_idxs],
-            self.Ys_train[self.val_idxs],
-            self.params_train[self.val_idxs],
-        )
+    def get_val_data(self, train_mode="iid"):
+        if train_mode == "iid":
+            return (
+                self.Xs_train[self.val_idxs],
+                self.Ys_train[self.val_idxs],
+                self.params_train[self.val_idxs],
+            )
+        elif train_mode == "ood":
+            return (
+                self.ood_Xs_train[self.val_idxs],
+                self.ood_Ys_train[self.val_idxs],
+                self.params_train[self.val_idxs],
+            )
+        else:
+            raise NotImplementedError
 
     def get_test_data(self):
         return self.Xs_test, self.Ys_test, self.params_test

@@ -13,7 +13,7 @@ from openpto.expmanager.utils_manager import (
     prob_to_gpu,
     save_pd,
 )
-from openpto.method.Generalize.EERM import EERM
+from openpto.method.Generalize.wrapper_generalize import generalize_wrapper
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import ndiv, rand_like, to_array
@@ -40,7 +40,8 @@ class OodManager:
         self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
-        self.ood_model = EERM(self.pred_model)
+        self.ood_model = generalize_wrapper(self.args.ood_model, self.pred_model)
+        self.logger.info(f"---[{self.args.ood_model}] Training Model")
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
@@ -51,8 +52,8 @@ class OodManager:
 
         ############################## Data ##############################
         # Get data
-        X_train, Y_train, Y_train_aux = problem.get_train_data()
-        X_val, Y_val, Y_val_aux = problem.get_val_data()
+        X_train, Y_train, Y_train_aux = problem.get_train_data(self.args.train_mode)
+        X_val, Y_val, Y_val_aux = problem.get_val_data(self.args.train_mode)
         X_test, Y_test, Y_test_aux = problem.get_test_data()
 
         ############################## Preliminary Evaluation ##############################
@@ -319,7 +320,7 @@ class OodManager:
             f"[avg Test Time]: {avg_test_time:.5f} "
         )
         self.logger.info(
-            f"[{self.args.opt_model}]  {results['test']['objective'].mean():.5f}  {eval_value.mean():.5f}  "
+            f"[{self.args.train_mode} Train, {self.args.ood_model}, {self.args.opt_model}]  {results['test']['objective'].mean():.5f}  {eval_value.mean():.5f}  "
             f"{avg_train_time:.5f}  {avg_test_time:.5f}"
         )
         return True
