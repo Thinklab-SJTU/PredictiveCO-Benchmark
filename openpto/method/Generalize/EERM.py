@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from openpto.method.utils_method import get_idxs
+from openpto.method.utils_method import get_idxs, to_device
 
 
 class EERM(nn.Module):
@@ -26,14 +26,36 @@ class EERM(nn.Module):
         **model_args,
     ):
         # print("n_envs: ", n_envs)
+        device = X_train.device
+        print("device: ", device)
         Loss = list()
+        # original train data
+        preds = self.pred_model(X_train)
+        env_loss = list()
+        for idx in range(len(X_train)):
+            loss_idx = loss_fn(
+                problem,
+                coeff_hat=get_idxs(preds, idx),
+                coeff_true=get_idxs(Y_train, idx),
+                params=get_idxs(Y_train_aux, idx),
+                partition=partition,
+                index=idx,
+                do_debug=do_debug,
+                **model_args,
+            )
+            env_loss.append(loss_idx)
+        Loss.append(torch.stack(env_loss).sum().view(-1))
+        # data
         for env_id in range(n_envs):
             # gen env data
-            env_data = problem.genEnv(env_id, num_train_instances=len(X_train))
-            env_X_train, env_Y_train = env_data
-            # print("env_data:", env_data)
+            env_X_train, env_Y_train = problem.genEnv(
+                env_id, num_train_instances=len(X_train)
+            )
+            env_X_train, env_Y_train = to_device(env_X_train, device), to_device(
+                env_Y_train, device
+            )
             # forward and get output
-            env_preds = self.pred_model(X_train)
+            env_preds = self.pred_model(env_X_train)
             env_loss = list()
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
@@ -53,5 +75,4 @@ class EERM(nn.Module):
         Loss = torch.cat(Loss, dim=0)
         Var, Mean = torch.var_mean(Loss)
         outer_loss = Var + beta * Mean
-        # outer_loss = Mean
         return outer_loss
