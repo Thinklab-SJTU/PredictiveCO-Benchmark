@@ -5,7 +5,7 @@ from openpto.method.utils_method import get_idxs, to_device
 
 
 class ERM(nn.Module):
-    def __init__(self, pred_model):
+    def __init__(self, pred_model, **kwargs):
         super(ERM, self).__init__()
         self.pred_model = pred_model
 
@@ -19,9 +19,7 @@ class ERM(nn.Module):
         Y_train_aux,
         loss_fn,
         problem,
-        n_envs,
         do_debug,
-        beta,
         partition="train",
         **model_args,
     ):
@@ -44,9 +42,11 @@ class ERM(nn.Module):
 
 
 class EERM(nn.Module):
-    def __init__(self, pred_model):
+    def __init__(self, pred_model, n_envs, alpha, beta, **kwargs):
         super(EERM, self).__init__()
         self.pred_model = pred_model
+        self.n_envs = (n_envs,)
+        self.alpha, self.beta = alpha, beta
 
     def inference(self, X):
         return self.pred_model(X)
@@ -58,13 +58,10 @@ class EERM(nn.Module):
         Y_train_aux,
         loss_fn,
         problem,
-        n_envs,
         do_debug,
-        beta,
         partition="train",
         **model_args,
     ):
-        # print("n_envs: ", n_envs)
         device = X_train.device
         Loss = list()
         # original train data
@@ -84,7 +81,7 @@ class EERM(nn.Module):
             env_loss.append(loss_idx)
         Loss.append(torch.stack(env_loss).sum().view(-1))
         # data
-        for env_id in range(n_envs):
+        for env_id in range(self.n_envs):
             # gen env data
             env_X_train, env_Y_train = problem.genEnv(
                 env_id, num_train_instances=len(X_train)
@@ -112,5 +109,5 @@ class EERM(nn.Module):
         # print("Loss: ", len(Loss), Loss)
         Loss = torch.cat(Loss, dim=0)
         Var, Mean = torch.var_mean(Loss)
-        outer_loss = Var + beta * Mean
+        outer_loss = self.alpha * Var + self.beta * Mean
         return outer_loss

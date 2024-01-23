@@ -149,7 +149,7 @@ class ExpManager:
                 torch.save(
                     preds.detach().cpu(),
                     os.path.join(
-                        self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+                        self.args.bkup_log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
                     ),
                 )
             ###### Check metrics on val set
@@ -182,6 +182,12 @@ class ExpManager:
                         self.pred_model.state_dict(),
                         os.path.join(
                             self.args.log_dir, "checkpoints", "ptr_pred_best.pt"
+                        ),
+                    )
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(
+                            self.args.bkup_log_dir, "checkpoints", "ptr_pred_best.pt"
                         ),
                     )
             # Stop if model hasn't improved for patience steps
@@ -255,7 +261,12 @@ class ExpManager:
                         self.pred_model.state_dict(),
                         os.path.join(self.args.log_dir, "checkpoints", "tr_pred_best.pt"),
                     )
-
+                    torch.save(
+                        self.pred_model.state_dict(),
+                        os.path.join(
+                            self.args.bkup_log_dir, "checkpoints", "tr_pred_best.pt"
+                        ),
+                    )
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
                     break
@@ -290,21 +301,28 @@ class ExpManager:
         # save logs
         save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
         save_pd(val_logs, os.path.join(self.args.log_dir, "val_logs.csv"))
+        # save logs 2
+        save_pd(train_logs, os.path.join(self.args.bkup_log_dir, "train_logs.csv"))
+        save_pd(val_logs, os.path.join(self.args.bkup_log_dir, "val_logs.csv"))
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
+            [Objs_test_opt, eval_value],
+        )
+        np.save(
+            os.path.join(self.args.bkup_log_dir, "results.npy"),
             [Objs_test_opt, eval_value],
         )
         # save solutions
         if do_debug:
             Z_test_opt_array = to_array(Z_test_opt)
             np.save(
-                os.path.join(self.args.log_dir, "tensors", "solution.npy"),
+                os.path.join(self.args.bkup_log_dir, "tensors", "solution.npy"),
                 Z_test_opt_array,
             )
             torch.save(
                 results["test"]["preds"].cpu().detach(),
-                os.path.join(self.args.log_dir, "tensors", "preds.pt"),
+                os.path.join(self.args.bkup_log_dir, "tensors", "preds.pt"),
             )
 
         ############################ Logging ############################

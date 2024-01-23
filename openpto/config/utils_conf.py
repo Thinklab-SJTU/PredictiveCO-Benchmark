@@ -3,6 +3,8 @@ import ast
 import os
 import random
 
+from datetime import datetime
+
 import numpy as np
 import ruamel.yaml as yaml
 import torch
@@ -101,6 +103,7 @@ def get_args():
     parser.add_argument("--ood_model", type=str, choices=["ERM", "EERM"])
     parser.add_argument("--train_mode", type=str, default="iid", choices=["iid", "ood"])
     parser.add_argument("--n_envs", type=int, default=1)
+    parser.add_argument("--alpha", type=float, default=1.0)
     parser.add_argument("--beta", type=float, default=1.0)
     args = parser.parse_args()
 
@@ -161,28 +164,60 @@ def save_conf(path, conf):
         yaml.dump(vars(conf), f)
 
 
-def get_logger(logger_fname):
+def get_logger(args, conf):
     import logging
 
+    #
+    log_dir = os.path.join(
+        "saved_records",
+        args.problem + "-" + conf["dataset"]["prob_version"],
+        args.opt_model,
+        args.prefix,
+    )
+    args.log_dir = log_dir
+    os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
+
+    now = datetime.now()
+    formatted_time = f"{now.year:04d}-{now.month:02d}-{now.day:02d} {now.hour:02d}:{now.minute:02d}:{now.second:02d}.{now.microsecond:06d}"
+    bkup_log_dir = os.path.join(
+        "saved_records",
+        "timed_logs",
+        args.problem + "-" + conf["dataset"]["prob_version"],
+        args.opt_model,
+        args.prefix,
+        formatted_time,
+    )
+    args.bkup_log_dir = bkup_log_dir
+    os.makedirs(os.path.join(bkup_log_dir, "checkpoints"), exist_ok=True)
+    if args.do_debug:
+        os.makedirs(os.path.join(bkup_log_dir, "tensors"), exist_ok=True)
+
+    # Logger
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        "%(asctime)s-%(name)s-%(levelname)s:  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        "%(asctime)s-%(levelname)s:  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    # 使用FileHandler输出到文件
-    fh = logging.FileHandler(f"{logger_fname}/log.txt")
+    # FileHandler: write to file
+    fh = logging.FileHandler(f"{log_dir}/log.txt")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
 
-    # 使用StreamHandler输出到屏幕
+    # FileHandler2:
+    fh2 = logging.FileHandler(f"{bkup_log_dir}/log.txt")
+    fh2.setLevel(logging.DEBUG)
+    fh2.setFormatter(formatter)
+
+    # StreamHandler: output to shell
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
 
-    # 添加两个Handler
+    # add Handlers
     logger.addHandler(ch)
     logger.addHandler(fh)
+    logger.addHandler(fh2)
     return logger
 
 

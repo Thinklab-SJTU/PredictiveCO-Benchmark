@@ -40,7 +40,7 @@ class OodManager:
         self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
-        self.ood_model = generalize_wrapper(self.args.ood_model, self.pred_model)
+        self.ood_model = generalize_wrapper(args, self.args.ood_model, self.pred_model)
         self.logger.info(f"---[{self.args.ood_model}] Training Model")
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
@@ -155,7 +155,7 @@ class OodManager:
         #         torch.save(
         #             preds.detach().cpu(),
         #             os.path.join(
-        #                 self.args.log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
+        #                 self.args.bkup_log_dir, "tensors", f"preds-ptr-EP{ptr_epoch}.pt"
         #             ),
         #         )
         #     ###### Check metrics on val set
@@ -215,9 +215,7 @@ class OodManager:
                 Y_train_aux,
                 loss_fn,
                 problem,
-                self.args.n_envs,
                 do_debug,
-                self.args.beta,
                 "train",
                 **self.model_args,
             )
@@ -257,6 +255,12 @@ class OodManager:
                         self.ood_model.state_dict(),
                         os.path.join(self.args.log_dir, "checkpoints", "tr_pred_best.pt"),
                     )
+                    torch.save(
+                        self.ood_model.state_dict(),
+                        os.path.join(
+                            self.args.bkup_log_dir, "checkpoints", "tr_pred_best.pt"
+                        ),
+                    )
 
                 # Stop if model hasn't improved for patience steps
                 if self.args.earlystopping and time_since_best > self.args.patience:
@@ -292,21 +296,28 @@ class OodManager:
         # save logs
         save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
         save_pd(val_logs, os.path.join(self.args.log_dir, "val_logs.csv"))
+        # save logs 2
+        save_pd(train_logs, os.path.join(self.args.bkup_log_dir, "train_logs.csv"))
+        save_pd(val_logs, os.path.join(self.args.bkup_log_dir, "val_logs.csv"))
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
+            [Objs_test_opt, eval_value],
+        )
+        np.save(
+            os.path.join(self.args.bkup_log_dir, "results.npy"),
             [Objs_test_opt, eval_value],
         )
         # save solutions
         if do_debug:
             Z_test_opt_array = to_array(Z_test_opt)
             np.save(
-                os.path.join(self.args.log_dir, "tensors", "solution.npy"),
+                os.path.join(self.args.bkup_log_dir, "tensors", "solution.npy"),
                 Z_test_opt_array,
             )
             torch.save(
                 results["test"]["preds"].cpu().detach(),
-                os.path.join(self.args.log_dir, "tensors", "preds.pt"),
+                os.path.join(self.args.bkup_log_dir, "tensors", "preds.pt"),
             )
 
         ############################ Logging ############################

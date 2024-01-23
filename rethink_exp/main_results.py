@@ -26,22 +26,12 @@ if __name__ == "__main__":
     args = get_args()
     conf = load_conf(args.config_path, args.method_path, args.problem)
 
-    # os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     # set seed
     setup_seed(args.seed)
 
-    log_dir = os.path.join(
-        "saved_records",
-        args.problem + "-" + conf["dataset"]["prob_version"],
-        args.opt_model,
-        args.prefix,
-    )
-    args.log_dir = log_dir
-    os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
-    if args.do_debug:
-        os.makedirs(os.path.join(log_dir, "tensors"), exist_ok=True)
-    logger = get_logger(log_dir)
-    logger.info(f" args: {args} \n")
+    # set logger
+    logger = get_logger(args, conf)
+    logger.info(f" {args.bkup_log_dir}\n {args.log_dir}\n args: {args} \n")
 
     # Load problem
     logger.info(f" dataset configs: {conf['dataset']} \n")
