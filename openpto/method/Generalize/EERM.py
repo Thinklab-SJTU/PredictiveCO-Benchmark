@@ -45,7 +45,7 @@ class EERM(nn.Module):
     def __init__(self, pred_model, n_envs, alpha, beta, **kwargs):
         super(EERM, self).__init__()
         self.pred_model = pred_model
-        self.n_envs = (n_envs,)
+        self.n_envs = n_envs
         self.alpha, self.beta = alpha, beta
 
     def inference(self, X):
