@@ -26,6 +26,7 @@ def get_args():
             "knapsack",
             "energy",
             "advertising",
+            "shortestpath",
         ],
         default="knapsack",
     )
@@ -61,7 +62,10 @@ def get_args():
         default="mse",
     )
     parser.add_argument(
-        "--pred_model", type=str, choices=["dense", "cvr"], default="dense"
+        "--pred_model",
+        type=str,
+        choices=["dense", "cvr", "resnet18", "IMAGE_MLP", "CombResnet18", "PureConvNet"],
+        default="dense",
     )
     parser.add_argument(
         "--solver",

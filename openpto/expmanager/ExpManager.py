@@ -32,7 +32,9 @@ class ExpManager:
         self.logger = logger
         self.model_args = self.conf["models"][self.args.opt_model]
         self.device = torch.device(
-            f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
+            f"cuda:{args.gpu}"
+            if torch.cuda.is_available() and int(args.gpu) >= 0
+            else "cpu"
         )
         self.logger.info(f"--- Running on {self.device}")
         # prediction model

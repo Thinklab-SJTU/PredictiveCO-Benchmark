@@ -1,0 +1,9 @@
+dataset:
+  prob_version: warcraft
+  size: 12
+  
+
+solver:
+  heuristic: 
+    neighbourhood_fn: "8-grid"
+    

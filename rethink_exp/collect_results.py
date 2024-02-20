@@ -211,6 +211,30 @@ def collect_time():
         )
 
 
+def collect_prefixs(prob_name, prefix_names, model_name, collect_name):
+    pd.options.display.float_format = "{:.6f}".format
+    results = list()
+    for prefix_name in prefix_names:
+        result = get_results(prob_name, model_name, prefix_name)
+        results.append(result)
+    results = np.vstack(results)
+    data_dict = dict()
+    for idx in range(len(prefix_names)):
+        data_dict[prefix_names[idx]] = results[idx, :]
+    df = pd.DataFrame(data_dict)
+    print(df)
+    save_path = os.path.join(
+        "saved_records",
+        prob_name,
+        f"{prob_name}-{collect_name}-results.xlsx",
+    )
+    df.to_excel(
+        save_path,
+        index=False,
+        float_format="%.6f",
+    )
+
+
 if __name__ == "__main__":
     collect_benchmarks()
     collect_other_benchmarks()

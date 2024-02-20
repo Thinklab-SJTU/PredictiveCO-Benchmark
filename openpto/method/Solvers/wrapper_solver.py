@@ -5,6 +5,7 @@ from openpto.method.Solvers.grb.grb_advertise import AdGrbSolver
 from openpto.method.Solvers.grb.grb_energy import ICONGrbSolver
 from openpto.method.Solvers.grb.grb_knapsack import KPGrbSolver
 from openpto.method.Solvers.grb.grb_qpsolver import QPGrbSolver
+from openpto.method.Solvers.heuristic.spSolver import spSolver
 from openpto.method.Solvers.heuristic.TopKSolver import TopKSolver
 from openpto.method.Solvers.neural.BudgetallocSolver import budgetallocSolver
 from openpto.method.Solvers.neural.softTopkSolver import softTopkSolver
@@ -21,6 +22,7 @@ def solver_wrapper(args, conf, problem):
         "energy": {"gurobi": ICONGrbSolver},
         "knapsack": {"gurobi": KPGrbSolver, "qptl": QPGrbSolver, "cvxpy": CpKPSolver},
         "advertising": {"gurobi": AdGrbSolver, "ortools": AdOrToolSolver},
+        "shortestpath": {"heuristic": spSolver},
     }
     solve_dict = {**problem.init_API(), **conf["solver"][args.solver]}
     return prob_solver_dict[args.problem][args.solver](**solve_dict)

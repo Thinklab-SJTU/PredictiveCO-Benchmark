@@ -13,6 +13,7 @@ from openpto.problems.CubicTopK import CubicTopK
 from openpto.problems.Energy import Energy
 from openpto.problems.Knapsack import Knapsack
 from openpto.problems.PortfolioOpt import PortfolioOpt
+from openpto.problems.Shortestpath import Shortestpath
 
 
 ################################# Wrappers ################################################
@@ -35,6 +36,7 @@ def str2prob(prob_str):
         "knapsack": Knapsack,
         "energy": Energy,
         "advertising": Advertising,
+        "shortestpath": Shortestpath,
     }
     return prob_dict[prob_str]
 

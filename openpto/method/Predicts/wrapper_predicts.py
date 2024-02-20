@@ -1,10 +1,20 @@
+import torchvision
+
+from openpto.method.Predicts.cv_model import IMAGE_MLP, CombResnet18, PureConvNet
 from openpto.method.Predicts.cvr_model import CVRModel
 from openpto.method.Predicts.dense import MLP
 
 
 ######################## prediction model wrapper  ############################
 def pred_model_wrapper(args, pred_model_args):
-    model_dict = {"dense": MLP, "cvr": CVRModel}
+    model_dict = {
+        "dense": MLP,
+        "cvr": CVRModel,
+        "IMAGE_MLP": IMAGE_MLP,
+        "resnet18": torchvision.models.resnet18,
+        "CombResnet18": CombResnet18,
+        "PureConvNet": PureConvNet,
+    }
     return model_dict[args.pred_model](
         num_features=pred_model_args["ipdim"],
         num_targets=pred_model_args["opdim"],

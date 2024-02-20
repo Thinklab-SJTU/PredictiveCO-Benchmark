@@ -11,6 +11,9 @@ gurobipy
 torch
 numpy
 pandas
+ipympl
+basemap
+Pillow
 ortools==9.4.1874
 ruamel.yaml==0.17.21
 """
