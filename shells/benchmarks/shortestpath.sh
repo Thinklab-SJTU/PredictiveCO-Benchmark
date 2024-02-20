@@ -1,21 +1,22 @@
 GPU=0
 EPOCHS=300
+P_MODEL="cv_mlp"
 
 # # Prediction-focused learning
-python rethink_exp/main_results.py --problem=shortestpath --opt_model bce      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model bce      --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
 
 # Decisoin-focused learning
-python rethink_exp/main_results.py --problem=shortestpath --opt_model dfl      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model blackbox --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model identity --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model spo      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model nce      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model pointLTR --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model listLTR  --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model pairLTR  --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model lodl     --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --method_path "openpto/config/models/lodl50k.yaml"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model dfl      --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model blackbox --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model identity --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model spo      --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model nce      --solver heuristic --pred_model ${P_MODEL} --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model pointLTR --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model listLTR  --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model pairLTR  --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model lodl     --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --method_path "openpto/config/models/lodl50k.yaml"
 
 # prediction + decision
-python rethink_exp/main_results.py --problem=shortestpath --opt_model blackbox --solver gurobi --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model identity --solver gurobi --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model blackbox --solver heuristic --pred_model ${P_MODEL} --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=shortestpath --opt_model identity --solver heuristic --pred_model ${P_MODEL} --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
 

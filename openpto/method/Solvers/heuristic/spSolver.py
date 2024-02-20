@@ -4,17 +4,17 @@
 
 """
 
-import itertools
 import heapq
+import itertools
+
 from functools import partial
 
 import numpy as np
-import torch
-
 
 from openpto.method.Solvers.abcOptSolver import optSolver
 
 # DijkstraOutput = namedtuple("DijkstraOutput", ["shortest_path", "is_unique", "transitions"])
+
 
 class spSolver(optSolver):
     """ """
@@ -31,8 +31,10 @@ class spSolver(optSolver):
         """
         matrix = matrix.reshape(self.size, self.size)
         x_max, y_max = matrix.shape
-        neighbors_func = partial(get_neighbourhood_func(self.neighbourhood_fn), x_max=x_max, y_max=y_max)
-        # 
+        neighbors_func = partial(
+            get_neighbourhood_func(self.neighbourhood_fn), x_max=x_max, y_max=y_max
+        )
+        #
         costs = np.full_like(matrix, 1.0e10)
         costs[0][0] = matrix[0][0]
         num_path = np.zeros_like(matrix)
@@ -66,9 +68,9 @@ class spSolver(optSolver):
             on_path[cur_x, cur_y] = 1.0
 
         is_unique = num_path[-1, -1] == 1
-        
+
         Z = on_path.reshape(-1)
-        others = {"is_unique":is_unique, "transitions":transitions}
+        others = {"is_unique": is_unique, "transitions": transitions}
         return Z, others
         # if request_transitions:
         #     return DijkstraOutput(shortest_path=on_path, is_unique=is_unique, transitions=transitions)
@@ -76,18 +78,17 @@ class spSolver(optSolver):
         #     return DijkstraOutput(shortest_path=on_path, is_unique=is_unique, transitions=None)
 
 
-
 def neighbours_8(x, y, x_max, y_max):
     deltas_x = (-1, 0, 1)
     deltas_y = (-1, 0, 1)
-    for (dx, dy) in itertools.product(deltas_x, deltas_y):
+    for dx, dy in itertools.product(deltas_x, deltas_y):
         x_new, y_new = x + dx, y + dy
         if 0 <= x_new < x_max and 0 <= y_new < y_max and (dx, dy) != (0, 0):
             yield x_new, y_new
 
 
 def neighbours_4(x, y, x_max, y_max):
-    for (dx, dy) in [(1, 0), (0, 1), (0, -1), (-1, 0)]:
+    for dx, dy in [(1, 0), (0, 1), (0, -1), (-1, 0)]:
         x_new, y_new = x + dx, y + dy
         if 0 <= x_new < x_max and 0 <= y_new < y_max and (dx, dy) != (0, 0):
             yield x_new, y_new

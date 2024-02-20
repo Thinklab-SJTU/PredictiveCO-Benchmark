@@ -64,7 +64,7 @@ def get_args():
     parser.add_argument(
         "--pred_model",
         type=str,
-        choices=["dense", "cvr", "resnet18", "IMAGE_MLP", "CombResnet18", "PureConvNet"],
+        choices=["dense", "cvr", "resnet18", "cv_mlp", "CombResnet18", "PureConvNet"],
         default="dense",
     )
     parser.add_argument(
@@ -102,6 +102,8 @@ def get_args():
     # model
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--n_hidden", type=int, default=32)
+    parser.add_argument("--pooling", type=str, default="mean")
+    parser.add_argument("--kernel_size", type=int, default=1)
     #
     # generalization model
     parser.add_argument("--ood_model", type=str, choices=["ERM", "EERM"])

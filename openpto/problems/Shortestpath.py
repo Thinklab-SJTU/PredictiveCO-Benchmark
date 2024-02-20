@@ -143,7 +143,7 @@ class Shortestpath(PTOProblem):
         return sol, obj
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
-        Y = to_device(Y, "cpu")
+        Z = to_device(Z, Y.device)
         return (Y * Z).sum(-1)
 
     def get_twostageloss(self):

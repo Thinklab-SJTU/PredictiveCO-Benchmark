@@ -34,7 +34,7 @@ def to_tensor(Y):
 
 
 def get_idxs(obj, idxs):
-    if torch.is_tensor(obj):
+    if torch.is_tensor(obj) or isinstance(obj, np.ndarray):
         return obj[[idxs]]
     elif isinstance(obj, list):
         return obj[idxs].unsqueeze(0)

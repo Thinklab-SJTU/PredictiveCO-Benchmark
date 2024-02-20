@@ -1,6 +1,6 @@
 import torchvision
 
-from openpto.method.Predicts.cv_model import IMAGE_MLP, CombResnet18, PureConvNet
+from openpto.method.Predicts.cv_model import CombResnet18, PureConvNet, cv_mlp
 from openpto.method.Predicts.cvr_model import CVRModel
 from openpto.method.Predicts.dense import MLP
 
@@ -10,7 +10,7 @@ def pred_model_wrapper(args, pred_model_args):
     model_dict = {
         "dense": MLP,
         "cvr": CVRModel,
-        "IMAGE_MLP": IMAGE_MLP,
+        "cv_mlp": cv_mlp,
         "resnet18": torchvision.models.resnet18,
         "CombResnet18": CombResnet18,
         "PureConvNet": PureConvNet,
