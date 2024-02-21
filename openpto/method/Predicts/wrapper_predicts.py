@@ -1,6 +1,4 @@
-import torchvision
-
-from openpto.method.Predicts.cv_model import CombResnet18, PureConvNet, cv_mlp
+from openpto.method.Predicts.cv_model import CombResnet18, ConvNet, PureConvNet, cv_mlp
 from openpto.method.Predicts.cvr_model import CVRModel
 from openpto.method.Predicts.dense import MLP
 
@@ -11,14 +9,15 @@ def pred_model_wrapper(args, pred_model_args):
         "dense": MLP,
         "cvr": CVRModel,
         "cv_mlp": cv_mlp,
-        "resnet18": torchvision.models.resnet18,
-        "CombResnet18": CombResnet18,
+        "ConvNet": ConvNet,
         "PureConvNet": PureConvNet,
+        "CombResnet18": CombResnet18,
     }
     return model_dict[args.pred_model](
         num_features=pred_model_args["ipdim"],
         num_targets=pred_model_args["opdim"],
         num_layers=args.n_layers,
         intermediate_size=args.n_hidden,
+        activation=args.activation,
         output_activation=pred_model_args["out_act"],
     )

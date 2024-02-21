@@ -64,7 +64,7 @@ def get_args():
     parser.add_argument(
         "--pred_model",
         type=str,
-        choices=["dense", "cvr", "resnet18", "cv_mlp", "CombResnet18", "PureConvNet"],
+        choices=["dense", "cvr", "cv_mlp", "ConvNet", "CombResnet18", "PureConvNet"],
         default="dense",
     )
     parser.add_argument(
@@ -103,6 +103,7 @@ def get_args():
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--n_hidden", type=int, default=32)
     parser.add_argument("--pooling", type=str, default="mean")
+    parser.add_argument("--activation", type=str, default="relu")
     parser.add_argument("--kernel_size", type=int, default=1)
     #
     # generalization model
@@ -184,7 +185,7 @@ def get_logger(args, conf):
     os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
 
     now = datetime.now()
-    formatted_time = f"{now.year:04d}-{now.month:02d}-{now.day:02d} {now.hour:02d}:{now.minute:02d}:{now.second:02d}.{now.microsecond:06d}"
+    formatted_time = f"{now.year:04d}-{now.month:02d}-{now.day:02d} {now.hour:02d}-{now.minute:02d}-{now.second:02d}.{now.microsecond:06d}"
     bkup_log_dir = os.path.join(
         "saved_records",
         "timed_logs",

@@ -1,9 +1,9 @@
 import operator
 
-from functools import reduce
+from functools import partial, reduce
 
-import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from openpto.method.Solvers.utils_solver import View
 
@@ -20,50 +20,46 @@ class MLP(nn.Module):
         **args,
     ):
         super(MLP, self).__init__()
+        act_dict = {
+            "relu": F.relu,
+            "sigmoid": F.sigmoid,
+            "tanh": F.tanh,
+            "softmax": partial(F.softmax, dim=-1),
+            "identity": lambda x: x,
+        }
         if num_layers > 1:
             if intermediate_size is None:
                 intermediate_size = max(num_features, num_targets)
-            if activation == "relu":
-                activation_fn = torch.nn.ReLU
-            elif activation == "sigmoid":
-                activation_fn = torch.nn.Sigmoid
+            if activation in ["relu", "sigmoid", "tanh"]:
+                activation_fn = act_dict[activation]
             else:
                 raise Exception("Invalid activation function: " + str(activation))
             net_layers = [
-                torch.nn.Linear(num_features, intermediate_size),
-                activation_fn(),
+                nn.Linear(num_features, intermediate_size),
+                activation_fn,
             ]
             for _ in range(num_layers - 2):
-                net_layers.append(torch.nn.Linear(intermediate_size, intermediate_size))
-                net_layers.append(activation_fn())
+                net_layers.append(nn.Linear(intermediate_size, intermediate_size))
+                net_layers.append(activation_fn)
             if not isinstance(num_targets, tuple):
-                net_layers.append(torch.nn.Linear(intermediate_size, num_targets))
+                net_layers.append(nn.Linear(intermediate_size, num_targets))
             else:
                 net_layers.append(
-                    torch.nn.Linear(
-                        intermediate_size, reduce(operator.mul, num_targets, 1)
-                    )
+                    nn.Linear(intermediate_size, reduce(operator.mul, num_targets, 1))
                 )
                 net_layers.append(View(num_targets))
         else:
             if not isinstance(num_targets, tuple):
-                net_layers = [torch.nn.Linear(num_features, num_targets)]
+                net_layers = [nn.Linear(num_features, num_targets)]
             else:
                 net_layers = [
-                    torch.nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
+                    nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
                     View(num_targets),
                 ]
 
-        if output_activation == "relu":
-            net_layers.append(torch.nn.ReLU())
-        elif output_activation == "sigmoid":
-            net_layers.append(torch.nn.Sigmoid())
-        elif output_activation == "tanh":
-            net_layers.append(torch.nn.Tanh())
-        elif output_activation == "softmax":
-            net_layers.append(torch.nn.Softmax(dim=-1))
+        net_layers.append(act_dict[output_activation])
 
-        self.net = torch.nn.Sequential(*net_layers)
+        self.net = nn.Sequential(*net_layers)
 
     def forward(self, X):
         return self.net(X)
@@ -79,42 +75,39 @@ def dense_nn(
     activation="relu",
     output_activation="sigmoid",
 ):
+    act_dict = {
+        "relu": F.relu,
+        "sigmoid": F.sigmoid,
+        "tanh": F.tanh,
+        "softmax": partial(F.softmax, dim=-1),
+        "identity": lambda x: x,
+    }
     if num_layers > 1:
         if intermediate_size is None:
             intermediate_size = max(num_features, num_targets)
-        if activation == "relu":
-            activation_fn = torch.nn.ReLU
-        elif activation == "sigmoid":
-            activation_fn = torch.nn.Sigmoid
+        if activation in ["relu", "sigmoid", "tanh"]:
+            activation_fn = act_dict[activation]
         else:
             raise Exception("Invalid activation function: " + str(activation))
-        net_layers = [torch.nn.Linear(num_features, intermediate_size), activation_fn()]
+        net_layers = [nn.Linear(num_features, intermediate_size), activation_fn]
         for _ in range(num_layers - 2):
-            net_layers.append(torch.nn.Linear(intermediate_size, intermediate_size))
-            net_layers.append(activation_fn())
+            net_layers.append(nn.Linear(intermediate_size, intermediate_size))
+            net_layers.append(activation_fn)
         if not isinstance(num_targets, tuple):
-            net_layers.append(torch.nn.Linear(intermediate_size, num_targets))
+            net_layers.append(nn.Linear(intermediate_size, num_targets))
         else:
             net_layers.append(
-                torch.nn.Linear(intermediate_size, reduce(operator.mul, num_targets, 1))
+                nn.Linear(intermediate_size, reduce(operator.mul, num_targets, 1))
             )
             net_layers.append(View(num_targets))
     else:
         if not isinstance(num_targets, tuple):
-            net_layers = [torch.nn.Linear(num_features, num_targets)]
+            net_layers = [nn.Linear(num_features, num_targets)]
         else:
             net_layers = [
-                torch.nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
+                nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
                 View(num_targets),
             ]
+    net_layers.append(act_dict[output_activation])
 
-    if output_activation == "relu":
-        net_layers.append(torch.nn.ReLU())
-    elif output_activation == "sigmoid":
-        net_layers.append(torch.nn.Sigmoid())
-    elif output_activation == "tanh":
-        net_layers.append(torch.nn.Tanh())
-    elif output_activation == "softmax":
-        net_layers.append(torch.nn.Softmax(dim=-1))
-
-    return torch.nn.Sequential(*net_layers)
+    return nn.Sequential(*net_layers)

@@ -19,9 +19,8 @@ class Advertising(PTOProblem):
         self.avg_budget = avg_budget
         self.cost_pv = [0, 0.5, 1, 1.5]
         if prob_version == "real":
-            # load data
-            raw_data_dir = "/mnt/nas/dataset_share/genghaoyu/OR/Xinye/"
-            data12_train, data12_test = gen_opt_data(raw_data_dir)
+            # load data #TODO: edit data dir
+            data12_train, data12_test = gen_opt_data(data_dir)
 
             if not os.path.exists(f"{data_dir}/train_mock.pickle"):
                 print("--- train mock data")
