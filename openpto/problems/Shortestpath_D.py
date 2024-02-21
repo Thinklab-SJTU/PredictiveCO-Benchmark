@@ -12,7 +12,7 @@ from openpto.method.utils_method import to_array, to_device, to_tensor
 from openpto.problems.PTOProblem import PTOProblem
 
 
-class Shortestpath(PTOProblem):
+class Shortestpath_D(PTOProblem):
     """ """
 
     def __init__(
@@ -26,7 +26,7 @@ class Shortestpath(PTOProblem):
         data_dir="./openpto/data/",
         **kwargs,
     ):
-        super(Shortestpath, self).__init__()
+        super(Shortestpath_D, self).__init__()
         self._set_seed(rand_seed)
         self.size = size
         if version == "warcraft":

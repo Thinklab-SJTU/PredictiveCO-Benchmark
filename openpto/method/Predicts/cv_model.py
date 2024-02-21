@@ -9,6 +9,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
+act_dict = {
+    "relu": F.relu,
+    "tanh": F.tanh,
+    "sigmoid": F.sigmoid,
+    "softplus": F.softplus,
+    "softmax": partial(F.softmax, dim=-1),
+    "identity": lambda x: x,
+}
+
 
 class cv_mlp(torch.nn.Module):
     def __init__(
@@ -22,13 +31,6 @@ class cv_mlp(torch.nn.Module):
         **args,
     ):
         super().__init__()
-        act_dict = {
-            "relu": F.relu,
-            "sigmoid": F.sigmoid,
-            "tanh": F.tanh,
-            "softmax": partial(F.softmax, dim=-1),
-            "identity": lambda x: x,
-        }
         input_dim = 3 * num_features**2
         self.fc1 = nn.Linear(in_features=input_dim, out_features=intermediate_size)
         self.fc2 = nn.Linear(in_features=intermediate_size, out_features=num_targets)
@@ -53,13 +55,6 @@ class CombResnet18(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        act_dict = {
-            "relu": F.relu,
-            "sigmoid": F.sigmoid,
-            "tanh": F.tanh,
-            "softmax": partial(F.softmax, dim=-1),
-            "identity": lambda x: x,
-        }
         self.resnet_model = torchvision.models.resnet18(
             pretrained=False, num_classes=num_targets
         )
@@ -97,29 +92,21 @@ class ConvNet(torch.nn.Module):
         kernel_size,
         stride,
         linear_layer_size,
-        channels_1,
-        channels_2,
+        intermediate_size=32,
         activation="relu",
         output_activation="sigmoid",
         **kwargs,
     ):
         super().__init__()
-        act_dict = {
-            "relu": F.relu,
-            "sigmoid": F.sigmoid,
-            "tanh": F.tanh,
-            "softmax": partial(F.softmax, dim=-1),
-            "identity": lambda x: x,
-        }
         self.conv1 = nn.Conv2d(
             num_features=num_features,
-            out_channels=channels_1,
+            out_channels=intermediate_size,
             kernel_size=kernel_size,
             stride=stride,
         )
         self.conv2 = nn.Conv2d(
-            num_features=channels_1,
-            out_channels=channels_2,
+            num_features=intermediate_size,
+            out_channels=intermediate_size,
             kernel_size=kernel_size,
             stride=stride,
         )
@@ -128,7 +115,7 @@ class ConvNet(torch.nn.Module):
         self.pool = nn.AdaptiveAvgPool2d(output_shape)
 
         self.fc1 = nn.Linear(
-            in_features=output_shape[0] * output_shape[1] * channels_2,
+            in_features=output_shape[0] * output_shape[1] * intermediate_size,
             num_targets=linear_layer_size,
         )
         self.fc2 = nn.Linear(in_features=linear_layer_size, num_targets=num_targets)
@@ -154,31 +141,23 @@ class PureConvNet(torch.nn.Module):
         num_targets,
         pooling="average",
         kernel_size=1,
-        channels_1=20,
-        channels_2=20,
+        intermediate_size=32,
         activation="relu",
         output_activation="sigmoid",
         **kwargs,
     ):
         super().__init__()
-        act_dict = {
-            "relu": F.relu,
-            "sigmoid": F.sigmoid,
-            "tanh": F.tanh,
-            "softmax": partial(F.softmax, dim=-1),
-            "identity": lambda x: x,
-        }
         # self.use_second_conv = use_second_conv
 
         self.conv1 = nn.Conv2d(
             in_channels=num_features,
-            out_channels=channels_1,
+            out_channels=intermediate_size,
             kernel_size=kernel_size,
             stride=1,
         )
         self.conv2 = nn.Conv2d(
-            in_channels=channels_1,
-            out_channels=channels_2,
+            in_channels=intermediate_size,
+            out_channels=intermediate_size,
             kernel_size=kernel_size,
             stride=1,
         )
@@ -190,7 +169,7 @@ class PureConvNet(torch.nn.Module):
             self.pool = nn.AdaptiveMaxPool2d(output_shape)
 
         self.conv3 = nn.Conv2d(
-            in_channels=channels_2, out_channels=1, kernel_size=1, stride=1
+            in_channels=intermediate_size, out_channels=1, kernel_size=1, stride=1
         )
         self.act_func = act_dict[activation]
         self.out_act_func = act_dict[output_activation]

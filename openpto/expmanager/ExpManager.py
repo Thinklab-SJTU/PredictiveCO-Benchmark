@@ -226,7 +226,7 @@ class ExpManager:
                 )
                 losses.append(loss_idx)
 
-            loss = torch.stack(losses).sum()
+            loss = torch.stack(losses).mean()
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

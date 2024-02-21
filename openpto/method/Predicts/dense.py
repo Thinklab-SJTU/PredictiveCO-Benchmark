@@ -7,6 +7,15 @@ import torch.nn.functional as F
 
 from openpto.method.Solvers.utils_solver import View
 
+act_dict = {
+    "relu": F.relu,
+    "tanh": F.tanh,
+    "sigmoid": F.sigmoid,
+    "softplus": F.softplus,
+    "softmax": partial(F.softmax, dim=-1),
+    "identity": lambda x: x,
+}
+
 
 class MLP(nn.Module):
     def __init__(
@@ -20,13 +29,6 @@ class MLP(nn.Module):
         **args,
     ):
         super(MLP, self).__init__()
-        act_dict = {
-            "relu": F.relu,
-            "sigmoid": F.sigmoid,
-            "tanh": F.tanh,
-            "softmax": partial(F.softmax, dim=-1),
-            "identity": lambda x: x,
-        }
         if num_layers > 1:
             if intermediate_size is None:
                 intermediate_size = max(num_features, num_targets)
@@ -75,13 +77,6 @@ def dense_nn(
     activation="relu",
     output_activation="sigmoid",
 ):
-    act_dict = {
-        "relu": F.relu,
-        "sigmoid": F.sigmoid,
-        "tanh": F.tanh,
-        "softmax": partial(F.softmax, dim=-1),
-        "identity": lambda x: x,
-    }
     if num_layers > 1:
         if intermediate_size is None:
             intermediate_size = max(num_features, num_targets)
