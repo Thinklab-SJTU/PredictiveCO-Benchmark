@@ -10,7 +10,7 @@ def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
     elif problem.get_eval_metric() == "uplift":
         return treatment_func(coeff_true, sols_hat, aux_data)
     elif problem.get_eval_metric() == "match":
-        return perfect_match_accuracy(coeff_true, sols_hat, aux_data)
+        return perfect_match_accuracy(sols_true, sols_hat)
     else:
         raise NotImplementedError("Not implemented")
 
@@ -25,13 +25,13 @@ def regret_func(problem, coeff_true, sols_true, sols_hat, aux_data):
     return {"value": regret, "sense": 1}
 
 
-def perfect_match_accuracy(problem, coeff_true, sols_true, sols_hat, aux_data):
+def perfect_match_accuracy(sols_true, sols_hat):
     # true_paths, suggested_paths):
-    size = np.sqrt(sols_true.shape[1])
+    size = int(np.sqrt(sols_true.shape[1]))
     sols_true = sols_true.reshape(-1, size, size)
     sols_hat = sols_hat.reshape(-1, size, size)
-    matching_correct = np.sum(np.abs(sols_true - sols_hat), axis=-1)
-    avg_matching_correct = (matching_correct < 0.5).mean()
+    matching_correct = torch.sum(torch.abs(sols_true - sols_hat), dim=-1)
+    avg_matching_correct = (matching_correct < 0.5).astype(float).mean()
     return avg_matching_correct
 
 

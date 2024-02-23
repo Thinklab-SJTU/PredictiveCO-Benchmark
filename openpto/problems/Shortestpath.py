@@ -138,6 +138,9 @@ class Shortestpath(PTOProblem):
         assert self.train_inputs.shape[-1] == 8 * self.size
         return self.train_inputs.shape[-1], self.size**2
 
+    def get_eval_metric(self):
+        return "match"
+
     def get_output_activation(self):
         return "identity"
 

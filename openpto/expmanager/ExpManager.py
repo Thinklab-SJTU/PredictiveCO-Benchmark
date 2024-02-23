@@ -137,7 +137,7 @@ class ExpManager:
         for ptr_epoch in range(self.args.n_ptr_epochs):
             ###### one-shot training
             time_train_start = time.time()
-            preds, _ = self.pred_model(X_pretrain)
+            preds = self.pred_model(X_pretrain)
             loss = twostage_criterion(problem, preds, Y_pretrain, **self.model_args)
 
             self.optimizer.zero_grad()

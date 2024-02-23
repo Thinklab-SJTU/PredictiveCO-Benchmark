@@ -8,7 +8,7 @@ import torch
 # from utils import TrainingIterator
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-from openpto.method.utils_method import to_array, to_device, to_tensor
+from openpto.method.utils_method import to_device
 from openpto.problems.PTOProblem import PTOProblem
 
 
@@ -126,13 +126,13 @@ class Shortestpath_D(PTOProblem):
     #     return self.test_labels
 
     def get_train_data(self, **kwargs):
-        return self.train_inputs, self.train_true_weights, self.train_labels
+        return self.train_inputs, self.train_labels, self.train_true_weights
 
     def get_val_data(self, **kwargs):
-        return self.val_inputs, self.val_true_weights, self.val_labels
+        return self.val_inputs, self.val_labels, self.val_true_weights
 
     def get_test_data(self, **kwargs):
-        return self.test_inputs, self.test_true_weights, self.test_labels
+        return self.test_inputs, self.test_labels, self.test_true_weights
 
     def get_model_shape(self):
         assert self.train_inputs.shape[-1] == 8 * self.size
@@ -142,14 +142,8 @@ class Shortestpath_D(PTOProblem):
         return "identity"
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
-        Y = to_device(Y, "cpu")
-        sol = []
-        for i in range(len(Y)):
-            # solve
-            solp, other = optSolver.solve(to_array(Y[i]))
-            sol.append(solp)
-        sol = to_tensor(np.array(sol))
-        obj = self.get_objective(Y, sol, kwargs)
+        sol = Y
+        obj = self.get_objective(params, sol, kwargs)
         return sol, obj
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
