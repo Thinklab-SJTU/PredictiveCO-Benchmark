@@ -1,6 +1,7 @@
 dataset:
   prob_version: warcraft
   size: 12
+  normalize: True
   
 
 solver:

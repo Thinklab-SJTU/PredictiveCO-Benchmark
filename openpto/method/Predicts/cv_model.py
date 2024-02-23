@@ -34,13 +34,13 @@ class cv_mlp(torch.nn.Module):
         input_dim = 3 * num_features**2
         self.fc1 = nn.Linear(in_features=input_dim, out_features=intermediate_size)
         self.fc2 = nn.Linear(in_features=intermediate_size, out_features=num_targets)
+        self.act_func = act_dict[activation]
         self.out_act_func = act_dict[output_activation]
 
     def forward(self, x):
         batch_size = x.shape[0]
-        # x = x.view(batch_size, -1)
         x = x.reshape(batch_size, -1)
-        x = torch.tanh(self.fc1(x))
+        x = self.act_func(self.fc1(x))
         x = self.out_act_func(self.fc2(x))
         return x
 

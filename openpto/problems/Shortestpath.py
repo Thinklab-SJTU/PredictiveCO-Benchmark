@@ -21,6 +21,7 @@ class Shortestpath(PTOProblem):
         num_test_instances=500,  # number of instances to use from the dataset to test
         val_frac=0.2,  # fraction of training data reserved for validation
         size=12,
+        normalize=True,
         rand_seed=0,  # for reproducibility
         prob_version="warcraft",
         data_dir="./openpto/data/",
@@ -35,32 +36,23 @@ class Shortestpath(PTOProblem):
                 data_dir + f"/{size}x{size}/",
                 use_test_set=True,
                 evaluate_with_extra=False,
-                normalize=True,
+                normalize=normalize,
             )
         elif prob_version == "direct":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
                 use_test_set=True,
                 evaluate_with_extra=False,
-                normalize=True,
+                normalize=normalize,
             )
         else:
             raise NotImplementedError
 
     def load_dataset(self, data_dir, use_test_set, evaluate_with_extra, normalize):
-        train_prefix = "train"
         data_suffix = "maps"
+        train_prefix = "train"
         val_prefix = "val"
         test_prefix = "test"
-        # val_prefix = ("test" if use_test_set else "val") + (
-        #     "_extra" if evaluate_with_extra else ""
-        # )
-        train_data_path = os.path.join(
-            data_dir, train_prefix + "_" + data_suffix + ".npy"
-        )
-
-        if not os.path.exists(train_data_path):
-            raise Exception(f"Cannot find {train_data_path}")
 
         def read_data(split_prefix, normalize):
             inputs = np.load(
@@ -79,16 +71,14 @@ class Shortestpath(PTOProblem):
                     np.mean(inputs, axis=(0, 2, 3), keepdims=True),
                     np.std(inputs, axis=(0, 2, 3), keepdims=True),
                 )
-                inputs -= in_mean
-                inputs /= in_std
+                inputs = (inputs - in_mean) / in_std
             # normalize the weights
-            # if normalize:
-            #     wei_mean, wei_std = (
-            #         np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
-            #         np.std(true_weights, axis=(0, 2, 3), keepdims=True),
-            #     )
-            #     true_weights -= wei_mean
-            #     true_weights /= wei_std
+            if self.prob_version != "direct" and normalize:
+                wei_mean, wei_std = (
+                    np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
+                    np.std(true_weights, axis=(0, 1, 2), keepdims=True),
+                )
+                true_weights = (true_weights - wei_mean) / wei_std
             return (
                 torch.FloatTensor(inputs),
                 torch.FloatTensor(labels).reshape(len(labels), -1),
@@ -98,10 +88,10 @@ class Shortestpath(PTOProblem):
 
         (self.train_inputs, self.train_labels, self.train_true_weights, _) = read_data(
             train_prefix, normalize
-        )  # (10000, 3, 96, 96) (10000, 12, 12) (10000, 12, 12)
+        )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
         self.val_inputs, self.val_labels, self.val_true_weights, _ = read_data(
             val_prefix, normalize
-        )  # (1000, 3, 96, 96) (1000, 12, 12) (1000, 12, 12)
+        )  # (1000, 3, 96, 96) (1000, 12 * 12) (1000, 12 * 12)
         self.test_inputs, self.test_labels, self.test_true_weights, _ = read_data(
             test_prefix, normalize
         )
@@ -166,7 +156,7 @@ class Shortestpath(PTOProblem):
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if self.prob_version == "direct":
-            sol = Y
+            sol = Y.round()
             obj = self.get_objective(params, sol, kwargs)
             return sol, obj
         else:

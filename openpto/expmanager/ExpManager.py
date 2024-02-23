@@ -213,6 +213,8 @@ class ExpManager:
             time_train_start = time.time()
             losses = []
             preds = self.pred_model(X_train)
+            if do_debug:
+                print("preds: ", preds)
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,

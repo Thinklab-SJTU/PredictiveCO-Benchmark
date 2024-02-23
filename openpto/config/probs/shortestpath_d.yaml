@@ -1,6 +1,7 @@
 dataset:
   prob_version: direct
   size: 12
+  normalize: True
   
 
 solver:

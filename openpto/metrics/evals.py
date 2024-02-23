@@ -27,13 +27,8 @@ def regret_func(problem, coeff_true, sols_true, sols_hat, aux_data):
 
 def perfect_match_accuracy(sols_true, sols_hat):
     # sols_true, sols_hat = to_array(sols_true), to_array(sols_hat)
-    print("sols_true: ", sols_true.shape, sols_hat.shape)
-    # print(sols_true[0])
-    # print("-"*50)
-    # print(sols_hat[0])
-    accuracy = (sols_hat.round() * sols_true).sum(-1) / sols_true.sum(-1)
+    accuracy = (sols_hat * sols_true).sum(-1) / sols_true.sum(-1)
     # matching_correct = torch.sum(torch.abs(sols_true - sols_hat), dim=-1)
-    # print("matching_correct: ", accuracy)
     # avg_matching_correct = (matching_correct < 0.5).float()
     return {"value": accuracy, "sense": -1}
 

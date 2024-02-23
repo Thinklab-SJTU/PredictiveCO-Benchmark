@@ -23,7 +23,7 @@ class MLP(nn.Module):
         num_features,
         num_targets,
         num_layers,
-        intermediate_size=10,
+        intermediate_size=32,
         activation="relu",
         output_activation="sigmoid",
         **args,
@@ -73,7 +73,7 @@ def dense_nn(
     num_features,
     num_targets,
     num_layers,
-    intermediate_size=10,
+    intermediate_size=32,
     activation="relu",
     output_activation="sigmoid",
 ):

@@ -59,8 +59,9 @@ def init_if_not_saved(
     load_new=True,
 ):
     # Find the filename if a saved version of the problem with the same kwargs exists
-    os.makedirs(folder, exist_ok=True)
-    master_filename = os.path.join(folder, f"{problem_cls.__name__}.csv")
+    prob_name = problem_cls.__name__
+    os.makedirs(os.path.join(folder, prob_name), exist_ok=True)
+    master_filename = os.path.join(folder, prob_name, f"{prob_name}.csv")
     filename, saved_probs = find_saved_problem(master_filename, kwargs)
 
     if not load_new and filename is not None:
@@ -73,7 +74,7 @@ def init_if_not_saved(
         problem = problem_cls(**kwargs)
 
         # Save model for the future
-        filename = os.path.join(folder, f"{problem_cls.__name__}_{len(saved_probs)}.pkl")
+        filename = os.path.join(folder, prob_name, f"{prob_name}_{len(saved_probs)}.pkl")
         print(f"Saving the problem to {filename}")
         with open(filename, "wb") as file:
             pickle.dump(problem, file)
