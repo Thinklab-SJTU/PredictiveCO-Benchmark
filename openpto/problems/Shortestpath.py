@@ -22,20 +22,30 @@ class Shortestpath(PTOProblem):
         val_frac=0.2,  # fraction of training data reserved for validation
         size=12,
         rand_seed=0,  # for reproducibility
-        version="warcraft",
+        prob_version="warcraft",
         data_dir="./openpto/data/",
         **kwargs,
     ):
         super(Shortestpath, self).__init__()
         self._set_seed(rand_seed)
         self.size = size
-        if version == "warcraft":
+        self.prob_version = prob_version
+        if prob_version == "warcraft":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
                 use_test_set=True,
                 evaluate_with_extra=False,
                 normalize=True,
             )
+        elif prob_version == "direct":
+            self.load_dataset(
+                data_dir + f"/{size}x{size}/",
+                use_test_set=True,
+                evaluate_with_extra=False,
+                normalize=True,
+            )
+        else:
+            raise NotImplementedError
 
     def load_dataset(self, data_dir, use_test_set, evaluate_with_extra, normalize):
         train_prefix = "train"
@@ -72,13 +82,13 @@ class Shortestpath(PTOProblem):
                 inputs -= in_mean
                 inputs /= in_std
             # normalize the weights
-            if normalize:
-                wei_mean, wei_std = (
-                    np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
-                    np.std(true_weights, axis=(0, 2, 3), keepdims=True),
-                )
-                true_weights -= wei_mean
-                true_weights /= wei_std
+            # if normalize:
+            #     wei_mean, wei_std = (
+            #         np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
+            #         np.std(true_weights, axis=(0, 2, 3), keepdims=True),
+            #     )
+            #     true_weights -= wei_mean
+            #     true_weights /= wei_std
             return (
                 torch.FloatTensor(inputs),
                 torch.FloatTensor(labels).reshape(len(labels), -1),
@@ -88,10 +98,10 @@ class Shortestpath(PTOProblem):
 
         (self.train_inputs, self.train_labels, self.train_true_weights, _) = read_data(
             train_prefix, normalize
-        )
+        )  # (10000, 3, 96, 96) (10000, 12, 12) (10000, 12, 12)
         self.val_inputs, self.val_labels, self.val_true_weights, _ = read_data(
             val_prefix, normalize
-        )
+        )  # (1000, 3, 96, 96) (1000, 12, 12) (1000, 12, 12)
         self.test_inputs, self.test_labels, self.test_true_weights, _ = read_data(
             test_prefix, normalize
         )
@@ -100,9 +110,6 @@ class Shortestpath(PTOProblem):
             self.train_labels.shape,
             self.train_true_weights.shape,
         )
-        # (10000, 3, 96, 96) (10000, 12, 12) (10000, 12, 12)
-        # print(self.val_inputs.shape, self.val_labels.shape)
-        # (1000, 3, 96, 96) (1000, 12, 12) (1000, 12, 12)
 
         # # @input_to_numpy
         # def denormalize(x):
@@ -126,13 +133,23 @@ class Shortestpath(PTOProblem):
     #     return self.test_labels
 
     def get_train_data(self, **kwargs):
-        return self.train_inputs, self.train_true_weights, self.train_labels
+        print("self.prob_version: ", self.prob_version)
+        if self.prob_version == "direct":
+            return self.train_inputs, self.train_labels, self.train_true_weights
+        else:
+            return self.train_inputs, self.train_true_weights, self.train_labels
 
     def get_val_data(self, **kwargs):
-        return self.val_inputs, self.val_true_weights, self.val_labels
+        if self.prob_version == "direct":
+            return self.val_inputs, self.val_labels, self.val_true_weights
+        else:
+            return self.val_inputs, self.val_true_weights, self.val_labels
 
     def get_test_data(self, **kwargs):
-        return self.test_inputs, self.test_true_weights, self.test_labels
+        if self.prob_version == "direct":
+            return self.test_inputs, self.test_labels, self.test_true_weights
+        else:
+            return self.test_inputs, self.test_true_weights, self.test_labels
 
     def get_model_shape(self):
         assert self.train_inputs.shape[-1] == 8 * self.size
@@ -142,17 +159,25 @@ class Shortestpath(PTOProblem):
         return "match"
 
     def get_output_activation(self):
-        return "identity"
+        if self.prob_version == "direct":
+            return "sigmoid"
+        else:
+            return "identity"
 
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
-        Y = to_device(Y, "cpu")
-        sol = []
-        for i in range(len(Y)):
-            # solve
-            solp, other = optSolver.solve(to_array(Y[i]))
-            sol.append(solp)
-        sol = to_tensor(np.array(sol))
-        obj = self.get_objective(Y, sol, kwargs)
+        if self.prob_version == "direct":
+            sol = Y
+            obj = self.get_objective(params, sol, kwargs)
+            return sol, obj
+        else:
+            Y = to_device(Y, "cpu")
+            sol = []
+            for i in range(len(Y)):
+                # solve
+                solp, other = optSolver.solve(to_array(Y[i]))
+                sol.append(solp)
+            sol = to_tensor(np.array(sol))
+            obj = self.get_objective(Y, sol, kwargs)
         return sol, obj
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
@@ -160,7 +185,10 @@ class Shortestpath(PTOProblem):
         return (Y * Z).sum(-1)
 
     def get_twostageloss(self):
-        return "mse"
+        if self.prob_version == "direct":
+            return "bce"
+        else:
+            return "mse"
 
     def init_API(self):
         return {"modelSense": GRB.MAXIMIZE, "n_vars": self.size**2, "size": self.size}

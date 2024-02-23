@@ -8,7 +8,7 @@ def get_eval_results(problem, coeff_true, sols_true, sols_hat, aux_data):
     if problem.get_eval_metric() == "regret":
         return regret_func(problem, coeff_true, sols_true, sols_hat, aux_data)
     elif problem.get_eval_metric() == "uplift":
-        return treatment_func(coeff_true, sols_hat, aux_data)
+        return uplift_func(coeff_true, sols_hat, aux_data)
     elif problem.get_eval_metric() == "match":
         return perfect_match_accuracy(sols_true, sols_hat)
     else:
@@ -26,16 +26,13 @@ def regret_func(problem, coeff_true, sols_true, sols_hat, aux_data):
 
 
 def perfect_match_accuracy(sols_true, sols_hat):
-    # true_paths, suggested_paths):
-    size = int(np.sqrt(sols_true.shape[1]))
-    sols_true = sols_true.reshape(-1, size, size)
-    sols_hat = sols_hat.reshape(-1, size, size)
+    # sols_true, sols_hat = to_array(sols_true), to_array(sols_hat)
     matching_correct = torch.sum(torch.abs(sols_true - sols_hat), dim=-1)
-    avg_matching_correct = (matching_correct < 0.5).astype(float).mean()
-    return avg_matching_correct
+    avg_matching_correct = (matching_correct < 0.5).float()
+    return {"value": avg_matching_correct, "sense": -1}
 
 
-def treatment_func(labels, sols_hat, aux_data):
+def uplift_func(labels, sols_hat, aux_data):
     aux_data, labels = to_array(aux_data), to_array(labels)
     n_instances = len(aux_data)
     ctr_treats, ctr_controls = [], []

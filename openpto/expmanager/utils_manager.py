@@ -80,7 +80,7 @@ def print_metrics(
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
-            objective_hat = torch.zeros_like(pred_loss)
+            objective_hat = torch.zeros_like(pred_loss).cpu()
             Zs_hat = torch.zeros_like(pred_loss)
             if partition != "train":
                 Zs_hat, _ = problem.get_decision(
@@ -92,7 +92,7 @@ def print_metrics(
                 )
                 objective_hat = problem.get_objective(
                     Ys, Zs_hat, Ys_aux, **problem.init_API()
-                )
+                ).cpu()
             # Loss and Error
             losses = []
             for idx in range(len(Xs)):
@@ -142,8 +142,8 @@ def print_metrics(
                 "eval": eval_result,
             }
             logger.info(
-                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean():>10.5f}, {'Loss':>5}: {loss:>12.5f} "
-                f"{f'Pred Loss: {pred_loss:>12.5f}, {problem.get_eval_metric()}':>6}: {eval_result['value'].mean():.5f}"
+                f"{prefix:<6} {partition:<5} Objective: {objective_hat.mean().item():>10.5f}, {'Loss':>5}: {loss:>12.5f} "
+                f"Pred Loss: {pred_loss:>12.5f}, {problem.get_eval_metric():>6}: {eval_result['value'].mean():.5f}"
             )
         logger.info("----\n")
     return metrics

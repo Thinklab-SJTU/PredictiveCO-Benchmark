@@ -15,7 +15,7 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array
+from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array, to_device
 
 
 class ExpManager:
@@ -97,7 +97,7 @@ class ExpManager:
                 isTrain=False,
                 **problem.init_API(),
             )
-            objs_rand.append(torch.Tensor(Objs_test_rand))
+            objs_rand.append(Objs_test_rand)
         objs_rand = torch.stack(objs_rand)
         ############################# Load previous model #############################
         if self.args.trained_path != "":
@@ -309,11 +309,11 @@ class ExpManager:
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
-            [Objs_test_opt, eval_value],
+            [to_device(Objs_test_opt, "cpu"), to_device(eval_value, "cpu")],
         )
         np.save(
             os.path.join(self.args.bkup_log_dir, "results.npy"),
-            [Objs_test_opt, eval_value],
+            [to_device(Objs_test_opt, "cpu"), to_device(eval_value, "cpu")],
         )
         # save solutions
         if do_debug:
