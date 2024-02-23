@@ -20,6 +20,7 @@ act_dict = {
 
 
 class cv_mlp(torch.nn.Module):
+    #TODO: debug the training pipeline of image input
     def __init__(
         self,
         num_features,
