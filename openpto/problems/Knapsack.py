@@ -385,7 +385,7 @@ class Knapsack(PTOProblem):
             return self.Xs_train.shape[-1], 1
 
     def get_output_activation(self):
-        return None
+        return "identity"
 
     @staticmethod
     def genData(

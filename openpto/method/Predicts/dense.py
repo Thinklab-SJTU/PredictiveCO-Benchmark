@@ -16,6 +16,12 @@ act_dict = {
     "identity": lambda x: x,
 }
 
+act_func_dict = {
+    "relu": nn.ReLU,
+    "sigmoid": nn.Sigmoid,
+    "identity": lambda x: x,
+}
+
 
 class MLP(nn.Module):
     def __init__(
@@ -33,16 +39,16 @@ class MLP(nn.Module):
             if intermediate_size is None:
                 intermediate_size = max(num_features, num_targets)
             if activation in ["relu", "sigmoid", "tanh"]:
-                activation_fn = act_dict[activation]
+                activation_fn = act_func_dict[activation]
             else:
                 raise Exception("Invalid activation function: " + str(activation))
             net_layers = [
                 nn.Linear(num_features, intermediate_size),
-                activation_fn,
+                activation_fn(),
             ]
             for _ in range(num_layers - 2):
                 net_layers.append(nn.Linear(intermediate_size, intermediate_size))
-                net_layers.append(activation_fn)
+                net_layers.append(activation_fn())
             if not isinstance(num_targets, tuple):
                 net_layers.append(nn.Linear(intermediate_size, num_targets))
             else:
@@ -58,8 +64,8 @@ class MLP(nn.Module):
                     nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
                     View(num_targets),
                 ]
-
-        net_layers.append(act_dict[output_activation])
+        if output_activation != "identity":
+            net_layers.append(act_func_dict[output_activation])
 
         self.net = nn.Sequential(*net_layers)
 
@@ -81,13 +87,13 @@ def dense_nn(
         if intermediate_size is None:
             intermediate_size = max(num_features, num_targets)
         if activation in ["relu", "sigmoid", "tanh"]:
-            activation_fn = act_dict[activation]
+            activation_fn = act_func_dict[activation]
         else:
             raise Exception("Invalid activation function: " + str(activation))
-        net_layers = [nn.Linear(num_features, intermediate_size), activation_fn]
+        net_layers = [nn.Linear(num_features, intermediate_size), activation_fn()]
         for _ in range(num_layers - 2):
             net_layers.append(nn.Linear(intermediate_size, intermediate_size))
-            net_layers.append(activation_fn)
+            net_layers.append(activation_fn())
         if not isinstance(num_targets, tuple):
             net_layers.append(nn.Linear(intermediate_size, num_targets))
         else:
@@ -103,6 +109,6 @@ def dense_nn(
                 nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
                 View(num_targets),
             ]
-    net_layers.append(act_dict[output_activation])
+    net_layers.append(act_func_dict[output_activation])
 
     return nn.Sequential(*net_layers)

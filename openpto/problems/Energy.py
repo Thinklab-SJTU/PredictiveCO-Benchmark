@@ -126,7 +126,7 @@ class Energy(PTOProblem):
             return self.Xs[self.train_idxs].shape[-1], 1
 
     def get_output_activation(self):
-        return None
+        return "identity"
 
     # prep numpy arrays, Xs will contain groupID as first column
     def get_energy(self, fname=None, trainTestRatio=0.70):
