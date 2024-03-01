@@ -493,7 +493,6 @@ class LODL(optModel):
                 loss = twostage_criterion(
                     problem, pred, objectives_train, reduction="sum"
                 )
-                # loss = MSE()(problem, pred, objectives_train, reduction="sum")
                 loss.backward()
                 return loss
 
@@ -501,7 +500,6 @@ class LODL(optModel):
             if iter_idx % val_freq == 0:
                 # Get performance on val dataset
                 pred_val = self.lodl_model(Yhats_val).flatten()
-                # loss_val = MSE()(problem, pred_val, objectives_val, reduction="sum")
                 loss_val = twostage_criterion(
                     problem, pred_val, objectives_val, reduction="sum"
                 )

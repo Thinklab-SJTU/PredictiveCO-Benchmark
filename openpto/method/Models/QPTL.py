@@ -3,12 +3,11 @@
 """
 """
 
-import torch
 
 from gurobipy import GRB
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_tensor
+from openpto.method.utils_method import do_reduction, to_tensor
 
 
 class QPTL(optModel):
@@ -78,12 +77,5 @@ class QPTL(optModel):
         else:
             raise NotImplementedError
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss

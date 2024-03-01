@@ -211,7 +211,7 @@ def collect_time():
         )
 
 
-def collect_prefixs(prob_name, prefix_names, model_name, collect_name):
+def collect_prefixs(prob_name, ood_name, prefix_names, model_name, collect_name):
     pd.options.display.float_format = "{:.6f}".format
     results = list()
     for prefix_name in prefix_names:
@@ -226,13 +226,23 @@ def collect_prefixs(prob_name, prefix_names, model_name, collect_name):
     save_path = os.path.join(
         "saved_records",
         prob_name,
-        f"{prob_name}-{collect_name}-results.xlsx",
+        f"{prob_name}-{model_name}-{ood_name}-{collect_name}-results.xlsx",
     )
+    print("saving to ", save_path)
     df.to_excel(
         save_path,
         index=False,
         float_format="%.6f",
     )
+
+
+def collect_search(ood_name, model_name):
+    prefix_names = list()
+    for NENV in [9, 7, 5, 3]:
+        for BETA in [0.5, 1.0, 2.0, 4.0]:
+            for LR in ["1e-3", "1e-2"]:
+                prefix_names.append(f"{ood_name}-{NENV}-{BETA}-{LR}")
+    collect_prefixs("knapsack-gen-ood", ood_name, prefix_names, model_name, "search")
 
 
 if __name__ == "__main__":

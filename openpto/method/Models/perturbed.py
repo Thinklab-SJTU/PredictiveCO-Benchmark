@@ -9,8 +9,8 @@ import torch
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
-# from .utlis import getArgs
 from openpto.method.Models.abcOptModel import optModel
+from openpto.method.utils_method import do_reduction
 
 
 class perturbed(optModel):
@@ -70,14 +70,7 @@ class perturbed(optModel):
         )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(objs_hat)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(objs_hat)
-        elif hyperparams["reduction"] == "none":
-            loss = objs_hat
-        else:
-            raise ValueError(f"No reduction {hyperparams['reduction']}.")
+        loss = do_reduction(objs_hat, hyperparams["reduction"])
 
         if self.optSolver.modelSense == GRB.MINIMIZE:
             pass
@@ -222,14 +215,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #             self,
 #         )
 #         # reduction
-#         if reduction == "mean":
-#             loss = torch.mean(loss)
-#         elif reduction == "sum":
-#             loss = torch.sum(loss)
-#         elif reduction == "none":
-#             pass
-#         else:
-#             raise ValueError("No reduction '{}'.".format(reduction))
+#         loss = do_reduction(loss, hyperparams["reduction"])
 #         return loss
 
 

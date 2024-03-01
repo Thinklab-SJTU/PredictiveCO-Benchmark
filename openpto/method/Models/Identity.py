@@ -4,7 +4,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_device, to_tensor
+from openpto.method.utils_method import do_reduction, to_device, to_tensor
 
 
 class negativeIdentity(optModel):
@@ -35,14 +35,7 @@ class negativeIdentity(optModel):
         )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, params)
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(objs_hat)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(objs_hat)
-        elif hyperparams["reduction"] == "none":
-            loss = objs_hat
-        else:
-            raise ValueError(f"No reduction {hyperparams['reduction']}.")
+        loss = do_reduction(objs_hat, hyperparams["reduction"])
 
         if self.optSolver.modelSense == GRB.MINIMIZE:
             pass

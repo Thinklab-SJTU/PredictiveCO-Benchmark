@@ -3,7 +3,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_device, to_tensor
+from openpto.method.utils_method import do_reduction, to_device, to_tensor
 
 
 class MSE(optModel):
@@ -23,14 +23,7 @@ class MSE(optModel):
         Yhat and true lables Y.
         """
         loss = (coeff_hat - coeff_true).square()
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 
@@ -51,14 +44,7 @@ class MAE(optModel):
         Yhat and true lables Y.
         """
         loss = (coeff_hat - coeff_true).abs()
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 
@@ -84,14 +70,7 @@ class BCE(optModel):
             for Y_idx in range(len(coeff_true)):
                 loss_list.append(torch.nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))
             loss = torch.stack(loss_list)
-            if hyperparams["reduction"] == "mean":
-                loss = torch.mean(loss)
-            elif hyperparams["reduction"] == "sum":
-                loss = torch.sum(loss)
-            elif hyperparams["reduction"] == "none":
-                pass
-            else:
-                raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+            loss = do_reduction(loss, hyperparams["reduction"])
             return loss
         else:
             raise ValueError("coeff_true is not a tensor or list")

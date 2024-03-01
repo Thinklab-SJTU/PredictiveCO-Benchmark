@@ -10,7 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_tensor
+from openpto.method.utils_method import do_reduction, to_tensor
 
 
 class SPO(optModel):
@@ -48,14 +48,7 @@ class SPO(optModel):
             coeff_hat, coeff_true, sols_true, objs_true, problem, params, self.optSolver
         )
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction {}".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 

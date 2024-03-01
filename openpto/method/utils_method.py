@@ -47,6 +47,17 @@ def rand_like(obj, device="cpu"):
         return [torch.rand_like(ob, device=device) for ob in obj]
 
 
+def do_reduction(obj, reduction):
+    if reduction == "mean":
+        obj = torch.mean(obj)
+    elif reduction == "sum":
+        obj = torch.sum(obj)
+    elif reduction == "none":
+        return obj
+    else:
+        raise ValueError("No reduction '{}'.".format(reduction))
+
+
 def ndiv(a, b):
     if b == 0:
         return 0

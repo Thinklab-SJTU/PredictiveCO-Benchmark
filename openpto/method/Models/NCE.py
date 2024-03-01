@@ -10,7 +10,7 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_tensor
+from openpto.method.utils_method import do_reduction, to_tensor
 
 
 class NCE(optModel):
@@ -78,14 +78,7 @@ class NCE(optModel):
             raise NotImplementedError
 
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 
@@ -137,12 +130,5 @@ class NCE(optModel):
 #     if self.optSolver.modelSense == GRB.MAXIMIZE:
 #         loss, _ = (objpool_cp - obj_cp).max(axis=1)
 #     # reduction
-#     if hyperparams["reduction"] == "mean":
-#         loss = torch.mean(loss)
-#     elif hyperparams["reduction"] == "sum":
-#         loss = torch.sum(loss)
-#     elif hyperparams["reduction"] == "none":
-#         pass
-#     else:
-#         raise ValueError("No reduction '{}'.".format(reduction))
+#     loss = do_reduction(loss, hyperparams["reduction"])
 #     return loss

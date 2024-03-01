@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from openpto.method.utils_method import get_idxs
+from openpto.method.utils_method import do_reduction, get_idxs
 from openpto.metrics.evals import get_eval_results
 
 
@@ -125,12 +125,7 @@ def print_metrics(
                 eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
 
             # Print
-            if model_args["reduction"] == "mean":
-                loss = losses.mean().item()
-            elif model_args["reduction"] == "sum":
-                loss = losses.sum().item()
-            else:
-                raise KeyError(f"Not implemented reduction {model_args['reduction']}")
+            loss = do_reduction(losses, model_args["reduction"]).item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
                 "loss": loss,

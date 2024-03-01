@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import to_tensor
+from openpto.method.utils_method import do_reduction, to_tensor
 
 
 class pointwiseLTR(optModel):
@@ -62,14 +62,7 @@ class pointwiseLTR(optModel):
         # squared loss
         loss = (objpool_c - objpool_c_hat).square().mean(axis=0)
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 
@@ -148,14 +141,7 @@ class pairwiseLTR(optModel):
                 raise NotImplementedError
         loss = torch.stack(loss)
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 
 
@@ -218,12 +204,5 @@ class listwiseLTR(optModel):
         else:
             raise NotImplementedError
         # reduction
-        if hyperparams["reduction"] == "mean":
-            loss = torch.mean(loss)
-        elif hyperparams["reduction"] == "sum":
-            loss = torch.sum(loss)
-        elif hyperparams["reduction"] == "none":
-            pass
-        else:
-            raise ValueError("No reduction '{}'.".format(hyperparams["reduction"]))
+        loss = do_reduction(loss, hyperparams["reduction"])
         return loss

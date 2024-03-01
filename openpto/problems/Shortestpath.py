@@ -157,7 +157,7 @@ class Shortestpath(PTOProblem):
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if self.prob_version == "direct":
             sol = Y.round()
-            obj = self.get_objective(params, sol, kwargs)
+            obj = sol
             return sol, obj
         else:
             Y = to_device(Y, "cpu")
@@ -181,4 +181,15 @@ class Shortestpath(PTOProblem):
             return "mse"
 
     def init_API(self):
-        return {"modelSense": GRB.MAXIMIZE, "n_vars": self.size**2, "size": self.size}
+        if self.prob_version == "direct":
+            return {
+                "modelSense": GRB.MINIMIZE,
+                "n_vars": self.size**2,
+                "size": self.size,
+            }
+        else:
+            return {
+                "modelSense": GRB.MAXIMIZE,
+                "n_vars": self.size**2,
+                "size": self.size,
+            }
