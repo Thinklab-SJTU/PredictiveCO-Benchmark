@@ -80,8 +80,8 @@ class CombResnet18(nn.Module):
         # x = self.last_conv(x)
         x = self.pool(x)
         x = x.mean(dim=1)
-        x = self.out_act_func(x)
         x = x.reshape(x.shape[0], -1)
+        x = self.out_act_func(x)
         return x
 
 

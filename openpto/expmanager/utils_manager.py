@@ -2,7 +2,6 @@ import inspect
 import json
 import time
 
-import numpy as np
 import pandas as pd
 import torch
 
@@ -120,10 +119,11 @@ def print_metrics(
             if partition == "test":
                 test_time = time.time() - time_test_start
             optimal_z = optimal_dict[partition]
-            eval_result = {"value": np.zeros(len(Ys))}
-            if partition != "train":
-                eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
-
+            # eval_result = {"value": np.zeros(len(Ys))}
+            # if partition != "train":
+            eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
+            if partition == "train":
+                print(eval_result["value"])
             # Print
             loss = do_reduction(losses, model_args["reduction"]).item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()

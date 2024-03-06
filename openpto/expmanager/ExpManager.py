@@ -15,7 +15,14 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import get_idxs, ndiv, rand_like, to_array, to_device
+from openpto.method.utils_method import (
+    do_reduction,
+    get_idxs,
+    ndiv,
+    rand_like,
+    to_array,
+    to_device,
+)
 
 
 class ExpManager:
@@ -229,7 +236,8 @@ class ExpManager:
                 )
                 losses.append(loss_idx)
 
-            loss = torch.stack(losses).mean()
+            loss = torch.stack(losses)
+            loss = do_reduction(loss, self.model_args["reduction"])
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

@@ -123,7 +123,6 @@ class Shortestpath(PTOProblem):
     #     return self.test_labels
 
     def get_train_data(self, **kwargs):
-        print("self.prob_version: ", self.prob_version)
         if self.prob_version == "direct":
             return self.train_inputs, self.train_labels, self.train_true_weights
         else:
@@ -171,8 +170,11 @@ class Shortestpath(PTOProblem):
         return sol, obj
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
-        Z = to_device(Z, Y.device)
-        return (Y * Z).sum(-1)
+        if self.prob_version == "direct":
+            return Z
+        else:
+            Z = to_device(Z, Y.device)
+            return (Y * Z).sum(-1)
 
     def get_twostageloss(self):
         if self.prob_version == "direct":

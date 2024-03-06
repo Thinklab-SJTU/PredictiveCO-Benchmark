@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
@@ -62,13 +63,12 @@ class BCE(optModel):
     ):
         if torch.is_tensor(coeff_true):
             coeff_true = coeff_true.float()
-            return torch.nn.BCELoss(reduction=hyperparams["reduction"])(
-                coeff_hat, coeff_true
-            )
+            # print("coeff_true, coeff_hat:",coeff_true, coeff_hat)
+            return nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
         elif isinstance(coeff_true, list):
             loss_list = list()
             for Y_idx in range(len(coeff_true)):
-                loss_list.append(torch.nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))
+                loss_list.append(nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))
             loss = torch.stack(loss_list)
             loss = do_reduction(loss, hyperparams["reduction"])
             return loss
@@ -88,7 +88,7 @@ class CE(optModel):
         params=None,
         **hyperparams,
     ):
-        return torch.nn.CrossEntropyLoss(reduction=hyperparams["reduction"])(
+        return nn.CrossEntropyLoss(reduction=hyperparams["reduction"])(
             coeff_hat, coeff_true
         )
 

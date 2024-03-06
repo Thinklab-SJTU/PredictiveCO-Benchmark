@@ -53,9 +53,10 @@ def do_reduction(obj, reduction):
     elif reduction == "sum":
         obj = torch.sum(obj)
     elif reduction == "none":
-        return obj
+        pass
     else:
         raise ValueError("No reduction '{}'.".format(reduction))
+    return obj
 
 
 def ndiv(a, b):
