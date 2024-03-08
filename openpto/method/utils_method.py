@@ -40,6 +40,15 @@ def get_idxs(obj, idxs):
         return obj[idxs].unsqueeze(0)
 
 
+def get_batch(obj, idx, batch_size):
+    begin = idx * batch_size
+    end = (idx + 1) * batch_size
+    if torch.is_tensor(obj) or isinstance(obj, np.ndarray):
+        return obj[begin:end]
+    elif isinstance(obj, list):
+        return obj[begin:end].unsqueeze(0)
+
+
 def rand_like(obj, device="cpu"):
     if torch.is_tensor(obj):
         return torch.rand_like(obj, device=device)

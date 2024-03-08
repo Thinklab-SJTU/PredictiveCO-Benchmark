@@ -1,4 +1,10 @@
-from openpto.method.Predicts.cv_model import CombResnet18, ConvNet, PureConvNet, cv_mlp
+from openpto.method.Predicts.cv_model import (
+    CombResnet18,
+    ConvNet,
+    PureConvNet,
+    Resnet18,
+    cv_mlp,
+)
 from openpto.method.Predicts.cvr_model import CVRModel
 from openpto.method.Predicts.dense import MLP
 
@@ -12,6 +18,7 @@ def pred_model_wrapper(args, pred_model_args):
         "ConvNet": ConvNet,
         "PureConvNet": PureConvNet,
         "CombResnet18": CombResnet18,
+        "Resnet18": Resnet18,
     }
     return model_dict[args.pred_model](
         num_features=pred_model_args["ipdim"],

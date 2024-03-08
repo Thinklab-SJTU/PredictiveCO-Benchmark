@@ -51,7 +51,9 @@ def get_args():
             "listLTR",
             "intopt",
             "blackbox",
+            "blackboxSolver",
             "identity",
+            "identitySolver",
             "lodl",
             "nce",
             "qptl",
@@ -64,7 +66,15 @@ def get_args():
     parser.add_argument(
         "--pred_model",
         type=str,
-        choices=["dense", "cvr", "cv_mlp", "ConvNet", "CombResnet18", "PureConvNet"],
+        choices=[
+            "dense",
+            "cvr",
+            "cv_mlp",
+            "ConvNet",
+            "Resnet18",
+            "CombResnet18",
+            "PureConvNet",
+        ],
         default="dense",
     )
     parser.add_argument(
@@ -90,7 +100,11 @@ def get_args():
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--seed", type=int, default=2023)
     parser.add_argument("--lr", type=float, default=1e-2)
-    parser.add_argument("--batchsize", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--use_lr_scheduling", action="store_true")
+    parser.add_argument("--lr_milestone_1", type=int, default=100)
+    parser.add_argument("--lr_milestone_2", type=int, default=130)
+
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--do_debug", action="store_true")

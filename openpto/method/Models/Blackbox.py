@@ -13,7 +13,37 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.utils_method import do_reduction, minus, to_device, to_tensor
 
 
-class blackbox(optModel):
+class blackboxSolver(optModel):
+    """ """
+
+    def __init__(self, optSolver, **kwargs):
+        """ """
+        super().__init__(optSolver)
+        # smoothing parameter
+        if kwargs["lambd"] <= 0:
+            raise ValueError("lambda is not positive.")
+        self.lambd = kwargs["lambd"]
+        # build blackbox optimizer
+        self.dbb = blackboxFunc()
+
+    def forward(
+        self,
+        problem,
+        coeff_hat,
+        params,
+        **hyperparams,
+    ):
+        """
+        Forward pass
+        """
+        sols_hat = self.dbb.apply(
+            coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
+        )
+        # TODO:
+        return sols_hat
+
+
+class subopt_blackbox(optModel):
     """ """
 
     def __init__(self, optSolver, **kwargs):

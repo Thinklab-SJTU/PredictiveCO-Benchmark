@@ -81,9 +81,10 @@ def print_metrics(
             # Decision Quality
             objective_hat = torch.zeros_like(pred_loss).cpu()
             Zs_hat = torch.zeros_like(pred_loss)
-            if partition != "train":
+            # if partition != "train":
+            if True:
                 Zs_hat, _ = problem.get_decision(
-                    preds,
+                    preds.cpu(),
                     params=Ys_aux,
                     optSolver=optSolver,
                     isTrain=isTrain,
@@ -122,8 +123,6 @@ def print_metrics(
             # eval_result = {"value": np.zeros(len(Ys))}
             # if partition != "train":
             eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
-            if partition == "train":
-                print(eval_result["value"])
             # Print
             loss = do_reduction(losses, model_args["reduction"]).item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()

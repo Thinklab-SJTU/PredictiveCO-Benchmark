@@ -63,7 +63,6 @@ class BCE(optModel):
     ):
         if torch.is_tensor(coeff_true):
             coeff_true = coeff_true.float()
-            # print("coeff_true, coeff_hat:",coeff_true, coeff_hat)
             return nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
         elif isinstance(coeff_true, list):
             loss_list = list()
@@ -173,11 +172,6 @@ class DFL(optModel):
             coeff_hat_grad = torch.autograd.grad(loss, coeff_hat, retain_graph=True)
             twostage_grad = torch.autograd.grad(loss, twostage_loss, retain_graph=True)
 
-            def hook_fn(grad):
-                print("gradient through the path:", grad)
-
-            # coeff_hat_grad[0].register_hook(hook_fn)
-            # sols_hat_grad = torch.autograd.grad(loss, sol_hat, retain_graph=True)[0]
             print(
                 "dbb grad: ",
                 objs_hat_grad[0].shape,

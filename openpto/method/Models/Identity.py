@@ -7,7 +7,36 @@ from openpto.method.Models.abcOptModel import optModel
 from openpto.method.utils_method import do_reduction, to_device, to_tensor
 
 
-class negativeIdentity(optModel):
+class IdentitySolver(optModel):
+    """
+    Reference:
+    """
+
+    def __init__(self, optSolver, **kwargs):
+        """ """
+        super().__init__(optSolver)
+        self.nid = negativeIdentityFunc()
+
+    def forward(
+        self,
+        problem,
+        coeff_hat,
+        params,
+        **hyperparams,
+    ):
+        """
+        Forward pass
+        """
+        sols_hat = self.nid.apply(
+            coeff_hat,
+            problem,
+            params,
+            self.optSolver,
+        )
+        return sols_hat
+
+
+class subopt_Identity(optModel):
     """
     Reference:
     """

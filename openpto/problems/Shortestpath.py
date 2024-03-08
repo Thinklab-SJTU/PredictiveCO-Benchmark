@@ -156,7 +156,7 @@ class Shortestpath(PTOProblem):
     def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
         if self.prob_version == "direct":
             sol = Y.round()
-            obj = sol
+            obj = self.get_objective(params, sol, kwargs)
             return sol, obj
         else:
             Y = to_device(Y, "cpu")

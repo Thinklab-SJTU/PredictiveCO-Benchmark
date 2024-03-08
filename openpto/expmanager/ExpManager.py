@@ -6,6 +6,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 
+# from torchsummary import summary
 from openpto.expmanager.utils_manager import (
     add_log,
     compare_result,
@@ -17,7 +18,7 @@ from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import (
     do_reduction,
-    get_idxs,
+    get_batch,
     ndiv,
     rand_like,
     to_array,
@@ -37,6 +38,7 @@ class ExpManager:
         self.args = args
         self.conf = conf
         self.logger = logger
+        self.batch_size = self.args.batch_size
         self.model_args = self.conf["models"][self.args.opt_model]
         self.device = torch.device(
             f"cuda:{args.gpu}"
@@ -48,6 +50,15 @@ class ExpManager:
         self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
+        # optimizer
+        # optimizer:
+        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=args.lr)
+        if args.use_lr_scheduling:
+            self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                self.optimizer,
+                milestones=[args.lr_milestone_1, args.lr_milestone_2],
+                gamma=0.1,
+            )
 
     def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
@@ -117,8 +128,6 @@ class ExpManager:
         else:
             X_pretrain, Y_pretrain, Y_pretrain_aux = X_train, Y_train, Y_train_aux
 
-        # optimizer:
-        self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
         total_train_time = 0.0
         best = (float("inf"), None)
@@ -218,29 +227,37 @@ class ExpManager:
             # TODO: batch train or individually train?
             # currently, only support individually train
             time_train_start = time.time()
-            losses = []
-            preds = self.pred_model(X_train)
-            if do_debug:
-                print("preds: ", preds)
-                print("Y_train: ", Y_train)
-            for idx in range(len(X_train)):
-                loss_idx = loss_fn(
+            # losses = []
+
+            # if do_debug:
+            #     print("preds: ", preds)
+            #     print("Y_train: ", Y_train)
+
+            n_batchs = len(X_train) // self.batch_size
+            for batch_id in range(n_batchs):
+                x_batch = get_batch(X_train, batch_id, self.batch_size)
+                preds = self.pred_model(x_batch)
+                loss = loss_fn(
                     problem,
-                    coeff_hat=get_idxs(preds, idx),
-                    coeff_true=get_idxs(Y_train, idx),
-                    params=get_idxs(Y_train_aux, idx),
+                    coeff_hat=preds,
+                    coeff_true=get_batch(Y_train, batch_id, self.batch_size),
+                    params=get_batch(Y_train_aux, batch_id, self.batch_size),
                     partition="train",
-                    index=idx,
+                    index=batch_id,
                     do_debug=do_debug,
                     **self.model_args,
                 )
-                losses.append(loss_idx)
+                loss = do_reduction(loss, self.model_args["reduction"])
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                # losses.append(loss_idx)
+                if self.args.use_lr_scheduling:
+                    self.scheduler.step()
 
-            loss = torch.stack(losses)
-            loss = do_reduction(loss, self.model_args["reduction"])
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+            # accuracy = (preds.round() * Y_train).sum() / Y_train.sum()
+            # print("accuracy: ", accuracy)
+            # loss = torch.stack(losses)
             time_since_best += 1
             total_train_time += time.time() - time_train_start
 

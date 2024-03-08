@@ -3,8 +3,13 @@ spo:
 blackbox:
   reduction: mean
   lambd: 0.1
+blackboxSolver:
+  reduction: mean
+  lambd: 0.1  
 identity:
   reduction: mean
+identitySolver:
+  reduction: mean  
 qptl:
   reduction: mean
   tau: 1.0
@@ -37,6 +42,8 @@ mse:
 msemean:
   alpha: 0.1
 bce:
+  reduction: mean
+mae:
   reduction: mean
 ce:
   reduction: mean

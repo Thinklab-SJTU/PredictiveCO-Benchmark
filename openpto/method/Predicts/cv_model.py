@@ -46,6 +46,33 @@ class cv_mlp(torch.nn.Module):
         return x
 
 
+class Resnet18(nn.Module):
+    def __init__(
+        self,
+        num_features,
+        num_targets,
+        output_activation="sigmoid",
+        **kwargs,
+    ):
+        super().__init__()
+        self.resnet_model = torchvision.models.resnet18(
+            pretrained=False, num_classes=num_targets
+        )
+        del self.resnet_model.conv1
+        self.resnet_model.conv1 = nn.Conv2d(
+            num_features, 64, kernel_size=7, stride=2, padding=3, bias=False
+        )
+        self.out_act_func = act_dict[output_activation]
+
+    def forward(self, x):
+        x = x.permute(0, 2, 3, 1)
+        # print("x: ", x.shape) x:  torch.Size([1000, 96, 96, 3])
+        x = self.resnet_model(x)
+        # print("output 1: ", x.shape) output 1:  torch.Size([1000, 144])
+        x = self.out_act_func(x)
+        return x
+
+
 class CombResnet18(nn.Module):
     def __init__(
         self,

@@ -1,4 +1,4 @@
-def get_loss_fn(args, optSolver, conf):
+def get_ml_loss_fn(args, optSolver, conf):
     name = args.opt_model
     if name == "mse":
         from openpto.method.Models.MSE import MSE
@@ -20,6 +20,13 @@ def get_loss_fn(args, optSolver, conf):
         from openpto.method.Models.MSE import MAE
 
         ModelCalss = MAE
+    return ModelCalss
+
+
+def get_loss_fn(args, optSolver, conf):
+    name = args.opt_model
+    if name in ["mse", "msesum", "ce", "bce", "mae"]:
+        ModelCalss = get_ml_loss_fn(args, optSolver, conf)
     elif name == "dfl":
         from openpto.method.Models.MSE import DFL
 
@@ -51,14 +58,22 @@ def get_loss_fn(args, optSolver, conf):
         from openpto.method.Models.NCE import NCE
 
         ModelCalss = NCE
+    elif name == "blackboxSolver":
+        from openpto.method.Models.Blackbox import blackboxSolver
+
+        ModelCalss = blackboxSolver
     elif name == "blackbox":
-        from openpto.method.Models.Blackbox import blackbox
+        from openpto.method.Models.Blackbox import subopt_blackbox
 
-        ModelCalss = blackbox
+        ModelCalss = subopt_blackbox
+    elif name == "identitySolver":
+        from openpto.method.Models.Identity import IdentitySolver
+
+        ModelCalss = IdentitySolver
     elif name == "identity":
-        from openpto.method.Models.Identity import negativeIdentity
+        from openpto.method.Models.Identity import subopt_Identity
 
-        ModelCalss = negativeIdentity
+        ModelCalss = subopt_Identity
     elif name == "lodl":
         from openpto.method.Models.LODLs import LODL
 
