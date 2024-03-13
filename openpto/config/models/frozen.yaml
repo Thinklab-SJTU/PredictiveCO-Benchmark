@@ -3,7 +3,12 @@ spo:
 blackbox:
   reduction: sum
   lambd: 0.1
+blackboxSolver:
+  reduction: sum
+  lambd: 0.1  
 identity:
+  reduction: sum
+identitySolver:
   reduction: sum
 qptl:
   reduction: sum

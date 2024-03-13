@@ -13,3 +13,11 @@ def str2twoStageLoss(problem):
     else:
         raise ValueError(f"Not a valid 2-stage loss: {problem.get_twostageloss()}")
     return twostageloss
+
+
+def l1_penalty(pred_model):
+    return sum([(param.abs()).sum() for param in pred_model.parameters()])
+
+
+def l2_penalty(pred_model):
+    return sum([(param.square()).sum() for param in pred_model.parameters()])

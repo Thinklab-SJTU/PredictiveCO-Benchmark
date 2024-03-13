@@ -65,10 +65,9 @@ class Resnet18(nn.Module):
         self.out_act_func = act_dict[output_activation]
 
     def forward(self, x):
-        x = x.permute(0, 2, 3, 1)
-        # print("x: ", x.shape) x:  torch.Size([1000, 96, 96, 3])
-        x = self.resnet_model(x)
-        # print("output 1: ", x.shape) output 1:  torch.Size([1000, 144])
+        # x = x.permute(0, 2, 3, 1)
+        # print("x: ", x.shape)  # x:  torch.Size([1000, 96, 96, 3])
+        x = self.resnet_model(x)  # torch.Size([1000, 144])
         x = self.out_act_func(x)
         return x
 

@@ -14,7 +14,7 @@ from openpto.expmanager.utils_manager import (
     prob_to_gpu,
     save_pd,
 )
-from openpto.method.Models.utils_loss import str2twoStageLoss
+from openpto.method.Models.utils_loss import l1_penalty, l2_penalty, str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
 from openpto.method.utils_method import (
     do_reduction,
@@ -248,6 +248,12 @@ class ExpManager:
                     **self.model_args,
                 )
                 loss = do_reduction(loss, self.model_args["reduction"])
+                # add penalty
+                if self.args.l1_weight > 0:
+                    loss += self.args.l1_weight * l1_penalty(self.pred_model)
+                if self.args.l2_weight > 0:
+                    loss += self.args.l2_weight * l2_penalty(self.pred_model)
+
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()

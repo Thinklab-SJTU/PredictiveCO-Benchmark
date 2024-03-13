@@ -38,6 +38,13 @@ class Shortestpath(PTOProblem):
                 evaluate_with_extra=False,
                 normalize=normalize,
             )
+        elif prob_version == "warcraft-ood":
+            self.load_ood_dataset(
+                data_dir + f"/{size}x{size}/",
+                use_test_set=True,
+                evaluate_with_extra=False,
+                normalize=normalize,
+            )
         elif prob_version == "direct":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
@@ -58,27 +65,28 @@ class Shortestpath(PTOProblem):
             inputs = np.load(
                 os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
             ).astype(np.float32)
-            # noinspection PyTypeChecker
-            inputs = inputs.transpose(0, 3, 1, 2)  # channel first
+            # channel last
+            # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
 
             labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
             true_weights = np.load(
                 os.path.join(data_dir, split_prefix + "_vertex_weights.npy")
             )
             full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
+            print("inputs: ", inputs.shape, "true_weights: ", true_weights.shape)
             if normalize:
                 in_mean, in_std = (
-                    np.mean(inputs, axis=(0, 2, 3), keepdims=True),
-                    np.std(inputs, axis=(0, 2, 3), keepdims=True),
+                    np.mean(inputs, axis=(0, 1, 2), keepdims=True),
+                    np.std(inputs, axis=(0, 1, 2), keepdims=True),
                 )
                 inputs = (inputs - in_mean) / in_std
             # normalize the weights
-            if self.prob_version != "direct" and normalize:
-                wei_mean, wei_std = (
-                    np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
-                    np.std(true_weights, axis=(0, 1, 2), keepdims=True),
-                )
-                true_weights = (true_weights - wei_mean) / wei_std
+            # if normalize:  # true_weights:  (10000, 12, 12)
+            #     wei_mean, wei_std = (
+            #         np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
+            #         np.std(true_weights, axis=(0, 1, 2), keepdims=True),
+            #     )
+            #     true_weights = (true_weights - wei_mean) / wei_std
             return (
                 torch.FloatTensor(inputs),
                 torch.FloatTensor(labels).reshape(len(labels), -1),
@@ -96,6 +104,7 @@ class Shortestpath(PTOProblem):
             test_prefix, normalize
         )
         print(
+            "inputs, labels, weights: ",
             self.train_inputs.shape,
             self.train_labels.shape,
             self.train_true_weights.shape,
@@ -111,6 +120,47 @@ class Shortestpath(PTOProblem):
         #     "num_channels": val_full_images[0].shape[-1],
         #     "denormalize": denormalize,
         # }
+        return
+
+    def load_ood_dataset(self, data_dir, use_test_set, evaluate_with_extra, normalize):
+        data_suffix, val_prefix = "maps", "val"
+        train_prefix, test_prefix = "train", "test"
+
+        def read_data(split_prefix, normalize):
+            inputs = np.load(
+                os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
+            ).astype(np.float32)
+            # channel last
+            # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
+
+            labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
+            true_weights = np.load(
+                os.path.join(data_dir, split_prefix + "_vertex_weights.npy")
+            )
+            full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
+            print("inputs: ", inputs.shape, "true_weights: ", true_weights.shape)
+            if normalize:
+                in_mean, in_std = (
+                    np.mean(inputs, axis=(0, 1, 2), keepdims=True),
+                    np.std(inputs, axis=(0, 1, 2), keepdims=True),
+                )
+                inputs = (inputs - in_mean) / in_std
+            return (
+                torch.FloatTensor(inputs),
+                torch.FloatTensor(labels).reshape(len(labels), -1),
+                torch.FloatTensor(true_weights).reshape(len(labels), -1),
+                full_images,
+            )
+
+        (self.train_inputs, self.train_labels, self.train_true_weights, _) = read_data(
+            train_prefix, normalize
+        )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
+        self.val_inputs, self.val_labels, self.val_true_weights, _ = read_data(
+            val_prefix, normalize
+        )  # (1000, 3, 96, 96) (1000, 12 * 12) (1000, 12 * 12)
+        self.test_inputs, self.test_labels, self.test_true_weights, _ = read_data(
+            test_prefix, normalize
+        )
         return
 
     # def get_train_sol(self):
@@ -141,11 +191,12 @@ class Shortestpath(PTOProblem):
             return self.test_inputs, self.test_true_weights, self.test_labels
 
     def get_model_shape(self):
-        assert self.train_inputs.shape[-1] == 8 * self.size
-        return self.train_inputs.shape[-1], self.size**2
+        assert self.train_inputs.shape[2] == 8 * self.size
+        return self.train_inputs.shape[2], self.size**2
 
     def get_eval_metric(self):
-        return "match"
+        # return "match"
+        return "regret"
 
     def get_output_activation(self):
         if self.prob_version == "direct":
@@ -173,8 +224,8 @@ class Shortestpath(PTOProblem):
         if self.prob_version == "direct":
             return Z
         else:
-            Z = to_device(Z, Y.device)
-            return (Y * Z).sum(-1)
+            Z = to_device(Z, Y.device)  # 10000,144
+            return torch.sum(Y * Z, -1, keepdim=True)
 
     def get_twostageloss(self):
         if self.prob_version == "direct":
@@ -183,15 +234,20 @@ class Shortestpath(PTOProblem):
             return "mse"
 
     def init_API(self):
-        if self.prob_version == "direct":
-            return {
-                "modelSense": GRB.MINIMIZE,
-                "n_vars": self.size**2,
-                "size": self.size,
-            }
-        else:
-            return {
-                "modelSense": GRB.MAXIMIZE,
-                "n_vars": self.size**2,
-                "size": self.size,
-            }
+        return {
+            "modelSense": GRB.MINIMIZE,
+            "n_vars": self.size**2,
+            "size": self.size,
+        }
+        # if self.prob_version == "direct":
+        #     return {
+        #         "modelSense": GRB.MINIMIZE,
+        #         "n_vars": self.size**2,
+        #         "size": self.size,
+        #     }
+        # else:
+        #     return {
+        #         "modelSense": GRB.MAXIMIZE,
+        #         "n_vars": self.size**2,
+        #         "size": self.size,
+        #     }
