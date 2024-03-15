@@ -104,26 +104,13 @@ class Shortestpath(PTOProblem):
 
     def load_ood_dataset(self, data_dir, normalize):
         train_prefix, val_prefix, test_prefix = "train", "val", "test"
-        ###################### read data sub-function ######################
-
-        ########## change distribution of data sub-function ################
-        def transform_contrast(images, normalize):
-            transform = transforms.Compose(
-                [
-                    transforms.ColorJitter(contrast=10),
-                ]
-            )
-            transformed_images = transform(images.permute(0, 3, 1, 2)).permute(0, 2, 3, 1)
-            if normalize:
-                transformed_images = self.do_norm(transformed_images)
-            return transformed_images
-
         ##### Read Data for ver0; as train distribution
         train_X, self.train_Z, self.train_Y, _ = self.read_data(
             data_dir, train_prefix, False
         )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
         val_X, self.val_Z, self.val_Y, _ = self.read_data(data_dir, val_prefix, False)
         test_X, self.test_Z, self.test_Y, _ = self.read_data(data_dir, test_prefix, False)
+        self.ver0_train_X, self.ver0_val_X, self.ver0_test_X = train_X, val_X, test_X
         ##### Out the original data
         self.train_X, self.val_X, self.test_X = (
             self.do_norm(train_X),
@@ -131,12 +118,45 @@ class Shortestpath(PTOProblem):
             self.do_norm(test_X),
         )
         ##### Pertrub the data, get ver1
-        self.ver1_train_X, self.ver1_val_X, self.ver1_test_X = (
-            transform_contrast(train_X, normalize),
-            transform_contrast(val_X, normalize),
-            transform_contrast(test_X, normalize),
+        ver1_transform = self.get_augmentation("contrast", 10)  # TODO: automate
+        self.ver1_train_X, self.ver1_val_X, self.ver1_test_X = self.get_perturbed_data(
+            ver1_transform, normalize
         )
         return
+
+    def get_perturbed_data(self, transform, normalize):
+        ver_train_X, ver1_val_X, ver1_test_X = (
+            self.augment_transform(self.ver0_train_X, transform, normalize),
+            self.augment_transform(self.ver0_val_X, transform, normalize),
+            self.augment_transform(self.ver0_test_X, transform, normalize),
+        )
+        return ver_train_X, ver1_val_X, ver1_test_X
+
+    @staticmethod
+    def get_augmentation(aug_name, value):
+        if aug_name == "contrast":
+            aug_operator = transforms.ColorJitter(contrast=value)
+        elif aug_name == "brightness":
+            aug_operator = transforms.ColorJitter(brightness=value)
+        elif aug_name == "saturation":
+            aug_operator = transforms.ColorJitter(saturation=value)
+        elif aug_name == "hue":
+            aug_operator = transforms.ColorJitter(hue=value)
+        else:
+            raise NotImplementedError(aug_name)
+        transform = transforms.Compose(
+            [
+                aug_operator,
+            ]
+        )
+        return transform
+
+    ########## sub-function: change distribution of data ################
+    def augment_transform(self, images, transform, normalize):
+        transformed_images = transform(images.permute(0, 3, 1, 2)).permute(0, 2, 3, 1)
+        if normalize:
+            transformed_images = self.do_norm(transformed_images)
+        return transformed_images
 
     # def get_train_sol(self):
     #     return self.train_Z
