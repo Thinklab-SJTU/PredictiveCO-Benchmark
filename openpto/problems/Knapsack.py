@@ -23,15 +23,6 @@ class Knapsack(PTOProblem):
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         prob_version="gen",  # "energy" or "gen"
-        # num_items=100,  # number of targets to consider
-        # knapsack_dim=1,
-        # num_features=5,
-        # mean=0,
-        # var=1,
-        # poly_deg=1,
-        # noise_width=0,
-        # capacity=1,
-        # distr="normal",
         data_dir="./openpto/data/",
         **kwargs,
     ):
@@ -94,7 +85,8 @@ class Knapsack(PTOProblem):
             )
         elif prob_version == "gen-ood":
             self.num_items = num_items
-            ver0_weights, self.ood_Xs_train, self.ood_Ys_train = self.genData(
+            # ver0 data, train disbution
+            ver0_weights, self.ver0_Xs_train, self.ver0_Ys_train = self.genData(
                 num_train_instances,
                 num_features,
                 num_items,
@@ -107,6 +99,7 @@ class Knapsack(PTOProblem):
                 seed=rand_seed,
             )  # (bz, feature_dim), (bz, n_items)
             ## OOD test distribution
+            # ver1 data, test distribution
             mean_ood, var_ood = kwargs["mean_ood"], kwargs["var_ood"]
             ver1_weights, ver1_feats, ver1_profits = self.genData(
                 num_train_instances + num_test_instances,
@@ -284,7 +277,7 @@ class Knapsack(PTOProblem):
         df.insert(0, "groupID", gids)
         return df
 
-    def get_train_data(self, train_mode="iid"):
+    def get_train_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return (
                 self.Xs_train[self.train_idxs],
@@ -293,14 +286,14 @@ class Knapsack(PTOProblem):
             )
         elif train_mode == "ood":
             return (
-                self.ood_Xs_train[self.train_idxs],
-                self.ood_Ys_train[self.train_idxs],
+                self.ver0_Xs_train[self.train_idxs],
+                self.ver0_Ys_train[self.train_idxs],
                 self.params_train[self.train_idxs],
             )
         else:
             raise NotImplementedError
 
-    def get_val_data(self, train_mode="iid"):
+    def get_val_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return (
                 self.Xs_train[self.val_idxs],
@@ -309,14 +302,15 @@ class Knapsack(PTOProblem):
             )
         elif train_mode == "ood":
             return (
-                self.ood_Xs_train[self.val_idxs],
-                self.ood_Ys_train[self.val_idxs],
+                self.ver0_Xs_train[self.val_idxs],
+                self.ver0_Ys_train[self.val_idxs],
                 self.params_train[self.val_idxs],
             )
         else:
             raise NotImplementedError
 
-    def get_test_data(self):
+    def get_test_data(self, **kwargs):
+        # output the test data train mode
         return self.Xs_test, self.Ys_test, self.params_test
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):

@@ -7,6 +7,7 @@ import torch
 # from decorators import input_to_numpy
 # from utils import TrainingIterator
 from gurobipy import GRB  # pylint: disable=no-name-in-module
+from torchvision import transforms as transforms
 
 from openpto.method.utils_method import to_array, to_device, to_tensor
 from openpto.problems.PTOProblem import PTOProblem
@@ -34,165 +35,159 @@ class Shortestpath(PTOProblem):
         if prob_version == "warcraft":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
-                use_test_set=True,
-                evaluate_with_extra=False,
                 normalize=normalize,
             )
         elif prob_version == "warcraft-ood":
             self.load_ood_dataset(
                 data_dir + f"/{size}x{size}/",
-                use_test_set=True,
-                evaluate_with_extra=False,
                 normalize=normalize,
             )
         elif prob_version == "direct":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
-                use_test_set=True,
-                evaluate_with_extra=False,
                 normalize=normalize,
             )
         else:
             raise NotImplementedError
 
-    def load_dataset(self, data_dir, use_test_set, evaluate_with_extra, normalize):
+    def read_data(self, data_dir, split_prefix, normalize):
         data_suffix = "maps"
+        inputs = np.load(
+            os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
+        ).astype(np.float32)
+        # channel last
+        # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
+
+        labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
+        true_weights = np.load(
+            os.path.join(data_dir, split_prefix + "_vertex_weights.npy")
+        )
+        full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
+        print("inputs: ", inputs.shape, "true_weights: ", true_weights.shape)
+        if normalize:
+            in_mean, in_std = (
+                np.mean(inputs, axis=(0, 1, 2), keepdims=True),
+                np.std(inputs, axis=(0, 1, 2), keepdims=True),
+            )
+            inputs = (inputs - in_mean) / in_std
+        # normalize the weights
+        # if normalize:  # true_weights:  (10000, 12, 12)
+        #     wei_mean, wei_std = (
+        #         np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
+        #         np.std(true_weights, axis=(0, 1, 2), keepdims=True),
+        #     )
+        #     true_weights = (true_weights - wei_mean) / wei_std
+        return (
+            torch.FloatTensor(inputs),
+            torch.FloatTensor(labels).reshape(len(labels), -1),
+            torch.FloatTensor(true_weights).reshape(len(labels), -1),
+            full_images,
+        )
+
+    def load_dataset(self, data_dir, normalize):
         train_prefix = "train"
         val_prefix = "val"
         test_prefix = "test"
 
-        def read_data(split_prefix, normalize):
-            inputs = np.load(
-                os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
-            ).astype(np.float32)
-            # channel last
-            # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
-
-            labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
-            true_weights = np.load(
-                os.path.join(data_dir, split_prefix + "_vertex_weights.npy")
-            )
-            full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
-            print("inputs: ", inputs.shape, "true_weights: ", true_weights.shape)
-            if normalize:
-                in_mean, in_std = (
-                    np.mean(inputs, axis=(0, 1, 2), keepdims=True),
-                    np.std(inputs, axis=(0, 1, 2), keepdims=True),
-                )
-                inputs = (inputs - in_mean) / in_std
-            # normalize the weights
-            # if normalize:  # true_weights:  (10000, 12, 12)
-            #     wei_mean, wei_std = (
-            #         np.mean(true_weights, axis=(0, 1, 2), keepdims=True),
-            #         np.std(true_weights, axis=(0, 1, 2), keepdims=True),
-            #     )
-            #     true_weights = (true_weights - wei_mean) / wei_std
-            return (
-                torch.FloatTensor(inputs),
-                torch.FloatTensor(labels).reshape(len(labels), -1),
-                torch.FloatTensor(true_weights).reshape(len(labels), -1),
-                full_images,
-            )
-
-        (self.train_inputs, self.train_labels, self.train_true_weights, _) = read_data(
-            train_prefix, normalize
+        (self.train_X, self.train_Y, self.train_weights, _) = self.read_data(
+            data_dir, train_prefix, normalize
         )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
-        self.val_inputs, self.val_labels, self.val_true_weights, _ = read_data(
-            val_prefix, normalize
+        self.val_X, self.val_Y, self.val_weights, _ = self.read_data(
+            data_dir, val_prefix, normalize
         )  # (1000, 3, 96, 96) (1000, 12 * 12) (1000, 12 * 12)
-        self.test_inputs, self.test_labels, self.test_true_weights, _ = read_data(
-            test_prefix, normalize
+        self.test_X, self.test_Y, self.test_weights, _ = self.read_data(
+            data_dir, test_prefix, normalize
         )
         print(
             "inputs, labels, weights: ",
-            self.train_inputs.shape,
-            self.train_labels.shape,
-            self.train_true_weights.shape,
+            self.train_X.shape,
+            self.train_Y.shape,
+            self.train_weights.shape,
         )
-
-        # # @input_to_numpy
-        # def denormalize(x):
-        #     return (x * std) + mean
-        # metadata = {
-        #     "input_image_size": val_full_images[0].shape[1],
-        #     "output_features": val_true_weights[0].shape[0]
-        #                     * val_true_weights[0].shape[1],
-        #     "num_channels": val_full_images[0].shape[-1],
-        #     "denormalize": denormalize,
-        # }
         return
 
-    def load_ood_dataset(self, data_dir, use_test_set, evaluate_with_extra, normalize):
-        data_suffix, val_prefix = "maps", "val"
-        train_prefix, test_prefix = "train", "test"
+    def load_ood_dataset(self, data_dir, normalize):
+        train_prefix, val_prefix, test_prefix = "train", "val", "test"
 
-        def read_data(split_prefix, normalize):
-            inputs = np.load(
-                os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
-            ).astype(np.float32)
-            # channel last
-            # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
-
-            labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
-            true_weights = np.load(
-                os.path.join(data_dir, split_prefix + "_vertex_weights.npy")
+        ########## change distribution of data sub-function ################
+        def transform_contrast(images, normalize):
+            transform = transforms.Compose(
+                [
+                    transforms.ColorJitter(contrast=10),
+                ]
             )
-            full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
-            print("inputs: ", inputs.shape, "true_weights: ", true_weights.shape)
+            transformed_images = transform(images.permute(0, 3, 1, 2)).permute(0, 2, 3, 1)
             if normalize:
-                in_mean, in_std = (
-                    np.mean(inputs, axis=(0, 1, 2), keepdims=True),
-                    np.std(inputs, axis=(0, 1, 2), keepdims=True),
-                )
-                inputs = (inputs - in_mean) / in_std
-            return (
-                torch.FloatTensor(inputs),
-                torch.FloatTensor(labels).reshape(len(labels), -1),
-                torch.FloatTensor(true_weights).reshape(len(labels), -1),
-                full_images,
-            )
+                transformed_images = do_norm(transformed_images)
+            return transformed_images
 
-        (self.train_inputs, self.train_labels, self.train_true_weights, _) = read_data(
-            train_prefix, normalize
+        ###################### read data sub-function ######################
+        def do_norm(inputs):
+            in_mean, in_std = (
+                torch.mean(inputs, axis=(0, 1, 2), keepdims=True),
+                torch.std(inputs, axis=(0, 1, 2), keepdims=True),
+            )
+            return (inputs - in_mean) / in_std
+
+        ##### Read Data for ver0; as train distribution
+        ver0_train_X, self.train_Y, self.train_weights, _ = self.read_data(
+            data_dir, train_prefix, False
         )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
-        self.val_inputs, self.val_labels, self.val_true_weights, _ = read_data(
-            val_prefix, normalize
-        )  # (1000, 3, 96, 96) (1000, 12 * 12) (1000, 12 * 12)
-        self.test_inputs, self.test_labels, self.test_true_weights, _ = read_data(
-            test_prefix, normalize
+        ver0_val_X, self.val_Y, self.val_weights, _ = self.read_data(
+            data_dir, val_prefix, False
+        )
+        ver0_test_X, self.test_Y, self.test_weights, _ = self.read_data(
+            data_dir, test_prefix, False
+        )
+        ##### Out the original data
+        self.ver0_train_X, self.ver0_val_X = (
+            do_norm(ver0_train_X),
+            do_norm(ver0_val_X),
+        )
+        ##### Pertrub the data, get ver1
+        self.train_X, self.val_X, self.test_X = (
+            transform_contrast(ver0_train_X, normalize),
+            transform_contrast(ver0_val_X, normalize),
+            transform_contrast(ver0_test_X, normalize),
         )
         return
 
     # def get_train_sol(self):
-    #     return self.train_labels
+    #     return self.train_Y
 
     # def get_val_sol(self):
-    #     return self.val_labels
+    #     return self.val_Y
 
     # def get_test_sol(self):
-    #     return self.test_labels
+    #     return self.test_Y
 
-    def get_train_data(self, **kwargs):
+    def get_train_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
-            return self.train_inputs, self.train_labels, self.train_true_weights
+            return self.train_X, self.train_Y, self.train_weights
         else:
-            return self.train_inputs, self.train_true_weights, self.train_labels
+            if train_mode == "iid":
+                return self.train_X, self.train_weights, self.train_Y
+            elif train_mode == "ood":
+                return self.ver0_train_X, self.train_weights, self.train_Y
 
-    def get_val_data(self, **kwargs):
+    def get_val_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
-            return self.val_inputs, self.val_labels, self.val_true_weights
+            return self.val_X, self.val_Y, self.val_weights
         else:
-            return self.val_inputs, self.val_true_weights, self.val_labels
+            if train_mode == "iid":
+                return self.val_X, self.val_weights, self.val_Y
+            elif train_mode == "ood":
+                return self.ver0_val_X, self.val_weights, self.val_Y
 
-    def get_test_data(self, **kwargs):
+    def get_test_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
-            return self.test_inputs, self.test_labels, self.test_true_weights
+            return self.test_X, self.test_Y, self.test_weights
         else:
-            return self.test_inputs, self.test_true_weights, self.test_labels
+            return self.test_X, self.test_weights, self.test_Y
 
     def get_model_shape(self):
-        assert self.train_inputs.shape[2] == 8 * self.size
-        return self.train_inputs.shape[2], self.size**2
+        assert self.train_X.shape[2] == 8 * self.size
+        return self.train_X.shape[2], self.size**2
 
     def get_eval_metric(self):
         # return "match"
@@ -239,15 +234,13 @@ class Shortestpath(PTOProblem):
             "n_vars": self.size**2,
             "size": self.size,
         }
-        # if self.prob_version == "direct":
-        #     return {
-        #         "modelSense": GRB.MINIMIZE,
-        #         "n_vars": self.size**2,
-        #         "size": self.size,
-        #     }
-        # else:
-        #     return {
-        #         "modelSense": GRB.MAXIMIZE,
-        #         "n_vars": self.size**2,
-        #         "size": self.size,
-        #     }
+
+    def genEnv(
+        self,
+        env_id,
+        num_train_instances,
+    ):
+        self.env_config[f"env{env_id}"]
+        # print("config: ", config)
+        Xs_train, Ys_train = None, None
+        return Xs_train, Ys_train
