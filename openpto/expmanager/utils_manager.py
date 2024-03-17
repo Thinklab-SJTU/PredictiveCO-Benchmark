@@ -5,8 +5,29 @@ import time
 import pandas as pd
 import torch
 
+from torch.utils.data import Dataset
+
 from openpto.method.utils_method import do_reduction, get_idxs
 from openpto.metrics.evals import get_eval_results
+
+
+# get batch of data
+class ExpDataset(Dataset):
+    def __init__(self, X_train, Y_train, Y_train_aux):
+        self.X_train = X_train
+        self.Y_train = Y_train
+        self.Y_train_aux = Y_train_aux
+        self.length = len(X_train)  # Assuming all inputs have the same length
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        return {
+            "X": torch.FloatTensor(self.X_train[idx]),
+            "Y": torch.LongTensor([self.Y_train[idx]]),
+            "Y_aux": self.Y_train_aux[idx],
+        }
 
 
 def prob_to_gpu(problem, device):

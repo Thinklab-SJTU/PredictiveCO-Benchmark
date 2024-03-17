@@ -6,8 +6,11 @@ from copy import deepcopy
 import numpy as np
 import torch
 
+from torch.utils.data import DataLoader
+
 # from torchsummary import summary
 from openpto.expmanager.utils_manager import (
+    ExpDataset,
     add_log,
     compare_result,
     print_metrics,
@@ -16,14 +19,7 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import l1_penalty, l2_penalty, str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import (
-    do_reduction,
-    get_batch,
-    ndiv,
-    rand_like,
-    to_array,
-    to_device,
-)
+from openpto.method.utils_method import do_reduction, ndiv, rand_like, to_array, to_device
 
 
 class ExpManager:
@@ -218,30 +214,33 @@ class ExpManager:
         ############################# Train #############################
         # optimizer:
         self.optimizer = torch.optim.Adam(self.pred_model.parameters(), lr=self.args.lr)
+        # dataset loader
+        train_dataset = ExpDataset(X_train, Y_train, Y_train_aux)
+        train_loader = DataLoader(
+            train_dataset, batch_size=self.args.batch_size, shuffle=True
+        )
         # Train PTO
         time_since_best = 0
         self.logger.info("Training Model...")
         self.pred_model.train()
         for iter_idx in range(n_epochs):
-            ###### Learn
-            # TODO: batch train or individually train?
-            # currently, only support individually train
             time_train_start = time.time()
-            # losses = []
 
             # if do_debug:
             #     print("preds: ", preds)
             #     print("Y_train: ", Y_train)
 
-            n_batchs = len(X_train) // self.batch_size
-            for batch_id in range(n_batchs):
-                x_batch = get_batch(X_train, batch_id, self.batch_size)
-                preds = self.pred_model(x_batch)
+            # n_batchs = len(X_train) // self.batch_size
+            # for batch_id in range(n_batchs):
+            # X_batch = get_batch(X_train, batch_id, self.batch_size)
+            for batch_id, batch in enumerate(train_loader):
+                X_batch, Y_batch, Y_aux_batch = batch["X"], batch["Y"], batch["Y_aux"]
+                preds = self.pred_model(X_batch)
                 loss = loss_fn(
                     problem,
                     coeff_hat=preds,
-                    coeff_true=get_batch(Y_train, batch_id, self.batch_size),
-                    params=get_batch(Y_train_aux, batch_id, self.batch_size),
+                    coeff_true=Y_batch,
+                    params=Y_aux_batch,
                     partition="train",
                     index=batch_id,
                     do_debug=do_debug,
