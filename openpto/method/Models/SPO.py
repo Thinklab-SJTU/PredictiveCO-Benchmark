@@ -89,6 +89,10 @@ class SPOPlusFunc(torch.autograd.Function):
         coeff_hat_cpu = coeff_hat.detach().cpu()
         coeff_true_cpu = coeff_true.detach().cpu()
         # solve
+        # if np.isnan(2 * coeff_hat_cpu - coeff_true_cpu).any():
+        #     print("2 * coeff_hat_cpu - coeff_true_cpu: ", 2 * coeff_hat_cpu - coeff_true_cpu)
+        #     print("coeff_true_cpu: ", coeff_true_cpu)
+        #     print("coeff_hat_cpu: ", coeff_hat_cpu)
         sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_cpu - coeff_true_cpu,
             params,

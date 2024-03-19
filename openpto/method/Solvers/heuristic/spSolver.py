@@ -13,8 +13,6 @@ import numpy as np
 
 from openpto.method.Solvers.abcOptSolver import optSolver
 
-# DijkstraOutput = namedtuple("DijkstraOutput", ["shortest_path", "is_unique", "transitions"])
-
 
 class spSolver(optSolver):
     """ """
@@ -72,10 +70,7 @@ class spSolver(optSolver):
         Z = on_path.reshape(-1)
         others = {"is_unique": is_unique, "transitions": transitions}
         return Z, others
-        # if request_transitions:
-        #     return DijkstraOutput(shortest_path=on_path, is_unique=is_unique, transitions=transitions)
-        # else:
-        #     return DijkstraOutput(shortest_path=on_path, is_unique=is_unique, transitions=None)
+        # return DijkstraOutput(shortest_path=on_path, is_unique=is_unique, transitions=transitions)
 
 
 def neighbours_8(x, y, x_max, y_max):

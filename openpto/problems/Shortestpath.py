@@ -31,6 +31,7 @@ class Shortestpath(PTOProblem):
         super(Shortestpath, self).__init__()
         self._set_seed(rand_seed)
         self.size = size
+        self.normalize = normalize
         self.prob_version = prob_version
         if prob_version == "warcraft":
             self.load_dataset(
@@ -38,6 +39,11 @@ class Shortestpath(PTOProblem):
                 normalize=normalize,
             )
         elif prob_version == "warcraft-ood":
+            if "envs" in kwargs:
+                self.env_config = kwargs["envs"]
+            print("self.env_config: ", self.env_config)
+            self.type, self.value = kwargs["type"], kwargs["value"]
+            self.val_type, self.val_value = kwargs["val_type"], kwargs["val_value"]
             self.load_ood_dataset(
                 data_dir + f"/{size}x{size}/",
                 normalize=normalize,
@@ -56,6 +62,8 @@ class Shortestpath(PTOProblem):
             torch.mean(inputs, axis=(0, 1, 2), keepdims=True),
             torch.std(inputs, axis=(0, 1, 2), keepdims=True),
         )
+        # epsilon = 1e-6
+        # in_std[in_std == 0] = epsilon
         return (inputs - in_mean) / in_std
 
     def read_data(self, data_dir, split_prefix, normalize):
@@ -69,7 +77,7 @@ class Shortestpath(PTOProblem):
         labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
         Y = np.load(os.path.join(data_dir, split_prefix + "_vertex_weights.npy"))
         full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
-        print("inputs: ", inputs.shape, "Y: ", Y.shape)
+        # print("inputs: ", inputs.shape, "Y: ", Y.shape) #inputs:  (10000, 96, 96, 3) Y:  (10000, 12, 12)
         if normalize:
             inputs = self.do_norm(inputs)
 
@@ -111,26 +119,31 @@ class Shortestpath(PTOProblem):
         val_X, self.val_Z, self.val_Y, _ = self.read_data(data_dir, val_prefix, False)
         test_X, self.test_Z, self.test_Y, _ = self.read_data(data_dir, test_prefix, False)
         self.ver0_train_X, self.ver0_val_X, self.ver0_test_X = train_X, val_X, test_X
-        ##### Out the original data
+        ##### Out the train data, ver0
         self.train_X, self.val_X, self.test_X = (
             self.do_norm(train_X),
             self.do_norm(val_X),
             self.do_norm(test_X),
         )
-        ##### Pertrub the data, get ver1
-        ver1_transform = self.get_augmentation("contrast", 10)  # TODO: automate
-        self.ver1_train_X, self.ver1_val_X, self.ver1_test_X = self.get_perturbed_data(
-            ver1_transform, normalize
+        ###### pertrub val dataset, get ver1
+        ver1_transform = self.get_augmentation(self.val_type, self.val_value)
+        self.ver1_val_X = self.augment_transform(
+            self.ver0_val_X, ver1_transform, normalize
+        )
+        ##### Pertrub test data, get ver2
+        ver2_transform = self.get_augmentation(self.type, self.value)
+        self.ver2_test_X = self.augment_transform(
+            self.ver0_test_X, ver2_transform, normalize
         )
         return
 
     def get_perturbed_data(self, transform, normalize):
-        ver_train_X, ver1_val_X, ver1_test_X = (
+        new_train_X, new_val_X, new_test_X = (
             self.augment_transform(self.ver0_train_X, transform, normalize),
             self.augment_transform(self.ver0_val_X, transform, normalize),
             self.augment_transform(self.ver0_test_X, transform, normalize),
         )
-        return ver_train_X, ver1_val_X, ver1_test_X
+        return new_train_X, new_val_X, new_test_X
 
     @staticmethod
     def get_augmentation(aug_name, value):
@@ -145,15 +158,16 @@ class Shortestpath(PTOProblem):
         else:
             raise NotImplementedError(aug_name)
         transform = transforms.Compose(
-            [
-                aug_operator,
-            ]
+            [transforms.ToPILImage(), aug_operator, transforms.ToTensor()]
         )
         return transform
 
     ########## sub-function: change distribution of data ################
     def augment_transform(self, images, transform, normalize):
-        transformed_images = transform(images.permute(0, 3, 1, 2)).permute(0, 2, 3, 1)
+        transformed_images = torch.stack(
+            [transform(im) for im in images.permute(0, 3, 1, 2)]
+        )
+        transformed_images = transformed_images.permute(0, 2, 3, 1)
         if normalize:
             transformed_images = self.do_norm(transformed_images)
         return transformed_images
@@ -177,7 +191,10 @@ class Shortestpath(PTOProblem):
         if self.prob_version == "direct":
             return self.val_X, self.val_Z, self.val_Y
         else:
-            return self.val_X, self.val_Y, self.val_Z
+            if train_mode == "iid":
+                return self.val_X, self.val_Y, self.val_Z
+            elif train_mode == "ood":
+                return self.ver1_val_X, self.val_Y, self.val_Z
 
     def get_test_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
@@ -186,7 +203,7 @@ class Shortestpath(PTOProblem):
             if train_mode == "iid":
                 return self.test_X, self.test_Y, self.test_Z
             elif train_mode == "ood":
-                return self.ver1_test_X, self.test_Y, self.test_Z
+                return self.ver2_test_X, self.test_Y, self.test_Z
 
     def get_model_shape(self):
         assert self.train_X.shape[2] == 8 * self.size
@@ -243,7 +260,17 @@ class Shortestpath(PTOProblem):
         env_id,
         num_train_instances,
     ):
-        self.env_config[f"env{env_id}"]
+        config = self.env_config[f"env{env_id}"]
         # print("config: ", config)
-        Xs_train, Ys_train = None, None
-        return Xs_train, Ys_train
+        ver1_transform = self.get_augmentation(config["type"], config["value"])
+        new_train_X = self.augment_transform(
+            to_device(self.ver0_train_X, "cpu"), ver1_transform, self.normalize
+        )
+        # print("input before norm: ", new_train_X[0])
+        # new_train_X = self.do_norm(new_train_X)
+        # print("input after norm: ", new_train_X[0])
+        if torch.isnan(new_train_X).any():
+            print("envs: ", env_id)
+            print("input", new_train_X[0])
+            assert 0
+        return new_train_X, self.train_Y

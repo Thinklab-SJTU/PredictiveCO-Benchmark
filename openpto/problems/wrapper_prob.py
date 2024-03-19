@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 
@@ -70,7 +71,7 @@ def init_if_not_saved(
             problem = pickle.load(file)
     else:
         # Initialise model from scratch
-        print("kwargs:", kwargs)
+        print("new kwargs:", kwargs)
         problem = problem_cls(**kwargs)
 
         # Save model for the future
@@ -86,6 +87,13 @@ def init_if_not_saved(
             saved_probs.to_csv(file, index=False)
 
     return problem
+
+
+def dict_to_string(d):
+    if isinstance(d, dict):
+        return json.dumps(d)
+    else:
+        return d
 
 
 def find_saved_problem(
@@ -106,11 +114,12 @@ def find_saved_problem(
     # Check if the problem has been saved before
     relevant_models = saved_probs
     for col, val in kwargs.items():
+        if isinstance(val, dict):
+            continue  # TODO: work around
         if col in relevant_models.columns:
             relevant_models = relevant_models.loc[
                 relevant_models[col] == val
             ]  # filtering models by parameters
-
     # If it has, find the relevant filename
     filename = None
     if not relevant_models.empty:

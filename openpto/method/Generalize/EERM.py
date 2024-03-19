@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
 
-from openpto.method.utils_method import get_idxs, to_device
+from openpto.method.Models.utils_loss import l1_penalty, l2_penalty
+from openpto.method.utils_method import do_reduction, to_device
 
 
 class ERM(nn.Module):
-    def __init__(self, pred_model, **kwargs):
+    def __init__(self, pred_model, l1_weight, l2_weight, **kwargs):
         super(ERM, self).__init__()
         self.pred_model = pred_model
+        self.l1_weight, self.l2_weight = l1_weight, l2_weight
 
     def inference(self, X):
         return self.pred_model(X)
@@ -24,29 +26,46 @@ class ERM(nn.Module):
         **model_args,
     ):
         preds = self.pred_model(X_train)
-        env_loss = list()
-        for idx in range(len(X_train)):
-            loss_idx = loss_fn(
-                problem,
-                coeff_hat=get_idxs(preds, idx),
-                coeff_true=get_idxs(Y_train, idx),
-                params=get_idxs(Y_train_aux, idx),
-                partition=partition,
-                index=idx,
-                do_debug=do_debug,
-                **model_args,
-            )
-            env_loss.append(loss_idx)
-        loss = torch.stack(env_loss).sum()
+        loss = loss_fn(
+            problem,
+            coeff_hat=preds,
+            coeff_true=Y_train,
+            params=Y_train_aux,
+            partition=partition,
+            index=0,
+            do_debug=do_debug,
+            **model_args,
+        )
+        loss = do_reduction(loss, model_args["reduction"])
+        # add penalty
+        if self.l1_weight > 0:
+            loss += self.l1_weight * l1_penalty(self.pred_model)
+        if self.l2_weight > 0:
+            loss += self.l2_weight * l2_penalty(self.pred_model)
+        # env_loss = list()
+        # for idx in range(len(X_train)):
+        #     loss_idx = loss_fn(
+        #         problem,
+        #         coeff_hat=get_idxs(preds, idx),
+        #         coeff_true=get_idxs(Y_train, idx),
+        #         params=get_idxs(Y_train_aux, idx),
+        #         partition=partition,
+        #         index=idx,
+        #         do_debug=do_debug,
+        #         **model_args,
+        #     )
+        #     env_loss.append(loss_idx)
+        # loss = torch.stack(env_loss).sum()
         return loss
 
 
 class EERM(nn.Module):
-    def __init__(self, pred_model, n_envs, alpha, beta, **kwargs):
+    def __init__(self, pred_model, n_envs, alpha, beta, l1_weight, l2_weight, **kwargs):
         super(EERM, self).__init__()
         self.pred_model = pred_model
         self.n_envs = n_envs
         self.alpha, self.beta = alpha, beta
+        self.l1_weight, self.l2_weight = l1_weight, l2_weight
 
     def inference(self, X):
         return self.pred_model(X)
@@ -66,20 +85,32 @@ class EERM(nn.Module):
         Loss = list()
         # original train data
         preds = self.pred_model(X_train)
-        env_loss = list()
-        for idx in range(len(X_train)):
-            loss_idx = loss_fn(
-                problem,
-                coeff_hat=get_idxs(preds, idx),
-                coeff_true=get_idxs(Y_train, idx),
-                params=get_idxs(Y_train_aux, idx),
-                partition=partition,
-                index=idx,
-                do_debug=do_debug,
-                **model_args,
-            )
-            env_loss.append(loss_idx)
-        Loss.append(torch.stack(env_loss).sum().view(-1))
+        loss = loss_fn(
+            problem,
+            coeff_hat=preds,
+            coeff_true=Y_train,
+            params=Y_train_aux,
+            partition=partition,
+            index=0,
+            do_debug=do_debug,
+            **model_args,
+        )
+        loss = do_reduction(loss, model_args["reduction"])
+        Loss.append(loss.view(-1))
+        # env_loss = list()
+        # for idx in range(len(X_train)):
+        #     loss_idx = loss_fn(
+        #         problem,
+        #         coeff_hat=get_idxs(preds, idx),
+        #         coeff_true=get_idxs(Y_train, idx),
+        #         params=get_idxs(Y_train_aux, idx),
+        #         partition=partition,
+        #         index=idx,
+        #         do_debug=do_debug,
+        #         **model_args,
+        #     )
+        #     env_loss.append(loss_idx)
+        # Loss.append(torch.stack(env_loss).sum().view(-1))
         # data
         for env_id in range(self.n_envs):
             # gen env data
@@ -91,20 +122,36 @@ class EERM(nn.Module):
             )
             # forward and get output
             env_preds = self.pred_model(env_X_train)
-            env_loss = list()
-            for idx in range(len(X_train)):
-                loss_idx = loss_fn(
-                    problem,
-                    coeff_hat=get_idxs(env_preds, idx),
-                    coeff_true=get_idxs(env_Y_train, idx),
-                    params=get_idxs(Y_train_aux, idx),
-                    partition=partition,
-                    index=idx,
-                    do_debug=do_debug,
-                    **model_args,
-                )
-                env_loss.append(loss_idx)
-            env_loss = torch.stack(env_loss).sum()
+            # env_loss = list()
+            # for idx in range(len(X_train)):
+            #     loss_idx = loss_fn(
+            #         problem,
+            #         coeff_hat=get_idxs(env_preds, idx),
+            #         coeff_true=get_idxs(env_Y_train, idx),
+            #         params=get_idxs(Y_train_aux, idx),
+            #         partition=partition,
+            #         index=idx,
+            #         do_debug=do_debug,
+            #         **model_args,
+            #     )
+            #     env_loss.append(loss_idx)
+            # env_loss = torch.stack(env_loss).sum()
+            env_loss = loss_fn(
+                problem,
+                coeff_hat=env_preds,
+                coeff_true=env_Y_train,
+                params=Y_train_aux,
+                partition=partition,
+                index=0,
+                do_debug=do_debug,
+                **model_args,
+            )
+            env_loss = do_reduction(loss, model_args["reduction"])
+            # add penalty
+            if self.l1_weight > 0:
+                env_loss += self.l1_weight * l1_penalty(self.pred_model)
+            if self.l2_weight > 0:
+                env_loss += self.l2_weight * l2_penalty(self.pred_model)
             Loss.append(env_loss.view(-1))
         # print("Loss: ", len(Loss), Loss)
         Loss = torch.cat(Loss, dim=0)

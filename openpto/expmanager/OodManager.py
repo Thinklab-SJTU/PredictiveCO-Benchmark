@@ -54,7 +54,7 @@ class OodManager:
         # Get data
         X_train, Y_train, Y_train_aux = problem.get_train_data(self.args.train_mode)
         X_val, Y_val, Y_val_aux = problem.get_val_data(self.args.train_mode)
-        X_test, Y_test, Y_test_aux = problem.get_test_data()
+        X_test, Y_test, Y_test_aux = problem.get_test_data(self.args.train_mode)
 
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
