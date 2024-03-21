@@ -7,9 +7,8 @@ import torch
 
 from torch.utils.data import Dataset
 
-from openpto.method.utils_method import do_reduction, get_idxs
+from openpto.method.utils_method import do_reduction, get_idxs, to_device
 from openpto.metrics.evals import get_eval_results
-
 
 # get batch of data
 class ExpDataset(Dataset):
@@ -100,20 +99,20 @@ def print_metrics(
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
-            objective_hat = torch.zeros_like(pred_loss).cpu()
+            objective_hat = torch.zeros_like(pred_loss, device="cpu")
             Zs_hat = torch.zeros_like(pred_loss)
             # if partition != "train":
             if True:
                 Zs_hat, _ = problem.get_decision(
-                    preds.cpu(),
+                    to_device(preds,"cpu"),
                     params=Ys_aux,
                     optSolver=optSolver,
                     isTrain=isTrain,
                     **problem.init_API(),
                 )
                 objective_hat = problem.get_objective(
-                    Ys, Zs_hat, Ys_aux, **problem.init_API()
-                ).cpu()
+                    to_device(Ys, "cpu"),  to_device(Zs_hat, "cpu"), Ys_aux, **problem.init_API()
+                )
             # Loss and Error
             losses = []
             for idx in range(len(Xs)):

@@ -10,3 +10,4 @@ ruamel.base==1.0.0
 scikit_learn==1.1.2
 setuptools==67.8.0
 torch==1.12.1+cu113
+ortools

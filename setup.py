@@ -14,7 +14,7 @@ pandas
 ipympl
 basemap
 Pillow
-ortools==9.4.1874
+ortools
 ruamel.yaml==0.17.21
 """
 

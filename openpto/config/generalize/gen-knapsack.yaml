@@ -9,6 +9,8 @@ dataset:
   distr: normal
   mean: 10
   var: 10
+  mean_valid: 8
+  var_valid: 8
   mean_ood: 0
   var_ood: 1
   envs:
