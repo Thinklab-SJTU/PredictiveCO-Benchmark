@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 from openpto.method.utils_method import do_reduction, get_idxs, to_device
 from openpto.metrics.evals import get_eval_results
 
+
 # get batch of data
 class ExpDataset(Dataset):
     def __init__(self, X_train, Y_train, Y_train_aux):
@@ -104,14 +105,17 @@ def print_metrics(
             # if partition != "train":
             if True:
                 Zs_hat, _ = problem.get_decision(
-                    to_device(preds,"cpu"),
+                    to_device(preds, "cpu"),
                     params=Ys_aux,
                     optSolver=optSolver,
                     isTrain=isTrain,
                     **problem.init_API(),
                 )
                 objective_hat = problem.get_objective(
-                    to_device(Ys, "cpu"),  to_device(Zs_hat, "cpu"), Ys_aux, **problem.init_API()
+                    to_device(Ys, "cpu"),
+                    to_device(Zs_hat, "cpu"),
+                    Ys_aux,
+                    **problem.init_API(),
                 )
             # Loss and Error
             losses = []
