@@ -25,8 +25,16 @@ class TSP(PTOProblem):
         if prob_version == "gen":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
+            poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
             self.load_dataset(
-                num_train_instances, num_test_instances, n_nodes, n_features, val_frac, rand_seed
+                num_train_instances,
+                num_test_instances,
+                n_nodes,
+                n_features,
+                poly_deg,
+                noise_width,
+                val_frac,
+                rand_seed,
             )
 
     def get_train_data(self, **kwargs):
@@ -76,31 +84,39 @@ class TSP(PTOProblem):
         }
 
     def load_dataset(
-        self, num_train_instances, num_test_instances, num_nodes, num_features, val_frac, rand_seed
+        self,
+        num_train_instances,
+        num_test_instances,
+        num_nodes,
+        num_features,
+        deg,
+        noise_width,
+        val_frac,
+        rand_seed,
     ):
         train_feats, train_costs = self.genData(
             num_train_instances,
             num_features,
             num_nodes,
-            deg=1,
-            noise_width=0,
+            deg=deg,
+            noise_width=noise_width,
             seed=rand_seed,
         )
         val_feats, val_costs = self.genData(
             int(num_train_instances * val_frac),
             num_features,
             num_nodes,
-            deg=1,
-            noise_width=0,
-            seed=rand_seed,
+            deg=deg,
+            noise_width=noise_width,
+            seed=rand_seed + 1,
         )
         test_feats, test_costs = self.genData(
             num_test_instances,
             num_features,
             num_nodes,
-            deg=1,
-            noise_width=0,
-            seed=rand_seed,
+            deg=deg,
+            noise_width=noise_width,
+            seed=rand_seed + 2,
         )
         self.Xs_train, self.Ys_train = train_feats, train_costs
         self.Xs_val, self.Ys_val = val_feats, val_costs
@@ -108,6 +124,18 @@ class TSP(PTOProblem):
         print("train: ", self.Xs_train, "costs: ", self.Ys_train)
         print("val: ", self.Xs_val, "costs: ", self.Ys_val)
         print("test: ", self.Xs_test, "costs: ", self.Ys_test)
+        return
+
+    def load_ood_dataset(
+        self,
+        num_train_instances,
+        num_test_instances,
+        num_nodes,
+        num_features,
+        val_frac,
+        rand_seed,
+        **kwargs,
+    ):
         return
 
     @staticmethod

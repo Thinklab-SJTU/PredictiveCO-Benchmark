@@ -1,9 +1,8 @@
 from collections import defaultdict
-from itertools import combinations
-
-import numpy as np
 
 import gurobipy as gp  # pylint: disable=no-name-in-module
+import numpy as np
+
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Solvers.grb.grbSolver import optGrbSolver
@@ -11,16 +10,16 @@ from openpto.method.Solvers.grb.grbSolver import optGrbSolver
 
 # optimization model
 class TSPGrbSolver(optGrbSolver):
-    '''
+    """
     Code is adopted by PyEPO. This class is optimization model for traveling salesman problem based on Gavish–Graves (GG) formulation.
-    '''
+    """
+
     def __init__(self, n_nodes, modelSense, **kwargs):
         super().__init__(modelSense)
         self.num_nodes = n_nodes
         # TSP nodes & edges
         self.nodes = list(range(n_nodes))
-        self.edges = [(i, j) for i in self.nodes
-                      for j in self.nodes if i < j]
+        self.edges = [(i, j) for i in self.nodes for j in self.nodes if i < j]
         self._model, self.z = self._getModel()
         # turn off output
         self._model.Params.outputFlag = 0
@@ -29,8 +28,9 @@ class TSPGrbSolver(optGrbSolver):
     def num_cost(self):
         return len(self.edges)
 
-    def _getModel(self,):
-        
+    def _getModel(
+        self,
+    ):
         """
         A method to build Gurobi model
 
@@ -48,13 +48,11 @@ class TSPGrbSolver(optGrbSolver):
         # constraints
         m.addConstrs(z.sum("*", j) == 1 for j in self.nodes)
         m.addConstrs(z.sum(i, "*") == 1 for i in self.nodes)
-        m.addConstrs(y.sum(i, "*") -
-                     gp.quicksum(y[j,i]
-                                 for j in self.nodes[1:]
-                                 if j != i) == 1
-                     for i in self.nodes[1:])
-        m.addConstrs(y[i,j] <= (len(self.nodes) - 1) * z[i,j]
-                     for (i,j) in z if i != 0)
+        m.addConstrs(
+            y.sum(i, "*") - gp.quicksum(y[j, i] for j in self.nodes[1:] if j != i) == 1
+            for i in self.nodes[1:]
+        )
+        m.addConstrs(y[i, j] <= (len(self.nodes) - 1) * z[i, j] for (i, j) in z if i != 0)
         return m, z
 
     def setObj(self, c):
@@ -66,11 +64,12 @@ class TSPGrbSolver(optGrbSolver):
         """
         if len(c) != self.num_cost:
             raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[k] * (self.z[i,j] + self.z[j,i])
-                          for k, (i,j) in enumerate(self.edges))
+        obj = gp.quicksum(
+            c[k] * (self.z[i, j] + self.z[j, i]) for k, (i, j) in enumerate(self.edges)
+        )
         self._model.setObjective(obj)
         return
-    
+
     def solve(self, y, **kwargs):
         """
         A method to solve model
@@ -78,11 +77,12 @@ class TSPGrbSolver(optGrbSolver):
         Returns:
             tuple: optimal solution (list) and objective value (float)
         """
+        self.setObj(y)
         self._model.update()
         self._model.optimize()
         sol = np.zeros(self.num_cost, dtype=np.uint8)
-        for k, (i,j) in enumerate(self.edges):
-            if self.z[i,j].x > 1e-2 or self.z[j,i].x > 1e-2:
+        for k, (i, j) in enumerate(self.edges):
+            if self.z[i, j].x > 1e-2 or self.z[j, i].x > 1e-2:
                 sol[k] = 1
         others = {}
         return sol, self._model.objVal, others
