@@ -104,8 +104,9 @@ class ExpManager:
         ###   Document the value of a random guess
         objs_rand = list()
         for _ in range(10):
+            rand_Y = rand_like(Y_test, device=self.device)
             Z_test_rand, Objs_test_rand = problem.get_decision(
-                rand_like(Y_test, device=self.device),
+                rand_Y,
                 params=Y_test_aux,
                 optSolver=optSolver,
                 isTrain=False,

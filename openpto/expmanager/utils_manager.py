@@ -24,8 +24,8 @@ class ExpDataset(Dataset):
 
     def __getitem__(self, idx):
         return {
-            "X": torch.FloatTensor(self.X_train[idx]),
-            "Y": torch.LongTensor([self.Y_train[idx]]),
+            "X": self.X_train[idx],
+            "Y": self.Y_train[idx],
             "Y_aux": self.Y_train_aux[idx],
         }
 

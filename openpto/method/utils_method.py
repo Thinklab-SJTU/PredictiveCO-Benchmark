@@ -54,6 +54,8 @@ def rand_like(obj, device="cpu"):
         return torch.rand_like(obj, device=device)
     elif isinstance(obj, list):
         return [torch.rand_like(ob, device=device) for ob in obj]
+    else:
+        raise NotImplementedError()
 
 
 def do_reduction(obj, reduction):

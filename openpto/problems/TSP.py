@@ -26,7 +26,7 @@ class TSP(PTOProblem):
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
             self.load_dataset(
-                num_train_instances, num_test_instances, n_nodes, n_features, rand_seed
+                num_train_instances, num_test_instances, n_nodes, n_features, val_frac, rand_seed
             )
 
     def get_train_data(self, **kwargs):
@@ -54,17 +54,20 @@ class TSP(PTOProblem):
             Y = to_tensor(Y)
 
         sol, obj = [], []
-        print("Y", Y)
         for i in range(len(Y)):
             # solve
-            solp, objp, other = optSolver.solve(Y[i])
+            solp, _, _ = optSolver.solve(Y[i])
             sol.append(solp)
-            obj.append(objp)
-        sols_array, objs_array = np.array(sol), np.array(obj)
-        return sols_array, objs_array
+            # obj.append(objp)
+        sols, objs = torch.FloatTensor(sol), torch.FloatTensor(obj)
+        objs = self.get_objective(Y, sols, params, **kwargs)
+        return sols, objs
 
-    def get_objective(self, Y, Z, **kwargs):
-        return Y * Z
+    def get_objective(self, Y, Z, aux_data, **kwargs):
+        # print("Y: ", Y, Y.shape)
+        # print("Z: ", Z, Z.shape)
+        # print("res: ",  (Y * Z).shape)
+        return (Y * Z).sum(-1)
 
     def init_API(self):
         return {
@@ -73,7 +76,7 @@ class TSP(PTOProblem):
         }
 
     def load_dataset(
-        self, num_train_instances, num_test_instances, num_nodes, num_features, rand_seed
+        self, num_train_instances, num_test_instances, num_nodes, num_features, val_frac, rand_seed
     ):
         train_feats, train_costs = self.genData(
             num_train_instances,
@@ -84,7 +87,7 @@ class TSP(PTOProblem):
             seed=rand_seed,
         )
         val_feats, val_costs = self.genData(
-            num_train_instances,
+            int(num_train_instances * val_frac),
             num_features,
             num_nodes,
             deg=1,
@@ -102,6 +105,9 @@ class TSP(PTOProblem):
         self.Xs_train, self.Ys_train = train_feats, train_costs
         self.Xs_val, self.Ys_val = val_feats, val_costs
         self.Xs_test, self.Ys_test = test_feats, test_costs
+        print("train: ", self.Xs_train, "costs: ", self.Ys_train)
+        print("val: ", self.Xs_val, "costs: ", self.Ys_val)
+        print("test: ", self.Xs_test, "costs: ", self.Ys_test)
         return
 
     @staticmethod
@@ -163,7 +169,7 @@ class TSP(PTOProblem):
             ).reshape(-1) * noise
         # rounding
         c = np.around(c, decimals=4)
-        return x, c
+        return torch.FloatTensor(x), torch.FloatTensor(c)
 
     def genEnv(
         self,
