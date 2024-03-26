@@ -1,0 +1,12 @@
+dataset:
+  prob_version: gen
+  num_features: 20
+  noise_width: 0.5
+  poly_deg: 2
+  knapsack_dim: 1
+  num_nodes: 20
+
+
+solver:
+  gurobi:
+    kwargs: None

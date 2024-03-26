@@ -27,6 +27,7 @@ def get_args():
             "energy",
             "advertising",
             "shortestpath",
+            "TSP",
         ],
         default="knapsack",
     )

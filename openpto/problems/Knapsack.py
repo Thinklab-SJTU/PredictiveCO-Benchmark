@@ -137,6 +137,110 @@ class Knapsack(PTOProblem):
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
 
+    def get_train_data(self, train_mode="iid", **kwargs):
+        if train_mode == "iid":
+            return (
+                self.Xs_train[self.train_idxs],
+                self.Ys_train[self.train_idxs],
+                self.params_train[self.train_idxs],
+            )
+        elif train_mode == "ood":
+            return (
+                self.ver0_Xs_train[self.train_idxs],
+                self.ver0_Ys_train[self.train_idxs],
+                self.params_train[self.train_idxs],
+            )
+        else:
+            raise NotImplementedError
+
+    def get_val_data(self, train_mode="iid", **kwargs):
+        if train_mode == "iid":
+            return (
+                self.Xs_train[self.val_idxs],
+                self.Ys_train[self.val_idxs],
+                self.params_train[self.val_idxs],
+            )
+        elif train_mode == "ood":
+            return (
+                self.ver0_Xs_train[self.val_idxs],
+                self.ver0_Ys_train[self.val_idxs],
+                self.params_train[self.val_idxs],
+            )
+        else:
+            raise NotImplementedError
+
+    def get_test_data(self, **kwargs):
+        # output the test data train mode
+        return self.Xs_test, self.Ys_test, self.params_test
+
+    def get_objective(self, Y, Z, aux_data=None, **kwargs):
+        if self.prob_version == "energy":
+            assert Y.shape[:-1] == Z.shape
+            assert Z.ndim + 1 == Y.ndim == 3
+            if torch.is_tensor(Y):
+                Z = to_tensor(Z).to(Y.device)
+            return (Y.squeeze(-1) * Z).sum(-1)
+        elif self.prob_version in ["gen", "gen-ood"]:
+            assert Y.shape == Z.shape
+            assert Y.ndim == Z.ndim == 2
+            if torch.is_tensor(Y):
+                Z = to_tensor(Z).to(Y.device)
+            return (Y * Z).sum(-1)
+        else:
+            raise KeyError(f"prob version {self.prob_version} not implemented")
+
+    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+        if torch.is_tensor(Y):
+            Y = Y.cpu()
+        else:
+            Y = to_tensor(Y)
+
+        # determine solver
+        if optSolver is None:
+            optSolver = KPGrbSolver(**kwargs)
+            # optSolver = KPGrbSolver(**kwargs)
+
+        if optSolver.__class__.__name__ == "CpKPSolver":
+            sol = []
+            for i in range(len(Y)):
+                # solve
+                solp = optSolver.solve(Y[i], isTrain)
+                if isinstance(solp, np.ndarray):
+                    solp = torch.tensor(solp)
+                else:
+                    solp = solp[0].cpu().reshape(-1)
+                sol.append(solp)
+            sol = torch.vstack(sol)
+            obj = self.get_objective(Y, sol)
+            return sol, obj
+        else:
+            sol, obj = [], []
+            for i in range(len(Y)):
+                # solve
+                solp, objp, other = optSolver.solve(Y[i])
+                sol.append(solp)
+                obj.append(objp)
+            sols_array, objs_array = np.array(sol), np.array(obj)
+            return sols_array, objs_array
+
+    def init_API(self):
+        return {
+            "weights": self.weights,
+            "capacity": self.capacity,
+            "modelSense": GRB.MAXIMIZE,
+            "n_items": self.num_items,
+            "tau": 1,
+        }
+
+    def get_model_shape(self):
+        if self.prob_version in ["gen", "gen-ood"]:
+            return self.Xs_train.shape[-1], self.num_items
+        else:
+            return self.Xs_train.shape[-1], 1
+
+    def get_output_activation(self):
+        return "identity"
+
     def get_energy_data(self, val_frac):
         self.num_items = 48
         x_train, y_train, x_test, y_test = self.get_energy(
@@ -276,110 +380,6 @@ class Knapsack(PTOProblem):
         gids = [gid for gid in range(length) for i in range(grouplength)]
         df.insert(0, "groupID", gids)
         return df
-
-    def get_train_data(self, train_mode="iid", **kwargs):
-        if train_mode == "iid":
-            return (
-                self.Xs_train[self.train_idxs],
-                self.Ys_train[self.train_idxs],
-                self.params_train[self.train_idxs],
-            )
-        elif train_mode == "ood":
-            return (
-                self.ver0_Xs_train[self.train_idxs],
-                self.ver0_Ys_train[self.train_idxs],
-                self.params_train[self.train_idxs],
-            )
-        else:
-            raise NotImplementedError
-
-    def get_val_data(self, train_mode="iid", **kwargs):
-        if train_mode == "iid":
-            return (
-                self.Xs_train[self.val_idxs],
-                self.Ys_train[self.val_idxs],
-                self.params_train[self.val_idxs],
-            )
-        elif train_mode == "ood":
-            return (
-                self.ver0_Xs_train[self.val_idxs],
-                self.ver0_Ys_train[self.val_idxs],
-                self.params_train[self.val_idxs],
-            )
-        else:
-            raise NotImplementedError
-
-    def get_test_data(self, **kwargs):
-        # output the test data train mode
-        return self.Xs_test, self.Ys_test, self.params_test
-
-    def get_objective(self, Y, Z, aux_data=None, **kwargs):
-        if self.prob_version == "energy":
-            assert Y.shape[:-1] == Z.shape
-            assert Z.ndim + 1 == Y.ndim == 3
-            if torch.is_tensor(Y):
-                Z = to_tensor(Z).to(Y.device)
-            return (Y.squeeze(-1) * Z).sum(-1)
-        elif self.prob_version in ["gen", "gen-ood"]:
-            assert Y.shape == Z.shape
-            assert Y.ndim == Z.ndim == 2
-            if torch.is_tensor(Y):
-                Z = to_tensor(Z).to(Y.device)
-            return (Y * Z).sum(-1)
-        else:
-            raise KeyError(f"prob version {self.prob_version} not implemented")
-
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
-        if torch.is_tensor(Y):
-            Y = Y.cpu()
-        else:
-            Y = to_tensor(Y)
-
-        # determine solver
-        if optSolver is None:
-            optSolver = KPGrbSolver(**kwargs)
-            # optSolver = KPGrbSolver(**kwargs)
-
-        if optSolver.__class__.__name__ == "CpKPSolver":
-            sol = []
-            for i in range(len(Y)):
-                # solve
-                solp = optSolver.solve(Y[i], isTrain)
-                if isinstance(solp, np.ndarray):
-                    solp = torch.tensor(solp)
-                else:
-                    solp = solp[0].cpu().reshape(-1)
-                sol.append(solp)
-            sol = torch.vstack(sol)
-            obj = self.get_objective(Y, sol)
-            return sol, obj
-        else:
-            sol, obj = [], []
-            for i in range(len(Y)):
-                # solve
-                solp, objp, other = optSolver.solve(Y[i])
-                sol.append(solp)
-                obj.append(objp)
-            sols_array, objs_array = np.array(sol), np.array(obj)
-            return sols_array, objs_array
-
-    def init_API(self):
-        return {
-            "weights": self.weights,
-            "capacity": self.capacity,
-            "modelSense": GRB.MAXIMIZE,
-            "n_items": self.num_items,
-            "tau": 1,
-        }
-
-    def get_model_shape(self):
-        if self.prob_version in ["gen", "gen-ood"]:
-            return self.Xs_train.shape[-1], self.num_items
-        else:
-            return self.Xs_train.shape[-1], 1
-
-    def get_output_activation(self):
-        return "identity"
 
     @staticmethod
     def genData(
