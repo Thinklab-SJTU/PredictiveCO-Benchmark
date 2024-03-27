@@ -168,7 +168,24 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
-            if ptr_epoch % self.args.valfreq == 0:
+            if ptr_epoch % self.args.valfreq != 0:
+                datasets = [
+                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
+                ]
+                metrics = print_metrics(
+                    datasets,
+                    self.pred_model,
+                    problem,
+                    twostage_criterion,
+                    twostage_criterion,
+                    ptoSolver,
+                    f"Ptr iter {ptr_epoch},",
+                    self.logger,
+                    do_debug=do_debug,
+                    **self.model_args,
+                )
+                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+            else:
                 # Compute metrics
                 datasets = [
                     (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
@@ -268,7 +285,7 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            if iter_idx % self.args.valfreq == 0:
+            if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
                 ]

@@ -226,7 +226,24 @@ class OodManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            if iter_idx % self.args.valfreq == 0:
+            if iter_idx % self.args.valfreq != 0:
+                datasets = [
+                    (X_train, Y_train, Y_train_aux, "train"),
+                ]
+                metrics = print_metrics(
+                    datasets,
+                    self.pred_model,
+                    problem,
+                    loss_fn,
+                    twostage_criterion,
+                    ptoSolver,
+                    f"Iter {iter_idx},",
+                    self.logger,
+                    do_debug=do_debug,
+                    **self.model_args,
+                )
+                add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
+            else:
                 # Compute metrics
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),

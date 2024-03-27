@@ -114,8 +114,6 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = -2 * (sols_true - sols_proxy)
         ##### work around #####
         coeff_hat_cpu = ctx.coeff_hat_cpu
-        print("shapes: ", grad_output.shape, grad.shape, coeff_hat_cpu.shape)
-        # shapes:  torch.Size([256]) torch.Size([256, 10]) torch.Size([256, 10])
         if grad.shape != coeff_hat_cpu.shape:
             if np.prod(grad.shape) == np.prod(coeff_hat_cpu.shape):
                 grad = grad.reshape(coeff_hat_cpu.shape)
