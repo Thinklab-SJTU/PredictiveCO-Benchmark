@@ -90,32 +90,22 @@ class TSP(PTOProblem):
         val_frac,
         rand_seed,
     ):
-        train_feats, train_costs = self.genData(
-            num_train_instances,
+        feats, costs = self.genData(
+            num_train_instances + num_test_instances,
             num_features,
             num_nodes,
             deg=deg,
             noise_width=noise_width,
             seed=rand_seed,
         )
-        val_feats, val_costs = self.genData(
-            int(num_train_instances * val_frac),
-            num_features,
-            num_nodes,
-            deg=deg,
-            noise_width=noise_width,
-            seed=rand_seed + 1,
+        train_feats, train_costs = (
+            feats[:num_train_instances],
+            costs[:num_train_instances],
         )
-        test_feats, test_costs = self.genData(
-            num_test_instances,
-            num_features,
-            num_nodes,
-            deg=deg,
-            noise_width=noise_width,
-            seed=rand_seed + 2,
-        )
-        self.Xs_train, self.Ys_train = train_feats, train_costs
-        self.Xs_val, self.Ys_val = val_feats, val_costs
+        test_feats, test_costs = feats[num_train_instances:], costs[num_train_instances:]
+        n_trains = int((1 - val_frac) * num_train_instances)
+        self.Xs_train, self.Ys_train = train_feats[:n_trains], train_costs[:n_trains]
+        self.Xs_val, self.Ys_val = train_feats[n_trains:], train_costs[n_trains:]
         self.Xs_test, self.Ys_test = test_feats, test_costs
         print("train: ", self.Xs_train, "costs: ", self.Ys_train)
         print("val: ", self.Xs_val, "costs: ", self.Ys_val)
@@ -137,6 +127,7 @@ class TSP(PTOProblem):
     @staticmethod
     def genData(num_data, num_features, num_nodes, deg, noise_width, seed=2023):
         """
+        Adopted by PyEPO
         A function to generate synthetic data and features for travelling salesman
 
         Args:

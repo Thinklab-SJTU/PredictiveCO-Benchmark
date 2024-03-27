@@ -21,8 +21,8 @@ class Knapsack(PTOProblem):
         num_train_instances=400,  # number of instances to use from the dataset to train
         num_test_instances=200,  # number of instances to use from the dataset to test
         val_frac=0.2,  # fraction of training data reserved for validation
-        rand_seed=0,  # for reproducibility
-        prob_version="gen",  # "energy" or "gen"
+        rand_seed=2023,  # for reproducibility
+        prob_version="gen",
         data_dir="./openpto/data/",
         **kwargs,
     ):
@@ -46,8 +46,8 @@ class Knapsack(PTOProblem):
             self.get_energy_data(val_frac)
         elif prob_version == "gen":
             self.num_items = num_items
-            print("mean, var", mean, var)
-            weights, feats, profits = self.genData(
+            print("distribution of generated data, mean, var:", mean, var)
+            weights, feats, profits = self.genKPData(
                 num_train_instances + num_test_instances,
                 num_features,
                 num_items,
@@ -86,7 +86,7 @@ class Knapsack(PTOProblem):
         elif prob_version == "gen-ood":
             self.num_items = num_items
             # ver0 data, train disbution
-            ver0_weights, self.ver0_Xs_train, self.ver0_Ys_train = self.genData(
+            ver0_weights, self.ver0_Xs_train, self.ver0_Ys_train = self.genKPData(
                 num_train_instances,
                 num_features,
                 num_items,
@@ -101,7 +101,7 @@ class Knapsack(PTOProblem):
             ## OOD test distribution
             # ver1 data, test distribution
             mean_ood, var_ood = kwargs["mean_ood"], kwargs["var_ood"]
-            ver1_weights, ver1_feats, ver1_profits = self.genData(
+            ver1_weights, ver1_feats, ver1_profits = self.genKPData(
                 num_train_instances + num_test_instances,
                 num_features,
                 num_items,
@@ -382,7 +382,7 @@ class Knapsack(PTOProblem):
         return df
 
     @staticmethod
-    def genData(
+    def genKPData(
         num_instances,
         num_features,
         num_items,
@@ -392,10 +392,9 @@ class Knapsack(PTOProblem):
         poly_deg=1,
         noise_width=0,
         distr="normal",
-        seed=135,
+        seed=2023,
     ):
         #     A function to generate synthetic data and features for knapsack
-
         #     Args:
         #         num_instances (int): number of data points
         #         num_features (int): dimension of features
@@ -404,7 +403,6 @@ class Knapsack(PTOProblem):
         #         poly_deg (int): data polynomial degree
         #         noise_width (float): half witdth of data random noise
         #         seed (int): random state seed
-
         #     Returns:
         #     tuple: weights of items (np.ndarray), data features (np.ndarray), costs (np.ndarray)
         # positive integer parameter
@@ -414,35 +412,27 @@ class Knapsack(PTOProblem):
             raise ValueError("poly_deg = {} should be positive.".format(poly_deg))
         # set seed
         rnd = np.random.RandomState(seed)
-        # number of data points
-        n = num_instances
-        # dimension of features
-        p = num_features
-        # dimension of problem
-        d = dim
-        # number of items
-        m = num_items
         # weights of items
-        weights = rnd.choice(range(300, 800), size=(d, m)) / 100
+        weights = rnd.choice(range(300, 800), size=(dim, num_items)) / 100
         # random matrix parameter B
-        B = rnd.binomial(1, 0.5, (m, p))
+        B = rnd.binomial(1, 0.5, (num_items, num_features))
         # feature vectors
         if distr == "normal":
-            feats = rnd.normal(mean, var, (n, p))
+            feats = rnd.normal(mean, var, (num_instances, num_features))
         else:
             raise NotImplementedError
         # value of items
-        profits = np.zeros((n, m), dtype=int)
-        for i in range(n):
+        profits = np.zeros((num_instances, num_items), dtype=int)
+        for i in range(num_instances):
             # cost without noise
             values = (
-                np.dot(B, feats[i].reshape(p, 1)).T / np.sqrt(p) + 3
+                np.dot(B, feats[i].reshape(num_features, 1)).T / np.sqrt(num_features) + 3
             ) ** poly_deg + 1
             # rescale
             values *= 5
             values /= 3.5**poly_deg
             # noise
-            epislon = rnd.uniform(1 - noise_width, 1 + noise_width, m)
+            epislon = rnd.uniform(1 - noise_width, 1 + noise_width, num_items)
             values *= epislon
             # convert into int
             values = np.ceil(values)
@@ -467,7 +457,7 @@ class Knapsack(PTOProblem):
         config = self.env_config[f"env{env_id}"]
         # print("config: ", config)
         # print("mean, var", mean, var)
-        _, Xs_train, Ys_train = self.genData(
+        _, Xs_train, Ys_train = self.genKPData(
             num_train_instances,
             self.kwargs["num_features"],
             self.num_items,
