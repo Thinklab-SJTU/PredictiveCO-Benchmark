@@ -36,6 +36,20 @@ class TSP(PTOProblem):
                 val_frac,
                 rand_seed,
             )
+        elif prob_version == "gen-ood":
+            n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
+            self.n_nodes = n_nodes
+            poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+            self.load_dataset(
+                num_train_instances,
+                num_test_instances,
+                n_nodes,
+                n_features,
+                poly_deg,
+                noise_width,
+                val_frac,
+                rand_seed,
+            )
 
     def get_train_data(self, **kwargs):
         return self.Xs_train, self.Ys_train, self.Ys_train
@@ -75,7 +89,7 @@ class TSP(PTOProblem):
 
     def init_API(self):
         return {
-            "modelSense": GRB.MAXIMIZE,
+            "modelSense": GRB.MINIMIZE,
             "n_nodes": self.n_nodes,
         }
 

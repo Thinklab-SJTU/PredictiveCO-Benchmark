@@ -1,27 +1,27 @@
 spo:
-  reduction: mean
+  reduction: sum
 blackbox:
-  reduction: mean
+  reduction: sum
   lambd: 0.1
 blackboxSolver:
-  reduction: mean
+  reduction: sum
   lambd: 0.1  
 identity:
-  reduction: mean
+  reduction: sum
 identitySolver:
-  reduction: mean  
+  reduction: sum
 qptl:
-  reduction: mean
+  reduction: sum
   tau: 1.0
 listLTR:
-  reduction: mean
+  reduction: sum
   tau: 1
 pairLTR:
-  reduction: mean
+  reduction: sum
 pointLTR:
-  reduction: mean
+  reduction: sum
 nce:
-  reduction: mean
+  reduction: sum
 lodl:
   num_samples: 500
   sampling: random_hessian
@@ -30,7 +30,7 @@ lodl:
   quadalpha: 0
   model_type: weightedmse
   serial: True
-  reduction: mean
+  reduction: sum
   num_iters: 100
   losslr: 1e-3
   train_frac: 0.6
@@ -38,19 +38,17 @@ lodl:
   patience: 25
   verbose: False
 mse:
-  reduction: mean
-msemean:
+  reduction: sum
+msesum:
   alpha: 0.1
 bce:
-  reduction: mean
-mae:
-  reduction: mean
+  reduction: sum
 ce:
-  reduction: mean
+  reduction: sum
 dfl:
   dflalpha: 0.1
-  reduction: mean
+  reduction: sum
 perturb: 
-  reduction: mean
+  reduction: sum
 cpLayer:
-  reduction: mean
+  reduction: sum
