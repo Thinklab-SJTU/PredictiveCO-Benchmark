@@ -109,7 +109,7 @@ class Advertising(PTOProblem):
     def get_twostageloss(self):
         return "bce"
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
         sols, objs = list(), list()
@@ -117,7 +117,7 @@ class Advertising(PTOProblem):
             Y_idx = Y[ins_id]
             n_users = len(Y_idx) // 4  # TODO: 2 channels, 4 combinations
             total_budget = self.avg_budget * n_users
-            sol = optSolver.solve(Y_idx, self.cost_pv, total_budget)
+            sol = ptoSolver.solve(Y_idx, self.cost_pv, total_budget)
             if torch.is_tensor(Y_idx):
                 sol = to_tensor(sol)
             sols.append(sol)

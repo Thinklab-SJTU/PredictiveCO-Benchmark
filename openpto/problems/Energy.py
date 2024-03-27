@@ -87,19 +87,19 @@ class Energy(PTOProblem):
             Z = Z.cpu()
         return (Y * Z).sum(-1)
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
         # determine solver
-        if optSolver is None:
-            optSolver = ICONGrbSolver(**kwargs)
+        if ptoSolver is None:
+            ptoSolver = ICONGrbSolver(**kwargs)
         if Y.ndim == 1:
             Y = Y.reshape(1, -1)
         ins_num = len(Y)
         sols = []
         for i in range(ins_num):
             # solve
-            sol = optSolver.solve(Y[i])
+            sol = ptoSolver.solve(Y[i])
             sols.append(sol)
             # obj.append(objp)
         # print(sols)

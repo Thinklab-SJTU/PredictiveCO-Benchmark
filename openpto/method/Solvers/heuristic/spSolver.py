@@ -11,10 +11,10 @@ from functools import partial
 
 import numpy as np
 
-from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class spSolver(optSolver):
+class spSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, size, neighbourhood_fn, **kwargs):

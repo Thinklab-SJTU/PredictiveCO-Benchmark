@@ -6,9 +6,9 @@ from torch import nn
 class optModel(nn.Module):
     """ """
 
-    def __init__(self, optSolver=None, **kwargs):
+    def __init__(self, ptoSolver=None, **kwargs):
         super(optModel, self).__init__()
-        self.optSolver = optSolver
+        self.ptoSolver = ptoSolver
 
     @abstractmethod
     def forward(

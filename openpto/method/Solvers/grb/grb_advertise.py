@@ -11,17 +11,14 @@ class AdGrbSolver(optGrbSolver):
         super().__init__(modelSense)
         # self._model, self.z = self._getModel(weights, capacity)
         # turn off output
-        # self._model.Params.outputFlag = 0
+        self._model.Params.outputFlag = 0
 
     def _getModel(self, weights, capacity):
         num_items = len(weights)
         # ceate a model
         m = gp.Model()
-        # turn off output
         m.Params.outputFlag = 0
-        # varibles
         x = m.addVars(num_items, name="x", vtype=GRB.BINARY)
-        # sense (must be minimize)
         m.modelSense = GRB.MAXIMIZE
         # constraints
         m.addConstr(
@@ -40,3 +37,6 @@ class AdGrbSolver(optGrbSolver):
             raise ValueError("Size of cost vector cannot match vars.")
         obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
         self._model.setObjective(obj)
+
+    def solve(self, Y, **kwargs):
+        raise NotImplementedError("The gurobi solver is not supported")

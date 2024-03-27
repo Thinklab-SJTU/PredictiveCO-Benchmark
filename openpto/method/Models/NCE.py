@@ -19,11 +19,11 @@ class NCE(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver, **kwargs)
+        super().__init__(ptoSolver, **kwargs)
         # solution pool
-        n_vars = optSolver.num_vars
+        n_vars = ptoSolver.num_vars
         self.solpool = np.empty((0, n_vars))
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
@@ -38,7 +38,7 @@ class NCE(optModel):
         sol_true, _ = problem.get_decision(
             coeff_true,
             params=params,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -50,13 +50,13 @@ class NCE(optModel):
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,
-                optSolver=self.optSolver,
+                ptoSolver=self.ptoSolver,
                 isTrain=True,
                 **problem.init_API(),
             )
         # solve
         sols_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, self.ptoSolver, **problem.init_API()
         )
         # add into solpool
         self.solpool = np.concatenate((self.solpool, sols_hat))
@@ -70,9 +70,9 @@ class NCE(optModel):
         obj_cp = problem.get_objective(coeff_hat, sol_true, params)
         objpool_cp = problem.get_objective(coeff_hat_pool, solpool, params)
         # get loss
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             loss = obj_cp - objpool_cp
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = objpool_cp - obj_cp
         else:
             raise NotImplementedError
@@ -95,13 +95,13 @@ class NCE(optModel):
 #     Reference:
 #     """
 
-#     def __init__(self, optSolver=1):
+#     def __init__(self, ptoSolver=1):
 #         """
 #         Args:
-#             optSolver (optModel): an  optimization model
+#             ptoSolver (optModel): an  optimization model
 #
 #         """
-#         super().__init__(optSolver)
+#         super().__init__(ptoSolver)
 #         # solution pool
 #         self.solpool = np.unique(dataset.sols.copy(), axis=0)  # remove duplicate
 
@@ -114,7 +114,7 @@ class NCE(optModel):
 #     # convert tensor
 #     cp = coeff_hat.detach().cpu().numpy()
 #     # solve
-#     sols_hat, _ = _solve_in_pass(cp, self.optSolver, self.pool)
+#     sols_hat, _ = _solve_in_pass(cp, self.ptoSolver, self.pool)
 #     # add into solpool
 #     self.solpool = np.concatenate((self.solpool, sols_hat))
 #     # remove duplicate
@@ -125,9 +125,9 @@ class NCE(optModel):
 #     # get obj for solpool
 #     objpool_cp = torch.einsum("bd,nd->bn", coeff_hat, solpool)
 #     # get loss
-#     if self.optSolver.modelSense == GRB.MINIMIZE:
+#     if self.ptoSolver.modelSense == GRB.MINIMIZE:
 #         loss, _ = (obj_cp - objpool_cp).max(axis=1)
-#     if self.optSolver.modelSense == GRB.MAXIMIZE:
+#     if self.ptoSolver.modelSense == GRB.MAXIMIZE:
 #         loss, _ = (objpool_cp - obj_cp).max(axis=1)
 #     # reduction
 #     loss = do_reduction(loss, hyperparams["reduction"])

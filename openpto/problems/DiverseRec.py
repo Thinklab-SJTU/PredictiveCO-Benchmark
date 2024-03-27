@@ -32,7 +32,7 @@ class DiverseRec(PTOProblem):
     def get_twostageloss(self):
         raise NotImplementedError()
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
         raise NotImplementedError()
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):

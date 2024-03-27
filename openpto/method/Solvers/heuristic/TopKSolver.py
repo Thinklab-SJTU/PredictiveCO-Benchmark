@@ -5,10 +5,10 @@
 
 import torch
 
-from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class TopKSolver(optSolver):
+class TopKSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, **kwargs):

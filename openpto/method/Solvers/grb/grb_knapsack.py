@@ -15,39 +15,21 @@ class KPGrbSolver(optGrbSolver):
 
     def _getModel(self, weights, capacity):
         num_items = len(weights)
-        # ceate a model
         m = gp.Model()
-        # turn off output
-        m.Params.outputFlag = 0
-        # varibles
         x = m.addVars(num_items, name="x", vtype=GRB.BINARY)
-        # sense (must be minimize)
-        m.modelSense = GRB.MAXIMIZE
-        # constraints
+        m.modelSense = self.modelSense
         m.addConstr(
             gp.quicksum([weights[i] * x[i] for i in range(num_items)]) <= capacity
         )
         return m, x
 
     def setObj(self, c):
-        """
-        A method to set objective function
-
-        Args:
-            c (np.ndarray / list): cost of objective function
-        """
         if len(c) != self.num_vars:
             raise ValueError("Size of cost vector cannot match vars.")
         obj = gp.quicksum(c[i] * self.z[k] for i, k in enumerate(self.z))
         self._model.setObjective(obj)
 
     def solve(self, y, **kwargs):
-        """
-        A method to solve model
-
-        Returns:
-            tuple: optimal solution (list) and objective value (float)
-        """
         self.setObj(y)
         self._model.update()
         self._model.optimize()

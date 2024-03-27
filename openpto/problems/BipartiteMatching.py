@@ -226,7 +226,7 @@ class BipartiteMatching(PTOProblem):
         self,
         Y,
         params,
-        optSolver=None,
+        ptoSolver=None,
         isTrain=False,
         max_instances_per_batch=5000,
         **kwargs,

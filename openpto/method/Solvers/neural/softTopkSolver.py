@@ -5,11 +5,11 @@ Abstract optimization model based on GurobiPy
 """
 
 
-from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 from openpto.method.Solvers.neural.softTopk import SoftTopk
 
 
-class softTopkSolver(optSolver):
+class softTopkSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, **kwargs):

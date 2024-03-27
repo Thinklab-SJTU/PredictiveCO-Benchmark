@@ -41,11 +41,11 @@ if __name__ == "__main__":
 
     # Load solver
     logger.info(f" Loading [{args.solver}] solver ...")
-    optSolver = solver_wrapper(args, conf, problem)
+    ptoSolver = solver_wrapper(args, conf, problem)
 
     # Load loss function
     logger.info(f" Loading [{args.opt_model}] Loss Function...")
-    loss_fn = get_loss_fn(args, optSolver, conf)
+    loss_fn = get_loss_fn(args, ptoSolver, conf)
 
     # load exp manager
     pred_model_args = {
@@ -59,4 +59,4 @@ if __name__ == "__main__":
     logger.info(
         f" Start training [{args.pred_model}] model on [{args.opt_model}] loss..."
     )
-    exp.run(problem, loss_fn, optSolver, n_epochs=args.n_epochs, do_debug=args.do_debug)
+    exp.run(problem, loss_fn, ptoSolver, n_epochs=args.n_epochs, do_debug=args.do_debug)

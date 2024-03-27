@@ -86,9 +86,9 @@ class CubicTopK(PTOProblem):
         Z = to_tensor(Z).to(Y.device)
         return (Z.unsqueeze(-1) * Y).sum(-1).sum(-1)
 
-    def get_decision(self, Y, params, optSolver, isTrain=False, **kwargs):
+    def get_decision(self, Y, params, ptoSolver, isTrain=False, **kwargs):
         Y = to_tensor(Y).cpu()
-        output_sols = optSolver.solve(Y, self.budget)
+        output_sols = ptoSolver.solve(Y, self.budget)
         output_vals = self.get_objective(Y, output_sols)
         return output_sols, output_vals
 

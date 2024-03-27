@@ -18,8 +18,8 @@ class Knapsack(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=100,  # number of instances to use from the dataset to train
-        num_test_instances=500,  # number of instances to use from the dataset to test
+        num_train_instances=400,  # number of instances to use from the dataset to train
+        num_test_instances=200,  # number of instances to use from the dataset to test
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         prob_version="gen",  # "energy" or "gen"
@@ -189,22 +189,22 @@ class Knapsack(PTOProblem):
         else:
             raise KeyError(f"prob version {self.prob_version} not implemented")
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
         else:
             Y = to_tensor(Y)
 
         # determine solver
-        if optSolver is None:
-            optSolver = KPGrbSolver(**kwargs)
-            # optSolver = KPGrbSolver(**kwargs)
+        if ptoSolver is None:
+            ptoSolver = KPGrbSolver(**kwargs)
+            # ptoSolver = KPGrbSolver(**kwargs)
 
-        if optSolver.__class__.__name__ == "CpKPSolver":
+        if ptoSolver.__class__.__name__ == "CpKPSolver":
             sol = []
             for i in range(len(Y)):
                 # solve
-                solp = optSolver.solve(Y[i], isTrain)
+                solp = ptoSolver.solve(Y[i], isTrain)
                 if isinstance(solp, np.ndarray):
                     solp = torch.tensor(solp)
                 else:
@@ -217,7 +217,7 @@ class Knapsack(PTOProblem):
             sol, obj = [], []
             for i in range(len(Y)):
                 # solve
-                solp, objp, other = optSolver.solve(Y[i])
+                solp, objp, other = ptoSolver.solve(Y[i])
                 sol.append(solp)
                 obj.append(objp)
             sols_array, objs_array = np.array(sol), np.array(obj)

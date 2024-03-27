@@ -56,10 +56,10 @@ class ExpManager:
                 gamma=0.1,
             )
 
-    def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
+    def run(self, problem, loss_fn, ptoSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
         prob_to_gpu(problem, self.device)
-        prob_to_gpu(optSolver, self.device)
+        prob_to_gpu(ptoSolver, self.device)
         problem.device = self.device
         self.pred_model = self.pred_model.to(self.device)
 
@@ -75,14 +75,14 @@ class ExpManager:
         Z_train_opt, Objs_train_opt = problem.get_decision(
             Y_train,
             params=Y_train_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -92,7 +92,7 @@ class ExpManager:
         Z_test_opt, Objs_test_opt = problem.get_decision(
             Y_test,
             params=Y_test_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -108,7 +108,7 @@ class ExpManager:
             Z_test_rand, Objs_test_rand = problem.get_decision(
                 rand_Y,
                 params=Y_test_aux,
-                optSolver=optSolver,
+                ptoSolver=ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
@@ -180,7 +180,7 @@ class ExpManager:
                     problem,
                     twostage_criterion,
                     twostage_criterion,
-                    optSolver,
+                    ptoSolver,
                     f"Ptr iter {ptr_epoch},",
                     self.logger,
                     do_debug=do_debug,
@@ -269,6 +269,23 @@ class ExpManager:
 
             ###### Check metrics on val set
             if iter_idx % self.args.valfreq == 0:
+                datasets = [
+                    (X_train, Y_train, Y_train_aux, "train"),
+                ]
+                metrics = print_metrics(
+                    datasets,
+                    self.pred_model,
+                    problem,
+                    loss_fn,
+                    twostage_criterion,
+                    ptoSolver,
+                    f"Iter {iter_idx},",
+                    self.logger,
+                    do_debug=do_debug,
+                    **self.model_args,
+                )
+                add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
+            else:
                 # Compute metrics
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
@@ -280,7 +297,7 @@ class ExpManager:
                     problem,
                     loss_fn,
                     twostage_criterion,
-                    optSolver,
+                    ptoSolver,
                     f"Iter {iter_idx},",
                     self.logger,
                     do_debug=do_debug,
@@ -325,7 +342,7 @@ class ExpManager:
             problem,
             loss_fn,
             twostage_criterion,
-            optSolver,
+            ptoSolver,
             "Final",
             self.logger,
             do_debug=do_debug,

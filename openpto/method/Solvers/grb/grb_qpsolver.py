@@ -64,7 +64,6 @@ class QPGrbSolver(optGrbSolver):
             #     G * x <= h
 
             inequality_constraints = []
-            # print("G: ", G, h)
             if G is not None:
                 for i in range(G.shape[0]):
                     row = np.where(G[i].cpu() != 0)[0]

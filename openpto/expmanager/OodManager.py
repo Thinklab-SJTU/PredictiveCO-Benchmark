@@ -43,10 +43,10 @@ class OodManager:
         self.ood_model = generalize_wrapper(args, self.args.ood_model, self.pred_model)
         self.logger.info(f"---[{self.args.ood_model}] Training Model")
 
-    def run(self, problem, loss_fn, optSolver=None, n_epochs=1, do_debug=False):
+    def run(self, problem, loss_fn, ptoSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
         prob_to_gpu(problem, self.device)
-        prob_to_gpu(optSolver, self.device)
+        prob_to_gpu(ptoSolver, self.device)
         problem.device = self.device
         self.ood_model = self.ood_model.to(self.device)
 
@@ -62,14 +62,14 @@ class OodManager:
         Z_train_opt, Objs_train_opt = problem.get_decision(
             Y_train,
             params=Y_train_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
         Z_val_opt, Objs_val_opt = problem.get_decision(
             Y_val,
             params=Y_val_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -79,7 +79,7 @@ class OodManager:
         Z_test_opt, Objs_test_opt = problem.get_decision(
             Y_test,
             params=Y_test_aux,
-            optSolver=optSolver,
+            ptoSolver=ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -94,7 +94,7 @@ class OodManager:
             Z_test_rand, Objs_test_rand = problem.get_decision(
                 rand_like(Y_test, device=self.device),
                 params=Y_test_aux,
-                optSolver=optSolver,
+                ptoSolver=ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
@@ -171,7 +171,7 @@ class OodManager:
         #             problem,
         #             twostage_criterion,
         #             twostage_criterion,
-        #             optSolver,
+        #             ptoSolver,
         #             f"Ptr iter {ptr_epoch},",
         #             self.logger,
         #             do_debug=do_debug,
@@ -238,7 +238,7 @@ class OodManager:
                     problem,
                     loss_fn,
                     twostage_criterion,
-                    optSolver,
+                    ptoSolver,
                     f"Iter {iter_idx},",
                     self.logger,
                     do_debug=do_debug,
@@ -284,7 +284,7 @@ class OodManager:
             problem,
             loss_fn,
             twostage_criterion,
-            optSolver,
+            ptoSolver,
             "Final",
             self.logger,
             do_debug=do_debug,

@@ -28,9 +28,9 @@ class LODL(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         self.obj_fn = None
         self.log_dir = kwargs["log_dir"]
         self.loss_path = kwargs["loss_path"]
@@ -379,14 +379,14 @@ class LODL(optModel):
             Z_opt, opt_objective = problem.get_decision(
                 Y.unsqueeze(0),
                 params=Y_aux,
-                optSolver=self.optSolver,
+                ptoSolver=self.ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
-            if self.optSolver.modelSense == GRB.MAXIMIZE:
+            if self.ptoSolver.modelSense == GRB.MAXIMIZE:
                 if best is None or opt_objective.mean() > best[1].mean():
                     best = (Z_opt, opt_objective)
-            elif self.optSolver.modelSense == GRB.MINIMIZE:
+            elif self.ptoSolver.modelSense == GRB.MINIMIZE:
                 if best is None or opt_objective.mean() < best[1].mean():
                     best = (Z_opt, opt_objective)
             else:
@@ -398,7 +398,7 @@ class LODL(optModel):
             Yhats,
             # Z_init=Z_opt,
             params=Y_aux,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )

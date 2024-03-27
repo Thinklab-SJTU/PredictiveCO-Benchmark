@@ -20,7 +20,7 @@ class perturbed(optModel):
 
     def __init__(
         self,
-        optSolver,
+        ptoSolver,
         n_samples=10,
         sigma=1.0,
         seed=135,
@@ -28,13 +28,13 @@ class perturbed(optModel):
     ):
         """
         Args:
-            optSolver (optModel): an  optimization model
+            ptoSolver (optModel): an  optimization model
             n_samples (int): number of Monte-Carlo samples
             sigma (float): the amplitude of the perturbation
             seed (int): random state seed
 
         """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         # number of samples
         self.n_samples = n_samples
         # perturbation amplitude
@@ -44,7 +44,7 @@ class perturbed(optModel):
         # build optimizer
         self.ptb = perturbedOptFunc()
         # solution pool
-        n_vars = optSolver.num_vars
+        n_vars = ptoSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float)
 
     def forward(
@@ -59,7 +59,7 @@ class perturbed(optModel):
         """
         sols_hat = self.ptb.apply(
             coeff_hat,
-            self.optSolver,
+            self.ptoSolver,
             problem,
             params,
             self.n_samples,
@@ -72,9 +72,9 @@ class perturbed(optModel):
         # reduction
         loss = do_reduction(objs_hat, hyperparams["reduction"])
 
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             pass
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
         return loss
 
@@ -88,7 +88,7 @@ class perturbedOptFunc(torch.autograd.Function):
     def forward(
         ctx,
         coeff_hat,
-        optSolver,
+        ptoSolver,
         problem,
         params,
         n_samples,
@@ -102,7 +102,7 @@ class perturbedOptFunc(torch.autograd.Function):
 
         Args:
             coeff_hat (torch.tensor): a batch of predicted values of the cost
-            optSolver (optModel): an  optimization model
+            ptoSolver (optModel): an  optimization model
             n_samples (int): number of Monte-Carlo samples
             sigma (float): the amplitude of the perturbation
             pool (ProcessPool): process pool object
@@ -122,7 +122,7 @@ class perturbedOptFunc(torch.autograd.Function):
         coeff_perturb = cp + sigma * noises
         # solve with perturbation
         ptb_sols, _ = problem.get_decision(
-            coeff_perturb, params, optSolver, **problem.init_API()
+            coeff_perturb, params, ptoSolver, **problem.init_API()
         )
         # add into solpool
         module.solpool = np.concatenate((module.solpool, ptb_sols))
@@ -175,7 +175,7 @@ class perturbedOptFunc(torch.autograd.Function):
 
 #     def __init__(
 #         self,
-#         optSolver,
+#         ptoSolver,
 #         n_samples=10,
 #         sigma=1.0,
 #         seed=135,
@@ -183,14 +183,14 @@ class perturbedOptFunc(torch.autograd.Function):
 #     ):
 #         """
 #         Args:
-#             optSolver (optModel): an  optimization model
+#             ptoSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             seed (int): random state seed
 #
 #             dataset (None/optDataset): the training data
 #         """
-#         super().__init__(optSolver)
+#         super().__init__(ptoSolver)
 #         # number of samples
 #         self.n_samples = n_samples
 #         # perturbation amplitude
@@ -207,7 +207,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         loss = self.pfy.apply(
 #             coeff_hat,
 #             true_sol,
-#             self.optSolver,
+#             self.ptoSolver,
 #             self.n_samples,
 #             self.sigma,
 #             self.pool,
@@ -229,7 +229,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         ctx,
 #         coeff_hat,
 #         true_sol,
-#         optSolver,
+#         ptoSolver,
 #         n_samples,
 #         sigma,
 #         pool,
@@ -242,7 +242,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         Args:
 #             coeff_hat (torch.tensor): a batch of predicted values of the cost
 #             true_sol (torch.tensor): a batch of true optimal solutions
-#             optSolver (optModel): an  optimization model
+#             ptoSolver (optModel): an  optimization model
 #             n_samples (int): number of Monte-Carlo samples
 #             sigma (float): the amplitude of the perturbation
 #             pool (ProcessPool): process pool object
@@ -263,7 +263,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         ptb_c = cp + sigma * noises
 #         # solve with perturbation
 #         rand_sigma = np.random.uniform()
-#         ptb_sols = _solve_in_pass(ptb_c, optSolver, pool)
+#         ptb_sols = _solve_in_pass(ptb_c, ptoSolver, pool)
 #         sols = ptb_sols.reshape(-1, cp.shape[1])
 #         # add into solpool
 #         module.solpool = np.concatenate((module.solpool, sols))
@@ -272,9 +272,9 @@ class perturbedOptFunc(torch.autograd.Function):
 #         # solution expectation
 #         e_sol = ptb_sols.mean(axis=1)
 #         # difference
-#         if optSolver.modelSense == GRB.MINIMIZE:
+#         if ptoSolver.modelSense == GRB.MINIMIZE:
 #             diff = w - e_sol
-#         if optSolver.modelSense == GRB.MAXIMIZE:
+#         if ptoSolver.modelSense == GRB.MAXIMIZE:
 #             diff = e_sol - w
 #         # loss
 #         loss = np.sum(diff**2, axis=1)
@@ -295,7 +295,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #         return grad * grad_output, None, None, None, None, None, None, None, None, None
 
 
-# def _solve_in_pass(ptb_c, optSolver, pool):
+# def _solve_in_pass(ptb_c, ptoSolver, pool):
 #     """
 #     A function to solve optimization in the forward pass
 #     """
@@ -309,16 +309,16 @@ class perturbedOptFunc(torch.autograd.Function):
 #             # per sample
 #             for j in range(n_samples):
 #                 # solve
-#                 optSolver.setObj(ptb_c[j, i])
-#                 sol, _ = optSolver.solve()
+#                 ptoSolver.setObj(ptb_c[j, i])
+#                 sol, _ = ptoSolver.solve()
 #                 sols.append(sol)
 #             ptb_sols.append(sols)
 #     # multi-core
 #     else:
 #         # get class
-#         model_type = type(optSolver)
+#         model_type = type(ptoSolver)
 #         # get args
-#         args = getArgs(optSolver)
+#         args = getArgs(ptoSolver)
 #         # parallel computing
 #         ptb_sols = pool.amap(
 #             _solveWithObj4Par,
@@ -329,7 +329,7 @@ class perturbedOptFunc(torch.autograd.Function):
 #     return np.array(ptb_sols)
 
 
-# def _cache_in_pass(ptb_c, optSolver, solpool):
+# def _cache_in_pass(ptb_c, ptoSolver, solpool):
 #     """
 #     A function to use solution pool in the forward/backward pass
 #     """
@@ -340,9 +340,9 @@ class perturbedOptFunc(torch.autograd.Function):
 #     for j in range(n_samples):
 #         # best solution in pool
 #         solpool_obj = ptb_c[j] @ solpool.T
-#         if optSolver.modelSense == GRB.MINIMIZE:
+#         if ptoSolver.modelSense == GRB.MINIMIZE:
 #             ind = np.argmin(solpool_obj, axis=1)
-#         if optSolver.modelSense == GRB.MAXIMIZE:
+#         if ptoSolver.modelSense == GRB.MAXIMIZE:
 #             ind = np.argmax(solpool_obj, axis=1)
 #         ptb_sols.append(solpool[ind])
 #     return np.array(ptb_sols).transpose(1, 0, 2)
@@ -361,13 +361,13 @@ class perturbedOptFunc(torch.autograd.Function):
 #         list: optimal solution
 #     """
 #     # rebuild model
-#     optSolver = model_type(**args)
+#     ptoSolver = model_type(**args)
 #     # per sample
 #     sols = []
 #     for cost in perturbed_costs:
 #         # set obj
-#         optSolver.setObj(cost)
+#         ptoSolver.setObj(cost)
 #         # solve
-#         sol, _ = optSolver.solve()
+#         sol, _ = ptoSolver.solve()
 #         sols.append(sol)
 #     return sols

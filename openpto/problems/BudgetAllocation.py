@@ -192,13 +192,13 @@ class BudgetAllocation(PTOProblem):
         obj = (w * (1 - p_all_fail)).sum(dim=-1)
         return obj
 
-    def get_decision(self, Y, params, optSolver=None, Z_init=None, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, Z_init=None, **kwargs):
         assert Y.ndim == 3
         if Z_init is None:
             Z_init = torch.rand(Y.shape[1:-1])
         Z_init = to_tensor(Z_init).to(self.device)
         Y = to_tensor(Y).to(self.device)
-        Z = torch.cat([optSolver.solve(y, Z_init=Z_init) for y in Y], dim=0).view(
+        Z = torch.cat([ptoSolver.solve(y, Z_init=Z_init) for y in Y], dim=0).view(
             (*Y.shape[:-2], -1)
         )
         # Z = torch.ones(*Y.shape[:-1])

@@ -12,9 +12,9 @@ class IdentitySolver(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         self.nid = negativeIdentityFunc()
 
     def forward(
@@ -31,7 +31,7 @@ class IdentitySolver(optModel):
             coeff_hat,
             problem,
             params,
-            self.optSolver,
+            self.ptoSolver,
         )
         return sols_hat
 
@@ -41,9 +41,9 @@ class subopt_Identity(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         self.nid = negativeIdentityFunc()
 
     def forward(
@@ -60,15 +60,15 @@ class subopt_Identity(optModel):
             coeff_hat,
             problem,
             params,
-            self.optSolver,
+            self.ptoSolver,
         )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, params)
         # reduction
         loss = do_reduction(objs_hat, hyperparams["reduction"])
 
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             pass
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
         return loss
 
@@ -84,14 +84,14 @@ class negativeIdentityFunc(torch.autograd.Function):
         coeff_hat,
         problem,
         params,
-        optSolver,
+        ptoSolver,
     ):
         """
         Forward pass for NID
 
         Args:
             pred_cost (torch.tensor): a batch of predicted values of the cost
-            optSolver (optModel): an  optimization model
+            ptoSolver (optModel): an  optimization model
 
         Returns:
             torch.tensor: predicted solutions
@@ -102,11 +102,11 @@ class negativeIdentityFunc(torch.autograd.Function):
         coeff_hat_array = coeff_hat.detach().cpu().numpy()
         # solve
         sols_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, ptoSolver, **problem.init_API()
         )
         sols_hat = to_device(to_tensor(sols_hat), device)
         # add other objects to ctx
-        ctx.modelSense = optSolver.modelSense
+        ctx.modelSense = ptoSolver.modelSense
         ctx.coeff_hat_array = coeff_hat_array
         return sols_hat
 

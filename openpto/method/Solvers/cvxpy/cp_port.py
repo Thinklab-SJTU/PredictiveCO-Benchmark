@@ -9,10 +9,10 @@ import cvxpy as cp
 
 from cvxpylayers.torch import CvxpyLayer
 
-from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class CpPortfolioSolver(optCPSolver):
+class CpPortfolioSolver(ptoSolver):
     """ """
 
     def __init__(self, num_stocks, modelSense=None, alpha=1, **kwargs):

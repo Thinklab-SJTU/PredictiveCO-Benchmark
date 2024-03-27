@@ -8,8 +8,8 @@ from openpto.method.utils_method import do_reduction, to_device, to_tensor
 
 
 class MSE(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver)
 
     @staticmethod
     def forward(
@@ -29,8 +29,8 @@ class MSE(optModel):
 
 
 class MAE(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver, **kwargs)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver, **kwargs)
 
     @staticmethod
     def forward(
@@ -50,8 +50,8 @@ class MAE(optModel):
 
 
 class BCE(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver, **kwargs)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver, **kwargs)
 
     @staticmethod
     def forward(
@@ -76,8 +76,8 @@ class BCE(optModel):
 
 
 class CE(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver, **kwargs)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver, **kwargs)
 
     @staticmethod
     def forward(
@@ -93,8 +93,8 @@ class CE(optModel):
 
 
 class MSE_Sum(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver, **kwargs)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver, **kwargs)
 
     @staticmethod
     def forward(
@@ -122,8 +122,8 @@ class MSE_Sum(optModel):
 
 
 class DFL(optModel):
-    def __init__(self, optSolver=None, **kwargs):
-        super().__init__(optSolver, **kwargs)
+    def __init__(self, ptoSolver=None, **kwargs):
+        super().__init__(ptoSolver, **kwargs)
         self.dflalpha = kwargs["dflalpha"]
 
     def forward(
@@ -145,7 +145,7 @@ class DFL(optModel):
         sol_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             isTrain=True,
             **problem.init_API(),
         )
@@ -156,12 +156,12 @@ class DFL(optModel):
         ).to(problem.device)
         # loss
         twostage_loss = twostageloss(problem, coeff_hat, coeff_true, **hyperparams)
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             loss = obj_hat + self.dflalpha * twostage_loss
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -obj_hat + self.dflalpha * twostage_loss
         else:
-            raise ValueError(f"Unknown model sense {self.optSolver.modelSense}")
+            raise ValueError(f"Unknown model sense {self.ptoSolver.modelSense}")
         # debug
         if (
             hyperparams["do_debug"]

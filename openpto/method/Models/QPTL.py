@@ -13,9 +13,9 @@ from openpto.method.utils_method import do_reduction, to_tensor
 class QPTL(optModel):
     """ """
 
-    def __init__(self, optSolver, tau=1, **kwargs):
+    def __init__(self, ptoSolver, tau=1, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         self.tau = tau
 
     def forward(
@@ -61,7 +61,7 @@ class QPTL(optModel):
         sol_true, _ = problem.get_decision(
             coeff_true,
             params=params,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             isTrain=False,
             **problem.init_API(),
         )
@@ -70,9 +70,9 @@ class QPTL(optModel):
         obj_cp = problem.get_objective(coeff_hat, sol_true)
 
         # get loss
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             loss = obj_cp
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -obj_cp
         else:
             raise NotImplementedError

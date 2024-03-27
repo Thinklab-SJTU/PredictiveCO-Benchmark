@@ -3,11 +3,11 @@
 
 import torch
 
-from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 from openpto.method.Solvers.neural.submodular import OptimiseSubmodular
 
 
-class budgetallocSolver(optSolver):
+class budgetallocSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense, n_vars, get_objective, num_iters, budget, **kwargs):

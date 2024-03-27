@@ -16,9 +16,9 @@ class cpLayer(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
 
     def forward(
         self,
@@ -33,7 +33,7 @@ class cpLayer(optModel):
         sols_hat, _ = problem.get_decision(
             coeff_hat,
             params=params,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             isTrain=True,
             **problem.init_API(),
         )
@@ -42,9 +42,9 @@ class cpLayer(optModel):
         # reduction
         loss = do_reduction(objs_hat, hyperparams["reduction"])
 
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             pass
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
 
         return loss

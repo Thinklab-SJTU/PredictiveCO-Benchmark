@@ -18,9 +18,9 @@ class SPO(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         self.spo_func = SPOPlusFunc()
 
     def forward(
@@ -40,12 +40,12 @@ class SPO(optModel):
             coeff_true,
             params,
             isTrain=False,
-            optSolver=self.optSolver,
+            ptoSolver=self.ptoSolver,
             **problem.init_API(),
         )
         #
         loss = self.spo_func.apply(
-            coeff_hat, coeff_true, sols_true, objs_true, problem, params, self.optSolver
+            coeff_hat, coeff_true, sols_true, objs_true, problem, params, self.ptoSolver
         )
         # reduction
         loss = do_reduction(loss, hyperparams["reduction"])
@@ -66,7 +66,7 @@ class SPOPlusFunc(torch.autograd.Function):
         objs_true,
         problem,
         params,
-        optSolver,
+        ptoSolver,
     ):
         """
         Forward pass for SPO+
@@ -78,7 +78,7 @@ class SPOPlusFunc(torch.autograd.Function):
             objs_true (torch.tensor): a batch of true optimal objective values
             problem: a problem object
             params: a parameter object
-            optSolver (optSolver): an optimization solver
+            ptoSolver (ptoSolver): an optimization solver
 
         Returns:
             torch.tensor: SPO+ loss
@@ -96,7 +96,7 @@ class SPOPlusFunc(torch.autograd.Function):
         sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_cpu - coeff_true_cpu,
             params,
-            optSolver,
+            ptoSolver,
             **problem.init_API(),
         )
         dq_hat = problem.get_objective(coeff_hat_cpu, sols_true, params)
@@ -113,12 +113,12 @@ class SPOPlusFunc(torch.autograd.Function):
         # save solutions
         ctx.save_for_backward(sols_true, sols_proxy)
         # add other objects to ctx
-        ctx.modelSense = optSolver.modelSense
+        ctx.modelSense = ptoSolver.modelSense
         ctx.coeff_hat_cpu = coeff_hat_cpu
         # model sense
-        if optSolver.modelSense == GRB.MINIMIZE:
+        if ptoSolver.modelSense == GRB.MINIMIZE:
             pass
-        elif optSolver.modelSense == GRB.MAXIMIZE:
+        elif ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
         else:
             raise NotImplementedError

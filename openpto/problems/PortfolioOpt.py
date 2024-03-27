@@ -441,7 +441,7 @@ class PortfolioOpt(PTOProblem):
         return self.covar_mat.reshape((-1, *self.covar_mat.shape[2:]))[instance_idxs]
 
     def get_decision(
-        self, Y, aux_data=None, optSolver=None, max_instances_per_batch=1500, **kwargs
+        self, Y, aux_data=None, ptoSolver=None, max_instances_per_batch=1500, **kwargs
     ):
         # Get the sqrt of the covariance matrix
         covar_mat = self.covar_mat if aux_data is None else aux_data
@@ -460,14 +460,14 @@ class PortfolioOpt(PTOProblem):
             for start in range(0, Y.shape[0], max_instances_per_batch):
                 end = min(Y.shape[0], start + max_instances_per_batch)
 
-                sol = optSolver.solve(Y[start:end], sqrt_covar[start:end])[0]
+                sol = ptoSolver.solve(Y[start:end], sqrt_covar[start:end])[0]
                 obj = self.get_objective(Y[start:end], sol, sqrt_covar[start:end])
                 sols.append(sol)
                 objs.append(obj)
             objs = torch.cat(objs, dim=0)
             sols = torch.cat(sols, dim=0)
         else:
-            sols = optSolver.solve(Y, sqrt_covar)[0]
+            sols = ptoSolver.solve(Y, sqrt_covar)[0]
             objs = self.get_objective(Y, sol, sqrt_covar)
         return (
             sols,

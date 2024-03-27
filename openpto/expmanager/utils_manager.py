@@ -79,7 +79,7 @@ def print_metrics(
     problem,
     loss_fn,
     twostage_criterion,
-    optSolver,
+    ptoSolver,
     prefix,
     logger,
     do_debug,
@@ -107,7 +107,7 @@ def print_metrics(
                 Zs_hat, _ = problem.get_decision(
                     to_device(preds, "cpu"),
                     params=Ys_aux,
-                    optSolver=optSolver,
+                    ptoSolver=ptoSolver,
                     isTrain=isTrain,
                     **problem.init_API(),
                 )
@@ -140,7 +140,6 @@ def print_metrics(
                 "val": problem.z_val_opt,
                 "test": problem.z_test_opt,
             }
-            # eval_result = {"value": torch.zeros_like(losses)}
             if partition == "test":
                 test_time = time.time() - time_test_start
             optimal_z = optimal_dict[partition]

@@ -9,10 +9,10 @@ import cvxpy as cp
 
 from cvxpylayers.torch import CvxpyLayer
 
-from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class BmatchingSolver(optCPSolver):
+class BmatchingSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense=None, isTrain=True, num_nodes=50, **kwargs):
@@ -48,3 +48,6 @@ class BmatchingSolver(optCPSolver):
         problem = cp.Problem(objective, constraints)
         assert problem.is_dpp()
         return CvxpyLayer(problem, parameters=[Y], variables=[Z])
+
+    def solve(self, **kwargs):
+        raise NotImplementedError

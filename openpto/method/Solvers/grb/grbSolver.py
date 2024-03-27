@@ -7,10 +7,10 @@ from copy import copy
 
 import numpy as np
 
-from openpto.method.Solvers.abcOptSolver import optSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class optGrbSolver(optSolver):
+class optGrbSolver(ptoSolver):
     """ """
 
     def __init__(self, modelSense):

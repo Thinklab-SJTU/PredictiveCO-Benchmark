@@ -13,8 +13,8 @@ class TSP(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=100,  # number of instances to use from the dataset to train
-        num_test_instances=500,  # number of instances to use from the dataset to test
+        num_train_instances=400,  # number of instances to use from the dataset to train
+        num_test_instances=200,  # number of instances to use from the dataset to test
         val_frac=0.2,  # fraction of training data reserved for validation
         rand_seed=0,  # for reproducibility
         prob_version="gen",
@@ -55,7 +55,7 @@ class TSP(PTOProblem):
     def get_twostageloss(self):
         return "mse"
 
-    def get_decision(self, Y, params, optSolver, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
         else:
@@ -64,7 +64,7 @@ class TSP(PTOProblem):
         sol, obj = [], []
         for i in range(len(Y)):
             # solve
-            solp, _, _ = optSolver.solve(Y[i])
+            solp, _, _ = ptoSolver.solve(Y[i])
             sol.append(solp)
             # obj.append(objp)
         sols, objs = torch.FloatTensor(sol), torch.FloatTensor(obj)

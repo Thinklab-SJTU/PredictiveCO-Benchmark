@@ -219,7 +219,7 @@ class Shortestpath(PTOProblem):
         else:
             return "identity"
 
-    def get_decision(self, Y, params, optSolver=None, isTrain=True, **kwargs):
+    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
         if self.prob_version == "direct":
             sol = Y.round()
             obj = self.get_objective(params, sol, kwargs)
@@ -229,7 +229,7 @@ class Shortestpath(PTOProblem):
             sol = []
             for i in range(len(Y)):
                 # solve
-                solp, other = optSolver.solve(to_array(Y[i]))
+                solp, other = ptoSolver.solve(to_array(Y[i]))
                 sol.append(solp)
             sol = to_tensor(np.array(sol))
             obj = self.get_objective(Y, sol, kwargs)

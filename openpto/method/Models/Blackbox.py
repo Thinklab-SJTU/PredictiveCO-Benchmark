@@ -16,9 +16,9 @@ from openpto.method.utils_method import do_reduction, minus, to_device, to_tenso
 class blackboxSolver(optModel):
     """ """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         # smoothing parameter
         if kwargs["lambd"] <= 0:
             raise ValueError("lambda is not positive.")
@@ -37,7 +37,7 @@ class blackboxSolver(optModel):
         Forward pass
         """
         sols_hat = self.dbb.apply(
-            coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
+            coeff_hat, problem, params, self.ptoSolver, self.lambd, hyperparams
         )
         # TODO:
         return sols_hat
@@ -46,9 +46,9 @@ class blackboxSolver(optModel):
 class subopt_blackbox(optModel):
     """ """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         # smoothing parameter
         if kwargs["lambd"] <= 0:
             raise ValueError("lambda is not positive.")
@@ -67,16 +67,16 @@ class subopt_blackbox(optModel):
         Forward pass
         """
         sols_hat = self.dbb.apply(
-            coeff_hat, problem, params, self.optSolver, self.lambd, hyperparams
+            coeff_hat, problem, params, self.ptoSolver, self.lambd, hyperparams
         )
         objs_hat = problem.get_objective(coeff_hat, sols_hat, params, **hyperparams)
 
         # reduction
         loss = do_reduction(objs_hat, hyperparams["reduction"])
 
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             pass
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -loss
 
         if (
@@ -105,7 +105,7 @@ class blackboxFunc(torch.autograd.Function):
         coeff_hat,
         problem,
         params,
-        optSolver,
+        ptoSolver,
         lambd,
         hyperparams,
     ):
@@ -115,7 +115,7 @@ class blackboxFunc(torch.autograd.Function):
         Args:
             coeff_hat (torch.tensor): a batch of predicted values of the cost//coeff_hat
             lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-            optSolver (optModel): an  optimization model
+            ptoSolver (optModel): an  optimization model
 
         Returns:
             torch.tensor:  solutions on predicted coefficients
@@ -125,13 +125,13 @@ class blackboxFunc(torch.autograd.Function):
         # convert tenstor
         coeff_hat_array = coeff_hat.detach().cpu().numpy()
         sols_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, ptoSolver, **problem.init_API()
         )
         # save to ctx (np.ndarray version)
         ctx.coeff_hat_array = coeff_hat_array
         ctx.sols_hat = sols_hat
         ctx.lambd = lambd
-        ctx.optSolver = optSolver
+        ctx.ptoSolver = ptoSolver
         ctx.params = params
         ctx.problem = problem
         # convert to tensor
@@ -146,7 +146,7 @@ class blackboxFunc(torch.autograd.Function):
         coeff_hat_array = ctx.coeff_hat_array
         sols_hat = ctx.sols_hat
         lambd = ctx.lambd
-        optSolver = ctx.optSolver
+        ptoSolver = ctx.ptoSolver
         params = ctx.params
         problem = ctx.problem
         # get device
@@ -167,7 +167,7 @@ class blackboxFunc(torch.autograd.Function):
             cq = coeff_hat_array + lambd * dl
         # second np call
         sols_lamb, _ = problem.get_decision(
-            to_tensor(cq), params, optSolver, **problem.init_API()
+            to_tensor(cq), params, ptoSolver, **problem.init_API()
         )
         grad = minus(sols_lamb, sols_hat) / lambd
         # convert to tensor

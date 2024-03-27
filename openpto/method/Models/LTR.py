@@ -19,11 +19,11 @@ class pointwiseLTR(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         # solution pool
-        n_vars = optSolver.num_vars
+        n_vars = ptoSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
@@ -38,13 +38,13 @@ class pointwiseLTR(optModel):
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,
-                optSolver=self.optSolver,
+                ptoSolver=self.ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
         # solve
         sol_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, self.ptoSolver, **problem.init_API()
         )
         # add into solpool
         self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -72,14 +72,14 @@ class pairwiseLTR(optModel):
     Reference:
     """
 
-    def __init__(self, optSolver, **kwargs):
+    def __init__(self, ptoSolver, **kwargs):
         """
         Args:
-            optSolver (optModel): an  optimization model
+            ptoSolver (optModel): an  optimization model
         """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
         # solution pool
-        n_vars = optSolver.num_vars
+        n_vars = ptoSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
@@ -92,13 +92,13 @@ class pairwiseLTR(optModel):
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,
-                optSolver=self.optSolver,
+                ptoSolver=self.ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
         # solve
         sol_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, self.ptoSolver, **problem.init_API()
         )
         # add into solpool
         self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -117,10 +117,10 @@ class pairwiseLTR(optModel):
         loss = []
         for i in range(len(coeff_hat)):
             # best sol
-            if self.optSolver.modelSense == GRB.MINIMIZE:
+            if self.ptoSolver.modelSense == GRB.MINIMIZE:
                 # best_ind = torch.argmin(objpool_c_true[i])
                 best_ind = torch.argmin(objpool_c_true)
-            elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
                 # best_ind = torch.argmax(objpool_c_true[i])
                 best_ind = torch.argmax(objpool_c_true)
             else:
@@ -133,9 +133,9 @@ class pairwiseLTR(optModel):
             objpool_cp_rest = objpool_c_hat_pool[rest_ind]
             # objpool_cp_rest = objpool_c_hat_pool[i, rest_ind]
             # best vs rest loss
-            if self.optSolver.modelSense == GRB.MINIMIZE:
+            if self.ptoSolver.modelSense == GRB.MINIMIZE:
                 loss.append(F.relu(objpool_cp_best - objpool_cp_rest))
-            elif self.optSolver.modelSense == GRB.MAXIMIZE:
+            elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
                 loss.append(F.relu(objpool_cp_rest - objpool_cp_best))
             else:
                 raise NotImplementedError
@@ -151,15 +151,15 @@ class listwiseLTR(optModel):
     Code from:
     """
 
-    def __init__(self, optSolver, tau=1.0, **kwargs):
+    def __init__(self, ptoSolver, tau=1.0, **kwargs):
         """ """
-        super().__init__(optSolver)
+        super().__init__(ptoSolver)
 
         if tau <= 0:
             raise ValueError("tau is not positive.")
         self.tau = tau
         # solution pool
-        n_vars = optSolver.num_vars
+        n_vars = ptoSolver.num_vars
         self.solpool = np.empty((0, n_vars), dtype=np.float32)
 
     def forward(self, problem, coeff_hat, coeff_true, params, **hyperparams):
@@ -173,13 +173,13 @@ class listwiseLTR(optModel):
             self.solpool, _ = problem.get_decision(
                 Y_train,
                 params=Y_train_aux,
-                optSolver=self.optSolver,
+                ptoSolver=self.ptoSolver,
                 isTrain=False,
                 **problem.init_API(),
             )
         # solve #TODO: if sol pool reasonable?
         sol_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, self.optSolver, **problem.init_API()
+            coeff_hat.detach().cpu(), params, self.ptoSolver, **problem.init_API()
         )
         # add into solpool
         self.solpool = np.concatenate((self.solpool, sol_hat))
@@ -194,12 +194,12 @@ class listwiseLTR(optModel):
         objpool_c = problem.get_objective(coeff_true, solpool, params)
         objpool_c_hat = problem.get_objective(coeff_hat, solpool, params)
         # cross entropy loss
-        if self.optSolver.modelSense == GRB.MINIMIZE:
+        if self.ptoSolver.modelSense == GRB.MINIMIZE:
             loss = -(
                 F.log_softmax(-objpool_c_hat / self.tau, dim=0)
                 * F.softmax(-objpool_c / self.tau, dim=0)
             )
-        elif self.optSolver.modelSense == GRB.MAXIMIZE:
+        elif self.ptoSolver.modelSense == GRB.MAXIMIZE:
             loss = -(F.log_softmax(objpool_c_hat, dim=0) * F.softmax(objpool_c, dim=0))
         else:
             raise NotImplementedError

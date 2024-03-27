@@ -1,4 +1,4 @@
-def get_ml_loss_fn(args, optSolver, conf):
+def get_ml_loss_fn(args, ptoSolver, conf):
     name = args.opt_model
     if name == "mse":
         from openpto.method.Models.MSE import MSE
@@ -23,10 +23,10 @@ def get_ml_loss_fn(args, optSolver, conf):
     return ModelCalss
 
 
-def get_loss_fn(args, optSolver, conf):
+def get_loss_fn(args, ptoSolver, conf):
     name = args.opt_model
     if name in ["mse", "msesum", "ce", "bce", "mae"]:
-        ModelCalss = get_ml_loss_fn(args, optSolver, conf)
+        ModelCalss = get_ml_loss_fn(args, ptoSolver, conf)
     elif name == "dfl":
         from openpto.method.Models.MSE import DFL
 
@@ -93,4 +93,4 @@ def get_loss_fn(args, optSolver, conf):
         "log_dir": args.log_dir,
         "loss_path": args.loss_path,
     }
-    return ModelCalss(optSolver, **loss_dict)
+    return ModelCalss(ptoSolver, **loss_dict)

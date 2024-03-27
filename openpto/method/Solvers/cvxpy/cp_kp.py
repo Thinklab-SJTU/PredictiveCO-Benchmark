@@ -9,10 +9,10 @@ import cvxpy as cp
 
 from cvxpylayers.torch import CvxpyLayer
 
-from openpto.method.Solvers.cvxpy.cpSolver import optCPSolver
+from openpto.method.Solvers.abcptoSolver import ptoSolver
 
 
-class CpKPSolver(optCPSolver):
+class CpKPSolver(ptoSolver):
     """ """
 
     def __init__(self, weights, capacity, modelSense, **kwargs):
