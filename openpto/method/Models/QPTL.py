@@ -3,7 +3,6 @@
 """
 """
 
-
 from gurobipy import GRB
 
 from openpto.method.Models.abcOptModel import optModel

@@ -14,9 +14,7 @@ from openpto.method.utils_method import do_reduction, to_tensor
 
 
 class SPO(optModel):
-    """
-    Reference:
-    """
+    """ """
 
     def __init__(self, ptoSolver, **kwargs):
         """ """
@@ -53,9 +51,7 @@ class SPO(optModel):
 
 
 class SPOPlusFunc(torch.autograd.Function):
-    """
-    A autograd function for SPO+ Loss
-    """
+    """ """
 
     @staticmethod
     def forward(
@@ -68,31 +64,13 @@ class SPOPlusFunc(torch.autograd.Function):
         params,
         ptoSolver,
     ):
-        """
-        Forward pass for SPO+
-
-        Args:
-            coeff_hat (torch.tensor): a batch of predicted values of the cost
-            coeff_true (torch.tensor): a batch of true values of the cost
-            sols_true (torch.tensor): a batch of true optimal solutions
-            objs_true (torch.tensor): a batch of true optimal objective values
-            problem: a problem object
-            params: a parameter object
-            ptoSolver (ptoSolver): an optimization solver
-
-        Returns:
-            torch.tensor: SPO+ loss
-        """
+        """ """
         # get device
         device = coeff_hat.device
         # convert tenstor
         coeff_hat_cpu = coeff_hat.detach().cpu()
         coeff_true_cpu = coeff_true.detach().cpu()
         # solve
-        # if np.isnan(2 * coeff_hat_cpu - coeff_true_cpu).any():
-        #     print("2 * coeff_hat_cpu - coeff_true_cpu: ", 2 * coeff_hat_cpu - coeff_true_cpu)
-        #     print("coeff_true_cpu: ", coeff_true_cpu)
-        #     print("coeff_hat_cpu: ", coeff_hat_cpu)
         sols_proxy, obj_proxy = problem.get_decision(
             2 * coeff_hat_cpu - coeff_true_cpu,
             params,
@@ -136,6 +114,8 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = -2 * (sols_true - sols_proxy)
         ##### work around #####
         coeff_hat_cpu = ctx.coeff_hat_cpu
+        print("shapes: ", grad_output.shape, grad.shape, coeff_hat_cpu.shape)
+        # shapes:  torch.Size([256]) torch.Size([256, 10]) torch.Size([256, 10])
         if grad.shape != coeff_hat_cpu.shape:
             if np.prod(grad.shape) == np.prod(coeff_hat_cpu.shape):
                 grad = grad.reshape(coeff_hat_cpu.shape)

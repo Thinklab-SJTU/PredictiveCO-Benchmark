@@ -61,21 +61,17 @@ class TSP(PTOProblem):
         else:
             Y = to_tensor(Y)
 
-        sol, obj = [], []
+        sols = []
         for i in range(len(Y)):
             # solve
             solp, _, _ = ptoSolver.solve(Y[i])
-            sol.append(solp)
-            # obj.append(objp)
-        sols, objs = torch.FloatTensor(sol), torch.FloatTensor(obj)
+            sols.append(solp)
+        sols = torch.FloatTensor(sols)
         objs = self.get_objective(Y, sols, params, **kwargs)
         return sols, objs
 
     def get_objective(self, Y, Z, aux_data, **kwargs):
-        # print("Y: ", Y, Y.shape)
-        # print("Z: ", Z, Z.shape)
-        # print("res: ",  (Y * Z).shape)
-        return (Y * Z).sum(-1)
+        return (Y * Z).sum(-1, keepdims=True)
 
     def init_API(self):
         return {
@@ -139,7 +135,7 @@ class TSP(PTOProblem):
         return
 
     @staticmethod
-    def genData(num_data, num_features, num_nodes, deg=1, noise_width=0, seed=135):
+    def genData(num_data, num_features, num_nodes, deg, noise_width, seed=2023):
         """
         A function to generate synthetic data and features for travelling salesman
 
@@ -161,38 +157,43 @@ class TSP(PTOProblem):
             raise ValueError("deg = {} should be positive.".format(deg))
         # set seed
         rnd = np.random.RandomState(seed)
-        # number of data points
-        n = num_data
-        # dimension of features
-        p = num_features
-        # number of nodes
-        m = num_nodes
         # random coordinates
         coords = np.concatenate(
-            (rnd.uniform(-2, 2, (m // 2, 2)), rnd.normal(0, 1, (m - m // 2, 2)))
+            (
+                rnd.uniform(-2, 2, (num_nodes // 2, 2)),
+                rnd.normal(0, 1, (num_nodes - num_nodes // 2, 2)),
+            )
         )
         # distance matrix
         org_dist = distance.cdist(coords, coords, "euclidean")
         # random matrix parameter B
-        B = rnd.binomial(1, 0.5, (m * (m - 1) // 2, p)) * rnd.uniform(
-            -2, 2, (m * (m - 1) // 2, p)
-        )
+        B = rnd.binomial(
+            1, 0.5, (num_nodes * (num_nodes - 1) // 2, num_features)
+        ) * rnd.uniform(-2, 2, (num_nodes * (num_nodes - 1) // 2, num_features))
         # feature vectors
-        x = rnd.normal(0, 1, (n, p))
+        x = rnd.normal(0, 1, (num_data, num_features))
         # init cost
-        c = np.zeros((n, m * (m - 1) // 2))
-        for i in range(n):
+        c = np.zeros((num_data, num_nodes * (num_nodes - 1) // 2))
+        for i in range(num_data):
             # reshape
             index = 0
-            for j in range(m):
-                for k in range(j + 1, m):
+            for j in range(num_nodes):
+                for k in range(j + 1, num_nodes):
                     c[i, index] = org_dist[j, k]
                     index += 1
             # noise
-            noise = rnd.uniform(1 - noise_width, 1 + noise_width, m * (m - 1) // 2)
+            noise = rnd.uniform(
+                1 - noise_width, 1 + noise_width, num_nodes * (num_nodes - 1) // 2
+            )
             # from feature to edge
             c[i] += (
-                ((np.dot(B, x[i].reshape(p, 1)).T / np.sqrt(p) + 3) ** deg)
+                (
+                    (
+                        np.dot(B, x[i].reshape(num_features, 1)).T / np.sqrt(num_features)
+                        + 3
+                    )
+                    ** deg
+                )
                 / 3 ** (deg - 1)
             ).reshape(-1) * noise
         # rounding

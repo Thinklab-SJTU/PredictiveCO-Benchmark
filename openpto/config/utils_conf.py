@@ -92,7 +92,6 @@ def get_args():
         default="gurobi",
     )
     parser.add_argument("--gpu", type=str, default="-1", help="Visible GPU")
-
     # training
     parser.add_argument("--loadnew", type=ast.literal_eval, default=False)
     parser.add_argument("--n_epochs", type=int, default=0)
@@ -107,7 +106,6 @@ def get_args():
     parser.add_argument("--lr_milestone_2", type=int, default=130)
     parser.add_argument("--l1_weight", type=float, default=0)
     parser.add_argument("--l2_weight", type=float, default=0)
-
     # data
     parser.add_argument("--data_dir", type=str, default="./openpto/data/")
     parser.add_argument("--do_debug", action="store_true")
@@ -122,7 +120,6 @@ def get_args():
     parser.add_argument("--pooling", type=str, default="mean")
     parser.add_argument("--activation", type=str, default="relu")
     parser.add_argument("--kernel_size", type=int, default=1)
-    #
     # generalization model
     parser.add_argument("--ood_model", type=str, choices=["ERM", "EERM"])
     parser.add_argument("--train_mode", type=str, default="iid", choices=["iid", "ood"])

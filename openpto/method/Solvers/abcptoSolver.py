@@ -8,9 +8,8 @@ from abc import abstractmethod
 
 
 class ptoSolver(object):
-    """ 
-    
-    """
+    """ """
+
     def __init__(self, modelSense):
         # default sense
         self.modelSense = modelSense

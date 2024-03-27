@@ -68,15 +68,11 @@ class pointwiseLTR(optModel):
 
 class pairwiseLTR(optModel):
     """
-
     Reference:
     """
 
     def __init__(self, ptoSolver, **kwargs):
-        """
-        Args:
-            ptoSolver (optModel): an  optimization model
-        """
+        """ """
         super().__init__(ptoSolver)
         # solution pool
         n_vars = ptoSolver.num_vars
@@ -126,12 +122,9 @@ class pairwiseLTR(optModel):
             else:
                 raise NotImplementedError
             objpool_cp_best = objpool_c_hat_pool[best_ind]
-            # objpool_cp_best = objpool_c_hat_pool[i, best_ind]
             # rest sol
             rest_ind = [j for j in range(len(objpool_c_hat_pool)) if j != best_ind]
-            # rest_ind = [j for j in range(len(objpool_c_hat_pool[i])) if j != best_ind]
             objpool_cp_rest = objpool_c_hat_pool[rest_ind]
-            # objpool_cp_rest = objpool_c_hat_pool[i, rest_ind]
             # best vs rest loss
             if self.ptoSolver.modelSense == GRB.MINIMIZE:
                 loss.append(F.relu(objpool_cp_best - objpool_cp_rest))
@@ -166,7 +159,6 @@ class listwiseLTR(optModel):
         """
         Forward pass
         """
-        # coeff_hat = coeff_hat.squeeze(-1)
         # obtain solution cache if empty
         if len(self.solpool) == 0:
             _, Y_train, Y_train_aux = problem.get_train_data()

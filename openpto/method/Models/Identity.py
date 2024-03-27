@@ -86,16 +86,7 @@ class negativeIdentityFunc(torch.autograd.Function):
         params,
         ptoSolver,
     ):
-        """
-        Forward pass for NID
-
-        Args:
-            pred_cost (torch.tensor): a batch of predicted values of the cost
-            ptoSolver (optModel): an  optimization model
-
-        Returns:
-            torch.tensor: predicted solutions
-        """
+        """ """
         # get device
         device = coeff_hat.device
         # convert tenstor
@@ -115,7 +106,6 @@ class negativeIdentityFunc(torch.autograd.Function):
         """
         Backward pass for NID
         """
-        # get device
         # identity matrix
         Ident = grad_output
         # Ident = torch.eye(grad_output.shape[1]).to(device)

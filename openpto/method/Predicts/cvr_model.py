@@ -15,7 +15,6 @@ class CVRModel(nn.Module):
     ):
         super(CVRModel, self).__init__()
         # models
-        # self.user_emb_layer = nn.Embedding(4, hidden_dim)
         self.pred0 = nn.Linear(num_features, intermediate_size * 4)
         self.pred1 = nn.Linear(intermediate_size * 4, intermediate_size * 2)
         self.pred2 = nn.Linear(intermediate_size * 2, intermediate_size // 2)

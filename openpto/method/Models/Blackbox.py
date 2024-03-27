@@ -109,17 +109,7 @@ class blackboxFunc(torch.autograd.Function):
         lambd,
         hyperparams,
     ):
-        """
-        Forward pass for DBB
-
-        Args:
-            coeff_hat (torch.tensor): a batch of predicted values of the cost//coeff_hat
-            lambd (float): a hyperparameter for differentiable block-box to contral interpolation degree
-            ptoSolver (optModel): an  optimization model
-
-        Returns:
-            torch.tensor:  solutions on predicted coefficients
-        """
+        """ """
         # get device
         device = coeff_hat.device
         # convert tenstor
@@ -153,11 +143,6 @@ class blackboxFunc(torch.autograd.Function):
         device = problem.device
         # convert tenstor
         dl = grad_output.detach().cpu().numpy()
-        ##### work around #####
-        # if dl.shape != coeff_hat_array.shape:
-        #     dl = np.expand(dl, (*dl.shape, coeff_hat_array.shape[-1]))
-        ##### end #####
-
         # perturbed costs
         ##### work around #####
         if dl.shape != coeff_hat_array.shape:
