@@ -9,3 +9,5 @@ dataset:
 solver:
   gurobi:
     kwargs: None
+  heuristic:
+    kwargs: None

@@ -14,7 +14,7 @@ class TSPGrbSolver(optGrbSolver):
     Code is adopted by PyEPO. This class is optimization model for traveling salesman problem based on Gavish–Graves (GG) formulation.
     """
 
-    def __init__(self, n_nodes, modelSense, **kwargs):
+    def __init__(self, modelSense, n_nodes, **kwargs):
         super().__init__(modelSense)
         self.num_nodes = n_nodes
         # TSP nodes & edges
