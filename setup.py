@@ -15,6 +15,7 @@ ipympl
 basemap
 Pillow
 ortools
+elkai
 ruamel.yaml==0.17.21
 """
 

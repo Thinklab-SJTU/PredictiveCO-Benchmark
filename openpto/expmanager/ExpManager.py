@@ -168,7 +168,7 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
-            if (ptr_epoch - 1) % self.args.valfreq != 0:
+            if (ptr_epoch + 1) % self.args.valfreq != 0:
                 datasets = [
                     (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
                 ]
@@ -285,7 +285,7 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            if (iter_idx - 1) % self.args.valfreq != 0:
+            if (iter_idx + 1) % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
                 ]

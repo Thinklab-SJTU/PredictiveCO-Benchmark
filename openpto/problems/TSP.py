@@ -22,7 +22,21 @@ class TSP(PTOProblem):
     ):
         super(TSP, self).__init__()
         self._set_seed(rand_seed)
-        if prob_version == "gen":
+        if prob_version == "gen-global":
+            n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
+            self.n_nodes = n_nodes
+            poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+            self.load_dataset_from_global_feats(
+                num_train_instances,
+                num_test_instances,
+                n_nodes,
+                n_features,
+                poly_deg,
+                noise_width,
+                val_frac,
+                rand_seed,
+            )
+        elif prob_version == "gen":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
             poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
@@ -40,16 +54,17 @@ class TSP(PTOProblem):
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
             poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
-            self.load_dataset(
-                num_train_instances,
-                num_test_instances,
-                n_nodes,
-                n_features,
-                poly_deg,
-                noise_width,
-                val_frac,
-                rand_seed,
-            )
+            raise NotImplementedError("not implemented")
+            # self.load_dataset_from_global_feats(
+            #     num_train_instances,
+            #     num_test_instances,
+            #     n_nodes,
+            #     n_features,
+            #     poly_deg,
+            #     noise_width,
+            #     val_frac,
+            #     rand_seed,
+            # )
 
     def get_train_data(self, **kwargs):
         return self.Xs_train, self.Ys_train, self.Ys_train
@@ -104,7 +119,42 @@ class TSP(PTOProblem):
         val_frac,
         rand_seed,
     ):
-        feats, costs = self.genData(
+        # new version of generated data
+        feats, costs = self.gendata(
+            num_train_instances + num_test_instances,
+            num_features,
+            num_nodes,
+            deg=deg,
+            noise_width=noise_width,
+            seed=rand_seed,
+        )
+        train_feats, train_costs = (
+            feats[:num_train_instances],
+            costs[:num_train_instances],
+        )
+        test_feats, test_costs = feats[num_train_instances:], costs[num_train_instances:]
+        n_trains = int((1 - val_frac) * num_train_instances)
+        self.Xs_train, self.Ys_train = train_feats[:n_trains], train_costs[:n_trains]
+        self.Xs_val, self.Ys_val = train_feats[n_trains:], train_costs[n_trains:]
+        self.Xs_test, self.Ys_test = test_feats, test_costs
+        print("train: ", self.Xs_train, "costs: ", self.Ys_train)
+        print("val: ", self.Xs_val, "costs: ", self.Ys_val)
+        print("test: ", self.Xs_test, "costs: ", self.Ys_test)
+        return
+
+    def load_dataset_from_global_feats(
+        self,
+        num_train_instances,
+        num_test_instances,
+        num_nodes,
+        num_features,
+        deg,
+        noise_width,
+        val_frac,
+        rand_seed,
+    ):
+        # uses data genearation from pyEPO
+        feats, costs = self.gendata_from_global_feats(
             num_train_instances + num_test_instances,
             num_features,
             num_nodes,
@@ -139,7 +189,7 @@ class TSP(PTOProblem):
         return
 
     @staticmethod
-    def genData(num_data, num_features, num_nodes, deg, noise_width, seed=2023):
+    def gendata_from(num_data, num_features, num_nodes, deg, noise_width, seed=2023):
         """
         Adopted by PyEPO
         A function to generate synthetic data and features for travelling salesman
@@ -170,7 +220,7 @@ class TSP(PTOProblem):
             )
         )
         # distance matrix
-        org_dist = distance.cdist(coords, coords, "euclidean")
+        pairwise_dist = distance.cdist(coords, coords, "euclidean")
         # random matrix parameter B
         B = rnd.binomial(
             1, 0.5, (num_nodes * (num_nodes - 1) // 2, num_features)
@@ -178,20 +228,20 @@ class TSP(PTOProblem):
         # feature vectors
         x = rnd.normal(0, 1, (num_data, num_features))
         # init cost
-        c = np.zeros((num_data, num_nodes * (num_nodes - 1) // 2))
+        time = np.zeros((num_data, num_nodes * (num_nodes - 1) // 2))
         for i in range(num_data):
             # reshape
             index = 0
             for j in range(num_nodes):
                 for k in range(j + 1, num_nodes):
-                    c[i, index] = org_dist[j, k]
+                    time[i, index] = pairwise_dist[j, k]
                     index += 1
             # noise
             noise = rnd.uniform(
                 1 - noise_width, 1 + noise_width, num_nodes * (num_nodes - 1) // 2
             )
             # from feature to edge
-            c[i] += (
+            time[i] += (
                 (
                     (
                         np.dot(B, x[i].reshape(num_features, 1)).T / np.sqrt(num_features)
@@ -202,8 +252,67 @@ class TSP(PTOProblem):
                 / 3 ** (deg - 1)
             ).reshape(-1) * noise
         # rounding
-        c = np.around(c, decimals=4)
-        return torch.FloatTensor(x), torch.FloatTensor(c)
+        time = np.around(time, decimals=4)
+        return torch.FloatTensor(x), torch.FloatTensor(time)
+
+    @staticmethod
+    def gendata(num_data, num_features, num_nodes, deg, noise_width, seed=2023):
+        # set seed
+        rnd = np.random.RandomState(seed)
+        # random coordinates
+        coords = np.concatenate(
+            (
+                rnd.uniform(-2, 2, (num_nodes // 2, 2)),
+                rnd.normal(0, 1, (num_nodes - num_nodes // 2, 2)),
+            )
+        )
+        # distance matrix
+        pairwise_dist = distance.cdist(coords, coords, "euclidean")
+        busy_degree = rnd.normal(0, 1, (num_nodes, num_nodes))
+        # random matrix parameter B
+        B = rnd.binomial(1, 0.5, (num_features)) * rnd.uniform(-2, 2, (num_features))
+        # feature vectors
+        x = rnd.normal(0, 1, (num_data, num_nodes * (num_nodes - 1) // 2, num_features))
+        # init cost
+        time = np.zeros((num_data, num_nodes * (num_nodes - 1) // 2))
+        d = np.zeros((num_data, num_nodes, num_nodes))
+        for i in range(num_data):
+            # reshape
+            incremental_idx = 0
+            for j in range(num_nodes):
+                for k in range(j):
+                    time[i, incremental_idx] = pairwise_dist[j, k] * busy_degree[j, k]
+                    incremental_idx += 1
+            # noise
+            noise = rnd.uniform(
+                1 - noise_width, 1 + noise_width, num_nodes * (num_nodes - 1) // 2
+            )
+            # from feature to edge
+            time[i] += (
+                (
+                    (
+                        np.dot(B, x[i].reshape(-1, num_features, 1)).T
+                        / np.sqrt(num_features)
+                        + 3
+                    )
+                    ** deg
+                )
+                / 3 ** (deg - 1)
+            ).reshape(-1) * noise
+            id = 0
+            for j in range(num_nodes):
+                for k in range(num_nodes):
+                    if j > k:
+                        d[i, j, k] = time[i, id]
+                        id = id + 1
+            for j in range(num_nodes):
+                for k in range(num_nodes):
+                    if j < k:
+                        d[i, j, k] = d[i, k, j]
+
+        # rounding
+        d = np.around(d, decimals=4)
+        return coords, d
 
     def genEnv(
         self,
