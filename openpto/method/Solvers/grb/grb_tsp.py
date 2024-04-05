@@ -44,7 +44,8 @@ class TSPGrbSolver(optGrbSolver):
         z = m.addVars(directed_edges, name="z", vtype=GRB.BINARY)
         y = m.addVars(directed_edges, name="y")
         # sense
-        m.modelSense = GRB.MINIMIZE
+        assert self.modelSense == GRB.MINIMIZE
+        m.modelSense = self.modelSense
         # constraints
         m.addConstrs(z.sum("*", j) == 1 for j in self.nodes)
         m.addConstrs(z.sum(i, "*") == 1 for i in self.nodes)

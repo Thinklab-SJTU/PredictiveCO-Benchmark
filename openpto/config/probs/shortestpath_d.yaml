@@ -1,10 +1,35 @@
 dataset:
-  prob_version: direct
+  prob_version: warcraft-ood
   size: 12
   normalize: True
-  
+  type: contrast
+  value: 10
+  val_type: hue
+  val_value: 0.3
+  envs:
+    env0:
+      type: saturation
+      value: 5
+    env1:
+      type: hue
+      value: 0.1
+    env2:
+      type: brightness
+      value: 5
+    env3:
+      type: saturation
+      value: 3
+    env4:
+      type: brightness
+      value: 3
+    env5:
+      type: hue
+      value: 0.2
+
+    # env5:
+      # type: brightness
+      # value: 1
 
 solver:
   heuristic: 
     neighbourhood_fn: "8-grid"
-    
