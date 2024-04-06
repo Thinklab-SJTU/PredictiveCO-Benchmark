@@ -19,7 +19,14 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import l1_penalty, l2_penalty, str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import do_reduction, ndiv, rand_like, to_array, to_device
+from openpto.method.utils_method import (
+    do_reduction,
+    ndiv,
+    rand_like,
+    to_array,
+    to_device,
+    to_tensor,
+)
 
 
 class ExpManager:
@@ -113,7 +120,7 @@ class ExpManager:
                 **problem.init_API(),
             )
             objs_rand.append(Objs_test_rand)
-        objs_rand = torch.stack(objs_rand)
+        objs_rand = torch.stack(to_tensor(objs_rand))
         ############################# Load previous model #############################
         if self.args.trained_path != "":
             self.pred_model.load_state_dict(torch.load(self.args.trained_path))

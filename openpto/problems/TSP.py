@@ -127,10 +127,12 @@ class TSP(PTOProblem):
             rand_seed,
             **kwargs,
         )
-        # node: B, N, 2 
+        n_data = num_train_instances + num_test_instances
+        # node: B, N, 2
         # edge: B, E, d
-        # feats = torch.cat((node_feats, edge_feats))
-        feats = edge_feats.reshape(num_train_instances + num_test_instances, -1)
+        feats = torch.cat(
+            (node_feats.reshape(n_data, -1), edge_feats.reshape(n_data, -1)), dim=-1
+        )
         train_feats, train_costs = (
             feats[:num_train_instances],
             costs[:num_train_instances],
@@ -268,7 +270,7 @@ class TSP(PTOProblem):
     def gendata(n_data, n_feats, n_nodes, seed, **kwargs):
         def poly_func(B, input):
             n_units = input.shape[-1]
-            return (np.dot(B, input) / np.sqrt(n_units) + 3) ** deg / (3 ** (deg - 1))
+            return (np.dot(input, B) / np.sqrt(n_units) + 3) ** deg / (3 ** (deg - 1))
 
         n_edges = int((n_nodes * (n_nodes - 1)) / 2)
         deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
