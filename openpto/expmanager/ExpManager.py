@@ -19,14 +19,7 @@ from openpto.expmanager.utils_manager import (
 )
 from openpto.method.Models.utils_loss import l1_penalty, l2_penalty, str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import (
-    do_reduction,
-    ndiv,
-    rand_like,
-    to_array,
-    to_device,
-    to_tensor,
-)
+from openpto.method.utils_method import do_reduction, ndiv, to_array, to_device
 
 
 class ExpManager:
@@ -109,18 +102,19 @@ class ExpManager:
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt
         ###   Document the value of a random guess
-        objs_rand = list()
-        for _ in range(10):
-            rand_Y = rand_like(Y_test, device=self.device)
-            Z_test_rand, Objs_test_rand = problem.get_decision(
-                rand_Y,
-                params=Y_test_aux,
-                ptoSolver=ptoSolver,
-                isTrain=False,
-                **problem.init_API(),
-            )
-            objs_rand.append(Objs_test_rand)
-        objs_rand = torch.stack(to_tensor(objs_rand))
+        # objs_rand = list()
+        # for _ in range(10):
+        #     rand_Y = rand_like(Y_test, device=self.device)
+        #     Z_test_rand, Objs_test_rand = problem.get_decision(
+        #         rand_Y,
+        #         params=Y_test_aux,
+        #         ptoSolver=ptoSolver,
+        #         isTrain=False,
+        #         **problem.init_API(),
+        #     )
+        #     objs_rand.append(Objs_test_rand)
+        # objs_rand = torch.stack(to_tensor(objs_rand))
+        objs_rand = torch.zeros(10)
         ############################# Load previous model #############################
         if self.args.trained_path != "":
             self.pred_model.load_state_dict(torch.load(self.args.trained_path))
@@ -254,10 +248,7 @@ class ExpManager:
             # if do_debug:
             #     print("preds: ", preds)
             #     print("Y_train: ", Y_train)
-
-            # n_batchs = len(X_train) // self.batch_size
-            # for batch_id in range(n_batchs):
-            # X_batch = get_batch(X_train, batch_id, self.batch_size)
+            losses = list()
             for batch_id, batch in enumerate(train_loader):
                 X_batch, Y_batch, Y_aux_batch = batch["X"], batch["Y"], batch["Y_aux"]
                 preds = self.pred_model(X_batch)
@@ -271,17 +262,30 @@ class ExpManager:
                     do_debug=do_debug,
                     **self.model_args,
                 )
-                loss = do_reduction(loss, self.model_args["reduction"])
-                # add penalty
-                if self.args.l1_weight > 0:
-                    loss += self.args.l1_weight * l1_penalty(self.pred_model)
-                if self.args.l2_weight > 0:
-                    loss += self.args.l2_weight * l2_penalty(self.pred_model)
+                if self.args.opt_name == "sgd":
+                    loss = do_reduction(loss, self.model_args["reduction"])
+                    # add penalty
+                    if self.args.l1_weight > 0:
+                        loss += self.args.l1_weight * l1_penalty(self.pred_model)
+                    if self.args.l2_weight > 0:
+                        loss += self.args.l2_weight * l2_penalty(self.pred_model)
 
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                    # losses.append(loss_idx)
+                    if self.args.use_lr_scheduling:
+                        self.scheduler.step()
+                elif self.args.opt_name == "gd":
+                    losses.append(loss)
+                else:
+                    raise NotImplementedError
+
+            if self.args.opt_name == "gd":
+                losses = do_reduction(torch.stack(losses), self.model_args["reduction"])
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                # losses.append(loss_idx)
                 if self.args.use_lr_scheduling:
                     self.scheduler.step()
 

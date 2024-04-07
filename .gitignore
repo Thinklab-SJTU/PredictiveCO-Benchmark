@@ -132,7 +132,6 @@ dmypy.json
 saved_*/*
 openpto/data/
 shs/
-# visual/*
 *.pdf
 *.ipynb
 /visual
