@@ -17,5 +17,5 @@ solver:
   qptl:
     kwargs: None
   cvxpy:
-    kwargs: None  
+    kwargs: None
     
