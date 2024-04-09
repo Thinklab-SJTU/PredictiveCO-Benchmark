@@ -133,7 +133,7 @@ saved_*/*
 openpto/data/
 shs/
 *.pdf
-*.ipynb
+# *.ipynb
 # /visual
 .VSCodeCounter/
 *.pyc
