@@ -134,6 +134,6 @@ openpto/data/
 shs/
 *.pdf
 *.ipynb
-/visual
+# /visual
 .VSCodeCounter/
 *.pyc
