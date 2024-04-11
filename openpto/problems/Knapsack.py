@@ -29,11 +29,12 @@ class Knapsack(PTOProblem):
         super(Knapsack, self).__init__(data_dir)
         self.kwargs = kwargs
         self.rand_seed = rand_seed
-        num_items = kwargs["num_items"]
-        knapsack_dim, num_features = kwargs["knapsack_dim"], kwargs["num_features"]
-        mean, var = kwargs["mean"], kwargs["var"]
-        poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
-        distr = kwargs["distr"]
+        if prob_version != "energy":
+            num_items = kwargs["num_items"]
+            knapsack_dim, num_features = kwargs["knapsack_dim"], kwargs["num_features"]
+            mean, var = kwargs["mean"], kwargs["var"]
+            poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+            distr = kwargs["distr"]
         if "envs" in kwargs:
             self.env_config = kwargs["envs"]
             print("self.env_config: ", self.env_config)

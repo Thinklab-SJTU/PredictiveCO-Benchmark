@@ -3,7 +3,6 @@
 """
 """
 
-import numpy as np
 
 from openpto.method.Solvers.abcptoSolver import ptoSolver
 
@@ -19,4 +18,3 @@ class DPSolver(ptoSolver):
         z = 0
         raise NotImplementedError
         return z, None, None
-

@@ -94,7 +94,7 @@ def get_args():
     parser.add_argument("--gpu", type=str, default="-1", help="Visible GPU")
     # training
     parser.add_argument("--loadnew", type=ast.literal_eval, default=False)
-    parser.add_argument("--opt_name", type=str, default="sgd", choices=["gd", "sgd"])
+    parser.add_argument("--opt_name", type=str, default="gd", choices=["gd", "sgd"])
     parser.add_argument("--n_epochs", type=int, default=0)
     parser.add_argument("--n_ptr_epochs", type=int, default=0)
     parser.add_argument("--earlystopping", type=ast.literal_eval, default=True)

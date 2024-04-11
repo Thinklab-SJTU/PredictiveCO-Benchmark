@@ -245,6 +245,49 @@ def collect_search(ood_name, model_name):
     collect_prefixs("knapsack-gen-ood", ood_name, prefix_names, model_name, "search")
 
 
+def collect_samples():
+    cap_prefix_names = ["train-2000"]
+    for prefix_name in cap_prefix_names:
+        df = collect_results("knapsack-gen", prefix_name, global_model_names)
+        print("-" * 130)
+        print("knapsack gen", prefix_name)
+        print(df)
+        df.to_excel(
+            os.path.join(
+                "saved_records",
+                "knapsack-gen",
+                f"knapsack-gen-{prefix_name}-results.xlsx",
+            ),
+            index=False,
+            float_format="%.6f",
+        )
+
+
+def collect_hyper():
+    cap_prefix_names = [
+        "hyper_ep100",
+        "hyper_bench",
+        "hyper_ep500",
+        "hyper_hd8",
+        "hyper_bench",
+        "hyper_hd128",
+    ]
+    for prefix_name in cap_prefix_names:
+        df = collect_results("knapsack-energy", prefix_name, global_model_names)
+        print("-" * 130)
+        print("knapsack energy", prefix_name)
+        print(df)
+        df.to_excel(
+            os.path.join(
+                "saved_records",
+                "knapsack-energy",
+                f"knapsack-energy-{prefix_name}-results.xlsx",
+            ),
+            index=False,
+            float_format="%.6f",
+        )
+
+
 if __name__ == "__main__":
     collect_benchmarks()
     collect_other_benchmarks()
@@ -253,3 +296,5 @@ if __name__ == "__main__":
     collect_ad()
     collect_gen()
     collect_time()
+    collect_samples()
+    collect_hyper()

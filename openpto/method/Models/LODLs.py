@@ -150,8 +150,23 @@ class LODL(optModel):
                 problen_name,
                 f"{problen_name}_{sampling}_{sampling_std}_{time.time()}.pkl",
             )
+            # # change to cpu
+            SL_dataset_cpu = {
+                partition: [(Y, None, None, None) for Y in Ys]
+                for Ys, partition in zip([Y_train, Y_val], ["train", "val"])
+            }
+            for idx, (Y, opt_objective, Yhats, objectives) in enumerate(sampled_points):
+                # turn to torch
+                opt_objective = to_tensor(opt_objective).to("cpu")
+                objectives = to_tensor(objectives).to("cpu")
+                SL_dataset_cpu[partition][idx] = (
+                    Y.to("cpu"),
+                    opt_objective,
+                    Yhats.to("cpu"),
+                    objectives,
+                )
             with open(samples_filename_write, "wb") as filehandle:
-                pickle.dump((num_extra_samples, SL_dataset), filehandle)
+                pickle.dump((num_extra_samples, SL_dataset_cpu), filehandle)
 
             #   Augment with new data
             for Ys, Ys_aux, partition in datasets:
@@ -201,7 +216,10 @@ class LODL(optModel):
             # Sanity check that the saved data is the same as the problem's data
             for idx, (Y, Y_aux) in enumerate(zip(Ys, Ys_aux)):
                 Y_dataset, opt_objective, _, objectives = SL_dataset[partition][idx]
-                assert torch.isclose(Y, Y_dataset.to(problem.device)).all()
+                Y_dataset = Y_dataset.to(problem.device)
+                opt_objective = opt_objective.to(problem.device)
+                objectives = objectives.to(problem.device)
+                assert torch.isclose(Y, Y_dataset).all()
 
                 # Also log the "average error"
                 avg_dls.append(abs(opt_objective - objectives).mean().item())
