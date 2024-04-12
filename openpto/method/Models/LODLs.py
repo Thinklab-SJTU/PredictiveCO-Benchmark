@@ -479,65 +479,66 @@ class LODL(optModel):
             raise LookupError()
         self.lodl_model = model
         if self.loss_path:
+            print("loading lodl model from: ", self.loss_path)
             self.lodl_model.load_state_dict(torch.load(self.loss_path))
+        else:
+            # Use GPU if available
+            device = problem.device
+            Yhats_train, Yhats_val, Yhats_test = (
+                Yhats_train.to(device),
+                Yhats_val.to(device),
+                Yhats_test.to(device),
+            )
+            objectives_train, objectives_val, objectives_test = (
+                objectives_train.to(device),
+                objectives_val.to(device),
+                objectives_test.to(device),
+            )
+            self.lodl_model = self.lodl_model.to(device)
 
-        # Use GPU if available
-        device = problem.device
-        Yhats_train, Yhats_val, Yhats_test = (
-            Yhats_train.to(device),
-            Yhats_val.to(device),
-            Yhats_test.to(device),
-        )
-        objectives_train, objectives_val, objectives_test = (
-            objectives_train.to(device),
-            objectives_val.to(device),
-            objectives_test.to(device),
-        )
-        self.lodl_model = self.lodl_model.to(device)
+            # Fit a model to the points
+            optimizer = torch.optim.Adam(self.lodl_model.parameters(), lr=losslr)
+            best = (float("inf"), None)
+            time_since_best = 0
+            # get loss func
+            twostage_criterion = str2twoStageLoss(problem)
+            for iter_idx in range(num_iters):
+                # Define update step using "closure" function
+                def loss_closure():
+                    optimizer.zero_grad()
+                    pred = self.lodl_model(Yhats_train).flatten()
+                    if not (pred >= -1e-3).all().item():
+                        print(f"WARNING: Prediction value < 0: {pred.min()}")
+                    loss = twostage_criterion(
+                        problem, pred, objectives_train, reduction="sum"
+                    )
+                    loss.backward()
+                    return loss
 
-        # Fit a model to the points
-        optimizer = torch.optim.Adam(self.lodl_model.parameters(), lr=losslr)
-        best = (float("inf"), None)
-        time_since_best = 0
-        # get loss func
-        twostage_criterion = str2twoStageLoss(problem)
-        for iter_idx in range(num_iters):
-            # Define update step using "closure" function
-            def loss_closure():
-                optimizer.zero_grad()
-                pred = self.lodl_model(Yhats_train).flatten()
-                if not (pred >= -1e-3).all().item():
-                    print(f"WARNING: Prediction value < 0: {pred.min()}")
-                loss = twostage_criterion(
-                    problem, pred, objectives_train, reduction="sum"
-                )
-                loss.backward()
-                return loss
+                # Perform validation
+                if iter_idx % val_freq == 0:
+                    # Get performance on val dataset
+                    pred_val = self.lodl_model(Yhats_val).flatten()
+                    loss_val = twostage_criterion(
+                        problem, pred_val, objectives_val, reduction="sum"
+                    )
 
-            # Perform validation
-            if iter_idx % val_freq == 0:
-                # Get performance on val dataset
-                pred_val = self.lodl_model(Yhats_val).flatten()
-                loss_val = twostage_criterion(
-                    problem, pred_val, objectives_val, reduction="sum"
-                )
+                    # Print statistics
+                    if verbose and iter_idx % (val_freq * print_freq) == 0:
+                        print(f"Iter {iter_idx}, Train Loss MSE: {loss_closure().item()}")
+                        print(f"Iter {iter_idx}, Val Loss MSE: {loss_val.item()}")
+                    # Save model if it's the best one
+                    if best[1] is None or loss_val.mean().item() < best[0]:
+                        best = (loss_val.mean().item(), deepcopy(model))
+                        time_since_best = 0
+                    # Stop if model hasn't improved for patience steps
+                    if time_since_best > patience:
+                        break
 
-                # Print statistics
-                if verbose and iter_idx % (val_freq * print_freq) == 0:
-                    print(f"Iter {iter_idx}, Train Loss MSE: {loss_closure().item()}")
-                    print(f"Iter {iter_idx}, Val Loss MSE: {loss_val.item()}")
-                # Save model if it's the best one
-                if best[1] is None or loss_val.mean().item() < best[0]:
-                    best = (loss_val.mean().item(), deepcopy(model))
-                    time_since_best = 0
-                # Stop if model hasn't improved for patience steps
-                if time_since_best > patience:
-                    break
-
-            # Make an update step
-            optimizer.step(loss_closure)
-            time_since_best += 1
-        self.lodl_model = best[1]
+                # Make an update step
+                optimizer.step(loss_closure)
+                time_since_best += 1
+            self.lodl_model = best[1]
         # save model
         torch.save(
             self.lodl_model.state_dict(),

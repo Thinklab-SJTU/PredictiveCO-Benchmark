@@ -10,7 +10,13 @@ import torch
 from gurobipy import GRB  # pylint: disable=no-name-in-module
 
 from openpto.method.Models.abcOptModel import optModel
-from openpto.method.utils_method import do_reduction, minus, to_device, to_tensor
+from openpto.method.utils_method import (
+    do_reduction,
+    minus,
+    to_array,
+    to_device,
+    to_tensor,
+)
 
 
 class blackboxSolver(optModel):
@@ -111,11 +117,11 @@ class blackboxFunc(torch.autograd.Function):
     ):
         """ """
         # get device
-        device = coeff_hat.device
+        device = problem.device
         # convert tenstor
-        coeff_hat_array = coeff_hat.detach().cpu().numpy()
+        coeff_hat_array = to_array(coeff_hat)
         sols_hat, _ = problem.get_decision(
-            coeff_hat.detach().cpu(), params, ptoSolver, **problem.init_API()
+            to_device(coeff_hat, "cpu"), params, ptoSolver, **problem.init_API()
         )
         # save to ctx (np.ndarray version)
         ctx.coeff_hat_array = coeff_hat_array

@@ -61,10 +61,10 @@ class BCE(optModel):
         params=None,
         **hyperparams,
     ):
-        if torch.is_tensor(coeff_true):
+        if torch.is_tensor(coeff_hat):
             coeff_true = coeff_true.float()
             return nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
-        elif isinstance(coeff_true, list):
+        elif isinstance(coeff_hat, list):
             loss_list = list()
             for Y_idx in range(len(coeff_true)):
                 loss_list.append(nn.BCELoss()(coeff_hat[Y_idx], coeff_true[Y_idx]))

@@ -16,7 +16,7 @@ from openpto.expmanager.utils_manager import (
 from openpto.method.Generalize.wrapper_generalize import generalize_wrapper
 from openpto.method.Models.utils_loss import str2twoStageLoss
 from openpto.method.Predicts.wrapper_predicts import pred_model_wrapper
-from openpto.method.utils_method import ndiv, rand_like, to_array
+from openpto.method.utils_method import ndiv, to_array
 
 
 class OodManager:
@@ -89,17 +89,18 @@ class OodManager:
         problem.z_val_opt = Z_val_opt
         problem.z_test_opt = Z_test_opt
         ###   Document the value of a random guess
-        objs_rand = list()
-        for _ in range(10):
-            Z_test_rand, Objs_test_rand = problem.get_decision(
-                rand_like(Y_test, device=self.device),
-                params=Y_test_aux,
-                ptoSolver=ptoSolver,
-                isTrain=False,
-                **problem.init_API(),
-            )
-            objs_rand.append(torch.Tensor(Objs_test_rand))
-        objs_rand = torch.stack(objs_rand)
+        # objs_rand = list()
+        # for _ in range(10):
+        #     Z_test_rand, Objs_test_rand = problem.get_decision(
+        #         rand_like(Y_test, device=self.device),
+        #         params=Y_test_aux,
+        #         ptoSolver=ptoSolver,
+        #         isTrain=False,
+        #         **problem.init_API(),
+        #     )
+        #     objs_rand.append(torch.Tensor(Objs_test_rand))
+        # objs_rand = torch.stack(objs_rand)
+        objs_rand = torch.zeros(10)
         ############################# Load previous model #############################
         if self.args.trained_path != "":
             self.ood_model.load_state_dict(torch.load(self.args.trained_path))
@@ -137,7 +138,7 @@ class OodManager:
         #     X_pretrain, Y_pretrain, Y_pretrain_aux = X_train, Y_train, Y_train_aux
 
         # self.ood_model.train()
-        # for ptr_epoch in range(self.args.n_ptr_epochs):
+        # for ptr_epoch in range(1, self.args.n_ptr_epochs + 1):
         #     ###### one-shot training
         #     time_train_start = time.time()
         #     # TODO: get forward and loss
@@ -159,7 +160,7 @@ class OodManager:
         #             ),
         #         )
         #     ###### Check metrics on val set
-        #     if (ptr_epoch + 1) % self.args.valfreq == 0:
+        #     if ptr_epoch % self.args.valfreq == 0:
         #         # Compute metrics
         #         datasets = [
         #             (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
@@ -204,7 +205,7 @@ class OodManager:
         time_since_best = 0
         self.logger.info("Training Model...")
         self.ood_model.train()
-        for iter_idx in range(n_epochs):
+        for iter_idx in range(1, n_epochs + 1):
             ###### Learn
             # TODO: batch train or individually train?
             # currently, only support individually train
@@ -226,7 +227,7 @@ class OodManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            if (iter_idx + 1) % self.args.valfreq != 0:
+            if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
                 ]

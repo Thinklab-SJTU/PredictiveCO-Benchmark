@@ -148,7 +148,7 @@ class ExpManager:
         twostage_criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
-        for ptr_epoch in range(self.args.n_ptr_epochs):
+        for ptr_epoch in range(1, self.args.n_ptr_epochs + 1):
             ###### one-shot training
             time_train_start = time.time()
             preds = self.pred_model(X_pretrain)
@@ -169,7 +169,7 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
-            if (ptr_epoch + 1) % self.args.valfreq != 0:
+            if ptr_epoch % self.args.valfreq != 0:
                 datasets = [
                     (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
                 ]
@@ -242,7 +242,7 @@ class ExpManager:
         time_since_best = 0
         self.logger.info("Training Model...")
         self.pred_model.train()
-        for iter_idx in range(n_epochs):
+        for iter_idx in range(1, n_epochs + 1):
             time_train_start = time.time()
 
             # if do_debug:
@@ -296,7 +296,7 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            if (iter_idx + 1) % self.args.valfreq != 0:
+            if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
                 ]

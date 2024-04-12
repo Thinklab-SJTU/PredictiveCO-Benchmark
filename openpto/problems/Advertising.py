@@ -78,8 +78,7 @@ class Advertising(PTOProblem):
             return feat_results
 
         out_features = aggr_push(data["feat_his"], data["push_history"])
-        # TODO: add channel his to features
-        # data["channels_his"]
+        # TODO: add channel his to features # data["channels_his"]
         if isMock:
             realchannel = [
                 torch.FloatTensor(np.array(item)) for item in data["realchannel"]
@@ -109,7 +108,10 @@ class Advertising(PTOProblem):
     def get_twostageloss(self):
         return "bce"
 
-    def get_decision(self, Y, params, ptoSolver=None, isTrain=True, **kwargs):
+    def is_eval_train(self):
+        return False
+
+    def get_decision(self, Y, params, ptoSolver, isTrain=True, **kwargs):
         if torch.is_tensor(Y):
             Y = Y.cpu()
         sols, objs = list(), list()
@@ -121,6 +123,8 @@ class Advertising(PTOProblem):
             if torch.is_tensor(Y_idx):
                 sol = to_tensor(sol)
             sols.append(sol)
+        if isTrain:
+            sols = torch.vstack(sols)
         objs = self.get_objective(Y, sols, params)
         return sols, objs
 
@@ -128,6 +132,7 @@ class Advertising(PTOProblem):
         objs = list()
         for ins_id in range(len(Y)):
             Y_idx, Z_idx = Y[ins_id], Z[ins_id]
+
             assert Y_idx.shape[:-1] == Z_idx.shape
             if torch.is_tensor(Y_idx):
                 Y_idx, Z_idx = Y_idx.cpu(), Z_idx.cpu()

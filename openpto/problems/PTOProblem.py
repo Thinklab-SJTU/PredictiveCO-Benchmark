@@ -14,6 +14,9 @@ class PTOProblem(ABC):
         super(PTOProblem, self).__init__()
         self.data_dir = data_dir
 
+    def is_eval_train(self):
+        return True
+
     @abstractmethod
     def get_train_data(self, **kwargs):
         raise NotImplementedError()

@@ -91,7 +91,6 @@ def print_metrics(
         metrics = {}
         for Xs, Ys, Ys_aux, partition in datasets:
             # Choose whether we should use train or test
-            isTrain = (partition == "train") and (prefix != "Final")
             # timing
             if partition == "test":
                 time_test_start = time.time()
@@ -100,15 +99,16 @@ def print_metrics(
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
-            objective_hat = torch.zeros_like(pred_loss, device="cpu")
-            Zs_hat = torch.zeros_like(pred_loss)
-            # if partition != "train":
-            if True:
+            # print("partition: ", partition,  problem.is_eval_train())
+            if partition == "train" and not problem.is_eval_train():
+                objective_hat = torch.zeros_like(pred_loss, device="cpu")
+                Zs_hat = torch.zeros_like(pred_loss)
+            else:
                 Zs_hat, _ = problem.get_decision(
                     to_device(preds, "cpu"),
                     params=Ys_aux,
                     ptoSolver=ptoSolver,
-                    isTrain=isTrain,
+                    isTrain=False,
                     **problem.init_API(),
                 )
                 objective_hat = problem.get_objective(
@@ -142,10 +142,12 @@ def print_metrics(
             }
             if partition == "test":
                 test_time = time.time() - time_test_start
-            optimal_z = optimal_dict[partition]
-            # eval_result = {"value": np.zeros(len(Ys))}
-            # if partition != "train":
-            eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
+
+            if partition == "train" and not problem.is_eval_train():
+                eval_result = {"value": torch.zeros(len(Ys))}
+            else:
+                optimal_z = optimal_dict[partition]
+                eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
             # Print
             loss = do_reduction(losses, model_args["reduction"]).item()
             # mae = torch.nn.L1Loss()(losses, -objectives).item()

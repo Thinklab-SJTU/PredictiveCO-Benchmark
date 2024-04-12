@@ -68,12 +68,13 @@ def init_if_not_saved(
     filename, saved_probs = find_saved_problem(master_filename, kwargs)
 
     if not load_new and filename is not None:
+        print("\n--------loading:", filename)
         # Load the model
         with open(filename, "rb") as file:
             problem = pickle.load(file)
     else:
         # Initialise model from scratch
-        print("new kwargs:", kwargs)
+        print("\n--------Init new problem with kwargs:", kwargs)
         problem = problem_cls(**kwargs)
 
         # Save model for the future
