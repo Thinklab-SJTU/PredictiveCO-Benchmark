@@ -298,7 +298,7 @@ class ExpManager:
             ###### Check metrics on val set
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
-                    (X_train, Y_train, Y_train_aux, "train"),
+                    (X_train, Y_train, Y_train_aux, "pretrain"),
                 ]
                 metrics = print_metrics(
                     datasets,

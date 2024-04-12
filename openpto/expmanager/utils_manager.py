@@ -100,7 +100,7 @@ def print_metrics(
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
             # print("partition: ", partition,  problem.is_eval_train())
-            if partition == "train" and not problem.is_eval_train():
+            if partition == "pretrain" and not problem.is_eval_train():
                 objective_hat = torch.zeros_like(pred_loss, device="cpu")
                 Zs_hat = torch.zeros_like(pred_loss)
             else:
@@ -118,22 +118,27 @@ def print_metrics(
                     **problem.init_API(),
                 )
             # Loss and Error
-            losses = []
-            for idx in range(len(Xs)):
-                losses.append(
-                    loss_fn(
-                        problem,
-                        coeff_hat=get_idxs(preds, idx),
-                        coeff_true=get_idxs(Ys, idx),
-                        params=get_idxs(Ys_aux, idx),
-                        partition=partition,
-                        index=idx,
-                        do_debug=do_debug,
-                        **model_args,
+            if partition=="test":
+                loss = 0
+            else:
+                losses = []
+                for idx in range(len(Xs)):
+                    losses.append(
+                        loss_fn(
+                            problem,
+                            coeff_hat=get_idxs(preds, idx),
+                            coeff_true=get_idxs(Ys, idx),
+                            params=get_idxs(Ys_aux, idx),
+                            partition=partition,
+                            index=idx,
+                            do_debug=do_debug,
+                            **model_args,
+                        )
                     )
-                )
 
-            losses = torch.stack(losses).flatten()
+                losses = torch.stack(losses).flatten()
+                # Print
+                loss = do_reduction(losses, model_args["reduction"]).item()
             test_time = 0
             optimal_dict = {
                 "train": problem.z_train_opt,
@@ -143,13 +148,12 @@ def print_metrics(
             if partition == "test":
                 test_time = time.time() - time_test_start
 
-            if partition == "train" and not problem.is_eval_train():
+            if partition == "pretrain" and not problem.is_eval_train():
                 eval_result = {"value": torch.zeros(len(Ys))}
             else:
                 optimal_z = optimal_dict[partition]
                 eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)
-            # Print
-            loss = do_reduction(losses, model_args["reduction"]).item()
+
             # mae = torch.nn.L1Loss()(losses, -objectives).item()
             metrics[partition] = {
                 "loss": loss,
