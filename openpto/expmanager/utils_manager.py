@@ -118,7 +118,7 @@ def print_metrics(
                     **problem.init_API(),
                 )
             # Loss and Error
-            if partition=="test":
+            if partition == "test":
                 loss = 0
             else:
                 losses = []
