@@ -123,4 +123,13 @@ class SPOPlusFunc(torch.autograd.Function):
                     *grad_shape, coeff_hat_cpu.shape[-1]
                 )
         ##### end #####
+        ##### work around 2: #####
+        ## when a batch contains multiple items, do:
+        if grad_output.ndim < grad.ndim:
+            grad_output_shape = grad_output.shape
+            grad_output = grad_output.unsqueeze(1)
+            grad_output = grad_output.view(*grad_output_shape, 1).expand(
+                grad_output_shape[0], coeff_hat_cpu.shape[1], *grad_output_shape[1:]
+            )
+        ##### end #####
         return (grad_output * grad, None, None, None, None, None, None)

@@ -341,7 +341,6 @@ def aggr_node2edge(node_feats):
         for k in range(j):
             aggr_edge_feats.append(np.hstack((node_feats[j], node_feats[k])))
             incremental_idx += 1
-    # aggr_edge_feats = torch.FloatTensor(aggr_edge_feats)
     return aggr_edge_feats
 
 
