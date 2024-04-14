@@ -101,7 +101,8 @@ class TSP(PTOProblem):
         return sols, objs
 
     def get_objective(self, Y, Z, aux_data, **kwargs):
-        return (Y * Z).sum(-1, keepdims=True)
+        # print("decision shape:", Y.shape, Z.shape )
+        return (Y.squeeze(-1) * Z).sum(-1, keepdims=True)
 
     def init_API(self):
         return {
@@ -127,12 +128,17 @@ class TSP(PTOProblem):
             rand_seed,
             **kwargs,
         )
-        n_data = num_train_instances + num_test_instances
+        num_train_instances + num_test_instances
         # node: B, N, 2
         # edge: B, E, d
-        feats = torch.cat(
-            (node_feats.reshape(n_data, -1), edge_feats.reshape(n_data, -1)), dim=-1
-        )
+        feats = torch.cat((node_feats, edge_feats), dim=-1)
+        costs = costs.unsqueeze(-1)
+        print("node_feats: ", node_feats.shape, edge_feats.shape, feats.shape)
+        print("costs: ", costs.shape)
+        # assert 0
+        # feats = torch.cat(
+        #     (node_feats.reshape(n_data, -1), edge_feats.reshape(n_data, -1)), dim=-1
+        # )
         train_feats, train_costs = (
             feats[:num_train_instances],
             costs[:num_train_instances],
@@ -145,9 +151,9 @@ class TSP(PTOProblem):
         self.Xs_train, self.Ys_train = train_feats[:n_trains], train_costs[:n_trains]
         self.Xs_val, self.Ys_val = train_feats[n_trains:], train_costs[n_trains:]
         self.Xs_test, self.Ys_test = test_feats, test_costs
-        print("train: ", self.Xs_train, "costs: ", self.Ys_train)
-        print("val: ", self.Xs_val, "costs: ", self.Ys_val)
-        print("test: ", self.Xs_test, "costs: ", self.Ys_test)
+        # print("train: ", self.Xs_train, "costs: ", self.Ys_train)
+        # print("val: ", self.Xs_val, "costs: ", self.Ys_val)
+        # print("test: ", self.Xs_test, "costs: ", self.Ys_test)
         return
 
     def load_from_global_feats(
@@ -285,25 +291,29 @@ class TSP(PTOProblem):
                 for idx in range(n_data)
             ]
         )
-        busy_degree = np.abs(rnd.normal(1, 1, (n_data, n_edges)))
+        busy_degree = np.abs(rnd.normal(1, 1, (1, n_edges)))
         # random matrix parameter B
         B = rnd.binomial(1, 0.5, (n_feats)) * rnd.uniform(-2, 2, (n_feats))
         # feature vectors
         edge_feats = rnd.normal(0, 1, (n_data, n_edges, n_feats))
         time = np.zeros((n_data, n_edges))
+        node_feats = list()
         for i in range(n_data):
             incremental_idx = 0
             for j in range(n_nodes):
                 for k in range(j):
                     time[i, incremental_idx] = (
-                        pairwise_dist[i, j, k] * busy_degree[i, incremental_idx]
+                        pairwise_dist[i, j, k] * busy_degree[0, incremental_idx]
                     )
                     incremental_idx += 1
             # noise
             noise = rnd.uniform(1 - noise_width, 1 + noise_width, n_edges)
-            poly_term = poly_func(B, edge_feats[i]).reshape(-1)  # B: (E,) x[i]:(E, E)
+            poly_term = poly_func(B, edge_feats[i]).reshape(
+                -1
+            )  # B: (E,)   x[i]:(E, d) # poly_term: d
             time[i] += poly_term * noise
-        node_feats = coords
+            node_feats.append(aggr_node2edge(coords[i]))
+        node_feats = np.array(node_feats)
         return (
             torch.FloatTensor(time),
             torch.FloatTensor(node_feats),
@@ -321,6 +331,18 @@ class TSP(PTOProblem):
 #########################################
 #          Generate Nodes_coord         #
 #########################################
+
+
+def aggr_node2edge(node_feats):
+    aggr_edge_feats = list()
+    incremental_idx = 0
+    n_nodes = node_feats.shape[0]
+    for j in range(n_nodes):
+        for k in range(j):
+            aggr_edge_feats.append(np.hstack((node_feats[j], node_feats[k])))
+            incremental_idx += 1
+    # aggr_edge_feats = torch.FloatTensor(aggr_edge_feats)
+    return aggr_edge_feats
 
 
 def generate_nodes_coord(batch_size: int, n_nodes: int, kwargs):

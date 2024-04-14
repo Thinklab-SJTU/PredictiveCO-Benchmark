@@ -19,6 +19,10 @@ class LKHSolver(ptoSolver):
         self.edges = [(i, j) for i in self.nodes for j in self.nodes if i < j]
 
     @property
+    def n_edges(self):
+        return len(self.edges)
+
+    @property
     def n_vars(self):
         return self.n_nodes**2
 
@@ -30,15 +34,21 @@ class LKHSolver(ptoSolver):
             distance_matrix[j][i] = Y[idx]
         np.fill_diagonal(distance_matrix, np.inf)
         cities = elkai.DistanceMatrix(distance_matrix)
-        sol = cities.solve_tsp()
-        z = tour2matrix(self.n_nodes, sol)  # decode sol to matrix
-        return z, None, None
+        tour = cities.solve_tsp()
+        sol_array, sol_matrix = self.tour2matrix(
+            self.n_nodes, tour
+        )  # decode sol to matrix
+        others = {"tour": tour, "sol_matrix": sol_matrix}
+        return sol_array, None, others
 
-
-def tour2matrix(n_nodes, tour):
-    sol = np.zeros((n_nodes, n_nodes))
-    for idx in range(len(tour) - 1):
-        u, v = tour[idx], tour[idx + 1]
-        sol[u, v] = 1
-    final_sol = [sol[i, j] for i in range(n_nodes) for j in range(n_nodes) if i < j]
-    return final_sol
+    def tour2matrix(self, n_nodes, tour):
+        sol_matrix = np.zeros((n_nodes, n_nodes))
+        for idx in range(len(tour) - 1):
+            u, v = tour[idx], tour[idx + 1]
+            sol_matrix[u, v] = 1
+        # sol_array = [sol_matrix[i, j] for i in range(n_nodes) for j in range(n_nodes) if i < j]
+        sol_array = np.zeros(self.n_edges, dtype=np.uint8)
+        for k, (i, j) in enumerate(self.edges):
+            if sol_matrix[i, j] > 1e-2 or sol_matrix[j, i] > 1e-2:
+                sol_array[k] = 1
+        return sol_array, sol_matrix

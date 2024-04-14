@@ -16,7 +16,7 @@ class TSPGrbSolver(optGrbSolver):
 
     def __init__(self, modelSense, n_nodes, **kwargs):
         super().__init__(modelSense)
-        self.num_nodes = n_nodes
+        self.n_nodes = n_nodes
         # TSP nodes & edges
         self.nodes = list(range(n_nodes))
         self.edges = [(i, j) for i in self.nodes for j in self.nodes if i < j]
@@ -25,7 +25,7 @@ class TSPGrbSolver(optGrbSolver):
         self._model.Params.outputFlag = 0
 
     @property
-    def num_cost(self):
+    def n_edges(self):
         return len(self.edges)
 
     def _getModel(
@@ -63,7 +63,7 @@ class TSPGrbSolver(optGrbSolver):
         Args:
             c (list): cost vector
         """
-        if len(c) != self.num_cost:
+        if len(c) != self.n_edges:
             raise ValueError("Size of cost vector cannot match vars.")
         obj = gp.quicksum(
             c[k] * (self.z[i, j] + self.z[j, i]) for k, (i, j) in enumerate(self.edges)
@@ -81,12 +81,19 @@ class TSPGrbSolver(optGrbSolver):
         self.setObj(y)
         self._model.update()
         self._model.optimize()
-        sol = np.zeros(self.num_cost, dtype=np.uint8)
+        sol = np.zeros(self.n_edges, dtype=np.uint8)
         for k, (i, j) in enumerate(self.edges):
             if self.z[i, j].x > 1e-2 or self.z[j, i].x > 1e-2:
                 sol[k] = 1
         others = {}
         return sol, self._model.objVal, others
+
+    def grbarr2arr(self, grb_tensor):
+        sol_array = np.zeros_like(grb_tensor)
+        for k, (i, j) in enumerate(self.edges):
+            sol_array[i, j] = self.z[i, j].x
+            sol_array[j, i] = self.z[j, i].x
+        return sol_array
 
 
 def getTour(sol, edges):
