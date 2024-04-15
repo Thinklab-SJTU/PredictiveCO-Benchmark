@@ -58,7 +58,6 @@ class OodManager:
 
         ############################## Preliminary Evaluation ##############################
         #   Document the optimal value
-        # TODO: !!! use exact sovler for optimal
         Z_train_opt, Objs_train_opt = problem.get_decision(
             Y_train,
             params=Y_train_aux,

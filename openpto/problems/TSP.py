@@ -37,18 +37,15 @@ class TSP(PTOProblem):
         elif prob_version == "gen-ood":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
-            poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
-            raise NotImplementedError("not implemented")
-            # self.load_ood_dataset(
-            #     num_train_instances,
-            #     num_test_instances,
-            #     n_nodes,
-            #     n_features,
-            #     poly_deg,
-            #     noise_width,
-            #     val_frac,
-            #     rand_seed,
-            # )
+            self.load_ood_dataset(
+                num_train_instances,
+                num_test_instances,
+                n_nodes,
+                n_features,
+                val_frac,
+                rand_seed,
+                **kwargs,
+            )
         elif prob_version == "gen-global":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
@@ -62,18 +59,28 @@ class TSP(PTOProblem):
                 noise_width,
                 val_frac,
                 rand_seed,
-                kwargs,
+                **kwargs,
             )
         else:
             raise NotImplementedError("not implemented")
 
-    def get_train_data(self, **kwargs):
-        return self.Xs_train, self.Ys_train, self.Ys_train
+    def get_train_data(self, train_mode="iid", **kwargs):
+        if train_mode == "iid":
+            return self.Xs_train, self.Ys_train, self.Ys_train
+        elif train_mode == "ood":
+            return self.ver0_Xs_train, self.ver0_Ys_train, self.ver0_Ys_train
+        else:
+            raise NotImplementedError(train_mode)
 
-    def get_val_data(self, **kwargs):
-        return self.Xs_val, self.Ys_val, self.Ys_val
+    def get_val_data(self, train_mode="iid", **kwargs):
+        if train_mode == "iid":
+            return self.Xs_val, self.Ys_val, self.Ys_val
+        elif train_mode == "ood":
+            return self.ver0_Xs_val, self.ver0_Ys_val, self.ver0_Ys_val
+        else:
+            raise NotImplementedError(train_mode)
 
-    def get_test_data(self, **kwargs):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return self.Xs_test, self.Ys_test, self.Ys_test
 
     def get_model_shape(self):
@@ -101,7 +108,6 @@ class TSP(PTOProblem):
         return sols, objs
 
     def get_objective(self, Y, Z, aux_data, **kwargs):
-        # print("decision shape:", Y.shape, Z.shape )
         return (Y.squeeze(-1) * Z).sum(-1, keepdims=True)
 
     def init_API(self):
@@ -121,24 +127,18 @@ class TSP(PTOProblem):
         **kwargs,
     ):
         # new version of generated data
-        costs, node_feats, edge_feats = self.gendata(
+        deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        costs, feats = self.gendata(
             num_train_instances + num_test_instances,
             n_features,
             n_nodes,
             rand_seed,
-            **kwargs,
+            kwargs["type"],
+            kwargs["params"],
+            deg,
+            noise_width,
         )
-        num_train_instances + num_test_instances
-        # node: B, N, 2
-        # edge: B, E, d
-        feats = torch.cat((node_feats, edge_feats), dim=-1)
-        costs = costs.unsqueeze(-1)
-        print("node_feats: ", node_feats.shape, edge_feats.shape, feats.shape)
-        print("costs: ", costs.shape)
-        # assert 0
-        # feats = torch.cat(
-        #     (node_feats.reshape(n_data, -1), edge_feats.reshape(n_data, -1)), dim=-1
-        # )
+        print("node_feats: ", feats.shape, "costs: ", costs.shape)
         train_feats, train_costs = (
             feats[:num_train_instances],
             costs[:num_train_instances],
@@ -154,6 +154,63 @@ class TSP(PTOProblem):
         # print("train: ", self.Xs_train, "costs: ", self.Ys_train)
         # print("val: ", self.Xs_val, "costs: ", self.Ys_val)
         # print("test: ", self.Xs_test, "costs: ", self.Ys_test)
+        return
+
+    def load_ood_dataset(
+        self,
+        num_train_instances,
+        num_test_instances,
+        n_nodes,
+        n_features,
+        val_frac,
+        rand_seed,
+        **kwargs,
+    ):
+        n_trains = int((1 - val_frac) * num_train_instances)
+        # below is gen data #
+        deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        ver0_costs, ver0_feats = self.gendata(
+            num_train_instances,
+            n_features,
+            n_nodes,
+            rand_seed,
+            kwargs["type"],
+            kwargs["params"],
+            deg,
+            noise_width,
+        )
+        self.ver0_Xs_train, self.ver0_Ys_train = (
+            ver0_feats[:n_trains],
+            ver0_costs[:n_trains],
+        )
+        self.ver0_Xs_val, self.ver0_Ys_val = ver0_feats[n_trains:], ver0_costs[n_trains:]
+        # ver1 part
+        ver1_costs, ver1_feats = self.gendata(
+            num_train_instances + num_test_instances,
+            n_features,
+            n_nodes,
+            rand_seed,
+            kwargs["ood_type"],
+            kwargs["ood_params"],
+            deg,
+            noise_width,
+        )
+        ver1_train_feats, ver1_train_costs = (
+            ver1_feats[:num_train_instances],
+            ver1_costs[:num_train_instances],
+        )
+        self.Xs_test, self.Ys_test = (
+            ver1_feats[num_train_instances:],
+            ver1_costs[num_train_instances:],
+        )
+        self.Xs_train, self.Ys_train = (
+            ver1_train_feats[:n_trains],
+            ver1_train_costs[:n_trains],
+        )
+        self.Xs_val, self.Ys_val = (
+            ver1_train_feats[n_trains:],
+            ver1_train_costs[n_trains:],
+        )
         return
 
     def load_from_global_feats(
@@ -189,18 +246,6 @@ class TSP(PTOProblem):
         print("train: ", self.Xs_train, "costs: ", self.Ys_train)
         print("val: ", self.Xs_val, "costs: ", self.Ys_val)
         print("test: ", self.Xs_test, "costs: ", self.Ys_test)
-        return
-
-    def load_ood_dataset(
-        self,
-        num_train_instances,
-        num_test_instances,
-        n_nodes,
-        n_features,
-        val_frac,
-        rand_seed,
-        **kwargs,
-    ):
         return
 
     @staticmethod
@@ -273,17 +318,16 @@ class TSP(PTOProblem):
         return torch.FloatTensor(x), torch.FloatTensor(time)
 
     @staticmethod
-    def gendata(n_data, n_feats, n_nodes, seed, **kwargs):
+    def gendata(n_data, n_feats, n_nodes, seed, type, params, deg, noise_width, **kwargs):
         def poly_func(B, input):
             n_units = input.shape[-1]
             return (np.dot(input, B) / np.sqrt(n_units) + 3) ** deg / (3 ** (deg - 1))
 
         n_edges = int((n_nodes * (n_nodes - 1)) / 2)
-        deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
         # set seed
         rnd = np.random.RandomState(seed)
         # random coordinates
-        coords = generate_nodes_coord(n_data, n_nodes, kwargs)  # n_data, n_nodes, 2
+        coords = generate_nodes_coord(n_data, n_nodes, type, params)  # n_data, n_nodes, 2
         # distance matrix
         pairwise_dist = np.array(
             [
@@ -313,12 +357,18 @@ class TSP(PTOProblem):
             )  # B: (E,)   x[i]:(E, d) # poly_term: d
             time[i] += poly_term * noise
             node_feats.append(aggr_node2edge(coords[i]))
+        ### dims
+        # node: B, E, 2 (aggregated to nodes)
+        # edge: B, E, d
+        ### to torch tensor
         node_feats = np.array(node_feats)
-        return (
-            torch.FloatTensor(time),
-            torch.FloatTensor(node_feats),
-            torch.FloatTensor(edge_feats),
-        )
+        time = torch.FloatTensor(time)
+        node_feats = torch.FloatTensor(node_feats)
+        edge_feats = torch.FloatTensor(edge_feats)
+        ### concat
+        costs = time.unsqueeze(-1)
+        feats = torch.cat((node_feats, edge_feats), dim=-1)
+        return costs, feats
 
     def genEnv(
         self,
@@ -344,29 +394,29 @@ def aggr_node2edge(node_feats):
     return aggr_edge_feats
 
 
-def generate_nodes_coord(batch_size: int, n_nodes: int, kwargs):
-    if kwargs["type"] == "uniform":
+def generate_nodes_coord(batch_size: int, n_nodes: int, type, params):
+    if type == "uniform":
         return generate_uniform(
-            batch_size, n_nodes, low=kwargs["low"], high=kwargs["high"]
+            batch_size, n_nodes, low=params["low"], high=params["high"]
         )
-    elif kwargs["type"] == "cluster":
+    elif type == "cluster":
         return generate_cluster(
             batch_size=batch_size,
             n_nodes=n_nodes,
-            num_clusters=kwargs["num_clusters"],
-            cluster_std=kwargs["cluster_std"],
-            center_low=kwargs["center_low"],
-            center_high=kwargs["center_high"],
+            num_clusters=params["num_clusters"],
+            cluster_std=params["cluster_std"],
+            center_low=params["center_low"],
+            center_high=params["center_high"],
         )
-    elif kwargs["type"] == "gaussian":
+    elif type == "gaussian":
         return generate_gaussian(
             batch_size=batch_size,
             n_nodes=n_nodes,
-            mean_x=kwargs["mean_x"],
-            mean_y=kwargs["mean_y"],
-            std=kwargs["gaussian_std"],
+            mean_x=params["mean_x"],
+            mean_y=params["mean_y"],
+            std=params["gaussian_std"],
         )
-    # elif kwargs["type"] == "cluster_fixed_centers":
+    # elif params["type"] == "cluster_fixed_centers":
     #     return generate_cluster_fixed_centers(batch_size, n_nodes)
     else:
         raise NotImplementedError

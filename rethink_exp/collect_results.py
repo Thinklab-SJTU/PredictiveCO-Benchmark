@@ -51,8 +51,7 @@ global_data_names = [
     "budgetalloc-real",
     "cubic-gen",
     "bipartitematching-cora",
-    "shortestpath-warcraft"
-    "TSP-gen"
+    "shortestpath-warcraft" "TSP-gen",
 ]
 global_model_names = [
     "mse",

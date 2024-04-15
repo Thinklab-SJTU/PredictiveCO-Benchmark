@@ -118,7 +118,8 @@ def find_saved_problem(
     relevant_models = saved_probs
     for col, val in kwargs.items():
         if isinstance(val, dict):
-            continue  # TODO: work around
+            relevant_models = relevant_models  # TODO: work around
+            continue
         if col in relevant_models.columns:
             relevant_models = relevant_models.loc[
                 relevant_models[col] == val
