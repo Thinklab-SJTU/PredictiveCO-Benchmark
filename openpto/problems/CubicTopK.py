@@ -62,21 +62,21 @@ class CubicTopK(PTOProblem):
         # Undo random seed setting
         self._set_seed()
 
-    def get_train_data(self):
+    def get_train_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
         )
 
-    def get_val_data(self):
+    def get_val_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
         )
 
-    def get_test_data(self):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return self.Xs_test, self.Ys_test, self.Ys_test
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):

@@ -172,21 +172,21 @@ class BipartiteMatching(PTOProblem):
         Ps_tensor = torch.from_numpy(Ps.astype(np.float32)).reshape(-1, 2500, 1)
         return data_tensor, Ps_tensor
 
-    def get_train_data(self):
+    def get_train_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
             self.Ys[self.train_idxs],
         )
 
-    def get_val_data(self):
+    def get_val_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
             self.Ys[self.val_idxs],
         )
 
-    def get_test_data(self):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],

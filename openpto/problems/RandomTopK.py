@@ -105,17 +105,17 @@ class RandomTopK(PTOProblem):
         Xs = transform_nn(Ys_augmented).detach().clone()
         return Xs
 
-    def get_train_data(self):
+    def get_train_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.train],
             self.Ys[self.train],
             [None for _ in range(len(self.train))],
         )
 
-    def get_val_data(self):
+    def get_val_data(self, train_mode="iid", **kwargs):
         return self.Xs[self.val], self.Ys[self.val], [None for _ in range(len(self.val))]
 
-    def get_test_data(self):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.test],
             self.Ys[self.test],

@@ -136,21 +136,21 @@ class BudgetAllocation(PTOProblem):
 
         return (*Xsets,)
 
-    def get_train_data(self):
+    def get_train_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs_train[self.train_idxs],
             self.Ys_train[self.train_idxs],
             torch.ones(self.num_targets).expand(len(self.train_idxs), -1),
         )
 
-    def get_val_data(self):
+    def get_val_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs_train[self.val_idxs],
             self.Ys_train[self.val_idxs],
             torch.ones(self.num_targets).expand(len(self.val_idxs), -1),
         )
 
-    def get_test_data(self):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs_test,
             self.Ys_test,

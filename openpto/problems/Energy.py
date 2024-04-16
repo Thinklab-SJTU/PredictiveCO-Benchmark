@@ -59,21 +59,21 @@ class Energy(PTOProblem):
         self.Xs = torch.from_numpy(x).to(torch.float32)
         self.Ys = torch.from_numpy(y).to(torch.float32).unsqueeze(-1)
 
-    def get_train_data(self):
+    def get_train_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.train_idxs],
             self.Ys[self.train_idxs],
             self.Ys[self.train_idxs],  # placeholder not used
         )
 
-    def get_val_data(self):
+    def get_val_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.val_idxs],
             self.Ys[self.val_idxs],
             self.Ys[self.val_idxs],  # placeholder not used
         )
 
-    def get_test_data(self):
+    def get_test_data(self, train_mode="iid", **kwargs):
         return (
             self.Xs[self.test_idxs],
             self.Ys[self.test_idxs],

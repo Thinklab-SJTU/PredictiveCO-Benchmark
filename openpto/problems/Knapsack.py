@@ -170,7 +170,7 @@ class Knapsack(PTOProblem):
         else:
             raise NotImplementedError
 
-    def get_test_data(self, **kwargs):
+    def get_test_data(self, train_mode="iid", **kwargs):
         # output the test data train mode
         return self.Xs_test, self.Ys_test, self.params_test
 
