@@ -145,9 +145,9 @@ def print_metrics(
                         )
                     )
 
-                losses = torch.stack(losses).flatten()
+                losses = torch.vstack(losses).flatten()
                 # Print
-                loss = do_reduction(losses, model_args["reduction"]).item()
+                loss = do_reduction(losses, "mean").item()  # reduction
             test_time = 0
             optimal_dict = {
                 "train": problem.z_train_opt,

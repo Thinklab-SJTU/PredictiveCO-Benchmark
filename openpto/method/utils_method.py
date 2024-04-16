@@ -58,11 +58,17 @@ def rand_like(obj, device="cpu"):
         raise NotImplementedError()
 
 
-def do_reduction(obj, reduction):
+def do_reduction(obj, reduction, dim=None):
     if reduction == "mean":
-        obj = torch.mean(obj)
+        if dim is None:
+            obj = torch.mean(obj)
+        else:
+            obj = torch.mean(obj, dim=dim)
     elif reduction == "sum":
-        obj = torch.sum(obj)
+        if dim is None:
+            obj = torch.sum(obj)
+        else:
+            obj = torch.sum(obj, dim=dim)
     elif reduction == "none":
         pass
     else:

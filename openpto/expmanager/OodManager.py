@@ -204,6 +204,7 @@ class OodManager:
         time_since_best = 0
         self.logger.info("Training Model...")
         self.ood_model.train()
+        best_epoch = 0
         for iter_idx in range(1, n_epochs + 1):
             ###### Learn
             # TODO: batch train or individually train?
@@ -226,6 +227,7 @@ class OodManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
+            print("-" * 10, " Previous best epoch: ", best_epoch)
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
@@ -249,6 +251,7 @@ class OodManager:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
                     (X_val, Y_val, Y_val_aux, "val"),
+                    (X_test, Y_test, Y_test_aux, "test"),
                 ]
                 metrics = print_metrics(
                     datasets,
@@ -267,6 +270,7 @@ class OodManager:
                 add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
                 # Save model if it's the best one
                 if best[1] is None or compare_result(metrics["val"], best):
+                    best_epoch = iter_idx
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.ood_model))
                     time_since_best = 0
                     # save

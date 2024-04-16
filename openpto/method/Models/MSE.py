@@ -24,6 +24,8 @@ class MSE(optModel):
         Yhat and true lables Y.
         """
         loss = (coeff_hat - coeff_true).square()
+        # print("(coeff_hat - coeff_true): ", (coeff_hat - coeff_true)[0])
+        # print("loss: ", loss[0])
         loss = do_reduction(loss, hyperparams["reduction"])
         return loss
 

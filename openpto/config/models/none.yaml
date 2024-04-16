@@ -1,0 +1,56 @@
+spo:
+  reduction: none
+blackbox:
+  reduction: none
+  lambd: 0.1
+blackboxSolver:
+  reduction: none
+  lambd: 0.1  
+identity:
+  reduction: none
+identitySolver:
+  reduction: none  
+qptl:
+  reduction: none
+  tau: 1.0
+listLTR:
+  reduction: none
+  tau: 1
+pairLTR:
+  reduction: none
+pointLTR:
+  reduction: none
+nce:
+  reduction: none
+lodl:
+  num_samples: 500
+  sampling: random_hessian
+  sampling_std: -1
+  quadrank: 20
+  quadalpha: 0
+  model_type: weightedmse
+  serial: True
+  reduction: none
+  num_iters: 100
+  losslr: 1e-3
+  train_frac: 0.6
+  test_frac: 0.2
+  patience: 25
+  verbose: False
+mse:
+  reduction: none
+msenone:
+  alpha: 0.1
+bce:
+  reduction: none
+mae:
+  reduction: none
+ce:
+  reduction: none
+dfl:
+  dflalpha: 0.1
+  reduction: none
+perturb: 
+  reduction: none
+cpLayer:
+  reduction: none

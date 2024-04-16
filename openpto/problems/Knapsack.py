@@ -486,7 +486,7 @@ class Knapsack(PTOProblem):
     ):
         config = self.env_config[f"env{env_id}"]
         # print("config: ", config)
-        # print("mean, var", mean, var)
+        # print("mean, var", config["mean"], config["var"])
         _, Xs_train, Ys_train = self.genKPData(
             num_train_instances,
             self.kwargs["num_features"],
@@ -499,4 +499,5 @@ class Knapsack(PTOProblem):
             distr=self.kwargs["distr"],
             seed=self.rand_seed,
         )  # (bz, feature_dim), (bz, n_items)
+        # print("Ys_train: ", Ys_train[0])
         return Xs_train, Ys_train
