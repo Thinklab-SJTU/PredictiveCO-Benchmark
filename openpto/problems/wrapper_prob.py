@@ -68,7 +68,7 @@ def init_if_not_saved(
     filename, saved_probs = find_saved_problem(master_filename, kwargs)
 
     if not load_new and filename is not None:
-        print("\n--------loading:", filename)
+        print("\n--------loading:", filename, "\n")
         # Load the model
         with open(filename, "rb") as file:
             problem = pickle.load(file)
@@ -79,7 +79,7 @@ def init_if_not_saved(
 
         # Save model for the future
         filename = os.path.join(folder, prob_name, f"{prob_name}_{len(saved_probs)}.pkl")
-        print(f"Saving the problem to {filename}")
+        print(f"Saving the problem to {filename}\n")
         with open(filename, "wb") as file:
             pickle.dump(problem, file)
 

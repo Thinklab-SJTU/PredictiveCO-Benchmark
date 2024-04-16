@@ -22,6 +22,8 @@ class TSP(PTOProblem):
     ):
         super(TSP, self).__init__()
         self._set_seed(rand_seed)
+        self.prob_version = prob_version
+        self.rand_seed = rand_seed
         if prob_version == "gen":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
@@ -37,6 +39,10 @@ class TSP(PTOProblem):
         elif prob_version == "gen-ood":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
+            self.n_features = n_features
+            self.poly_deg = kwargs["poly_deg"]
+            self.noise_width = kwargs["noise_width"]
+            self.env_config = kwargs["envs"]
             self.load_ood_dataset(
                 num_train_instances,
                 num_test_instances,
@@ -127,17 +133,21 @@ class TSP(PTOProblem):
         **kwargs,
     ):
         # new version of generated data
-        deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
-        costs, feats = self.gendata(
+        # deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        selected_keys = ["poly_deg", "noise_width", "distance_factor"]
+        print("kwargs: ", kwargs)
+        hyper_params = {key: kwargs[key] for key in selected_keys}
+        self.hyper_params = hyper_params
+        costs, feats, others = self.gendata(
             num_train_instances + num_test_instances,
             n_features,
             n_nodes,
             rand_seed,
             kwargs["type"],
             kwargs["params"],
-            deg,
-            noise_width,
+            hyper_params,
         )
+        self.others = others
         print("node_feats: ", feats.shape, "costs: ", costs.shape)
         train_feats, train_costs = (
             feats[:num_train_instances],
@@ -168,41 +178,40 @@ class TSP(PTOProblem):
     ):
         n_trains = int((1 - val_frac) * num_train_instances)
         # below is gen data #
-        deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
-        ver0_costs, ver0_feats = self.gendata(
+        selected_keys = ["poly_deg", "noise_width", "distance_factor"]
+        hyper_params = {key: kwargs[key] for key in selected_keys}
+        self.hyper_params = hyper_params
+        ver0_costs, ver0_feats, ver0_others = self.gendata(
             num_train_instances,
             n_features,
             n_nodes,
             rand_seed,
             kwargs["type"],
             kwargs["params"],
-            deg,
-            noise_width,
+            **hyper_params,
         )
+        self.ver0_others = ver0_others
         self.ver0_Xs_train, self.ver0_Ys_train = (
             ver0_feats[:n_trains],
             ver0_costs[:n_trains],
         )
         self.ver0_Xs_val, self.ver0_Ys_val = ver0_feats[n_trains:], ver0_costs[n_trains:]
         # ver1 part
-        ver1_costs, ver1_feats = self.gendata(
+        ver1_costs, ver1_feats, ver1_others = self.gendata(
             num_train_instances + num_test_instances,
             n_features,
             n_nodes,
             rand_seed,
             kwargs["ood_type"],
             kwargs["ood_params"],
-            deg,
-            noise_width,
+            **hyper_params,
         )
+        self.ver1_others = ver1_others
         ver1_train_feats, ver1_train_costs = (
             ver1_feats[:num_train_instances],
             ver1_costs[:num_train_instances],
         )
-        self.Xs_test, self.Ys_test = (
-            ver1_feats[num_train_instances:],
-            ver1_costs[num_train_instances:],
-        )
+        ### get data split
         self.Xs_train, self.Ys_train = (
             ver1_train_feats[:n_trains],
             ver1_train_costs[:n_trains],
@@ -210,6 +219,10 @@ class TSP(PTOProblem):
         self.Xs_val, self.Ys_val = (
             ver1_train_feats[n_trains:],
             ver1_train_costs[n_trains:],
+        )
+        self.Xs_test, self.Ys_test = (
+            ver1_feats[num_train_instances:],
+            ver1_costs[num_train_instances:],
         )
         return
 
@@ -318,11 +331,13 @@ class TSP(PTOProblem):
         return torch.FloatTensor(x), torch.FloatTensor(time)
 
     @staticmethod
-    def gendata(n_data, n_feats, n_nodes, seed, type, params, deg, noise_width, **kwargs):
-        def poly_func(B, input):
+    def gendata(n_data, n_feats, n_nodes, seed, type, params, **kwargs):
+        def poly_func(B, input, deg):
             n_units = input.shape[-1]
             return (np.dot(input, B) / np.sqrt(n_units) + 3) ** deg / (3 ** (deg - 1))
 
+        poly_deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        distance_factor = kwargs["distance_factor"]
         n_edges = int((n_nodes * (n_nodes - 1)) / 2)
         # set seed
         rnd = np.random.RandomState(seed)
@@ -347,12 +362,14 @@ class TSP(PTOProblem):
             for j in range(n_nodes):
                 for k in range(j):
                     time[i, incremental_idx] = (
-                        pairwise_dist[i, j, k] * busy_degree[0, incremental_idx]
+                        pairwise_dist[i, j, k]
+                        * busy_degree[0, incremental_idx]
+                        * distance_factor
                     )
                     incremental_idx += 1
             # noise
             noise = rnd.uniform(1 - noise_width, 1 + noise_width, n_edges)
-            poly_term = poly_func(B, edge_feats[i]).reshape(
+            poly_term = poly_func(B, edge_feats[i], poly_deg).reshape(
                 -1
             )  # B: (E,)   x[i]:(E, d) # poly_term: d
             time[i] += poly_term * noise
@@ -368,14 +385,30 @@ class TSP(PTOProblem):
         ### concat
         costs = time.unsqueeze(-1)
         feats = torch.cat((node_feats, edge_feats), dim=-1)
-        return costs, feats
+        others = {"coords": coords}
+        return costs, feats, others
 
     def genEnv(
         self,
         env_id,
         num_train_instances,
     ):
-        return env_id, num_train_instances
+        if self.prob_version == "gen-ood":
+            config = self.env_config[f"env{env_id}"]
+            env_type = config["type"]
+            env_params = config["params"]
+            Y_train, X_train, _ = self.gendata(
+                num_train_instances,
+                self.n_features,
+                self.n_nodes,
+                self.rand_seed,
+                env_type,
+                env_params,
+                **self.hyper_params,
+            )
+        else:
+            raise NotImplementedError("no version " + self.prob_version)
+        return X_train, Y_train
 
 
 #########################################
