@@ -183,6 +183,7 @@ class ExpManager:
                     f"Ptr iter {ptr_epoch},",
                     self.logger,
                     do_debug=do_debug,
+                    batch_size=self.args.batch_size,
                     **self.model_args,
                 )
                 add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
@@ -202,6 +203,7 @@ class ExpManager:
                     f"Ptr iter {ptr_epoch},",
                     self.logger,
                     do_debug=do_debug,
+                    batch_size=self.args.batch_size,
                     **self.model_args,
                 )
                 add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
@@ -310,6 +312,7 @@ class ExpManager:
                     f"Iter {iter_idx},",
                     self.logger,
                     do_debug=do_debug,
+                    batch_size=self.args.batch_size,
                     **self.model_args,
                 )
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
@@ -329,6 +332,7 @@ class ExpManager:
                     f"Iter {iter_idx},",
                     self.logger,
                     do_debug=do_debug,
+                    batch_size=self.args.batch_size,
                     **self.model_args,
                 )
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
@@ -374,6 +378,7 @@ class ExpManager:
             "Final",
             self.logger,
             do_debug=do_debug,
+            batch_size=self.args.batch_size,
             **self.model_args,
         )
         total_test_time = results["test"]["time"]

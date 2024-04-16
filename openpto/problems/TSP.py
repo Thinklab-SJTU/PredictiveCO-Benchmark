@@ -82,7 +82,7 @@ class TSP(PTOProblem):
         if train_mode == "iid":
             return self.Xs_val, self.Ys_val, self.Ys_val
         elif train_mode == "ood":
-            return self.ver0_Xs_val, self.ver0_Ys_val, self.ver0_Ys_val
+            return self.ver9_Xs_val, self.ver9_Ys_val, self.ver9_Ys_val
         else:
             raise NotImplementedError(train_mode)
 
@@ -177,12 +177,14 @@ class TSP(PTOProblem):
         **kwargs,
     ):
         n_trains = int((1 - val_frac) * num_train_instances)
-        # below is gen data #
+        n_vals = num_train_instances - n_trains
+        ### below is gen data #
         selected_keys = ["poly_deg", "noise_width", "distance_factor"]
         hyper_params = {key: kwargs[key] for key in selected_keys}
+        ### ver0 train data
         self.hyper_params = hyper_params
-        ver0_costs, ver0_feats, ver0_others = self.gendata(
-            num_train_instances,
+        self.ver0_Ys_train, self.ver0_Xs_train, self.ver0_others = self.gendata(
+            n_trains,
             n_features,
             n_nodes,
             rand_seed,
@@ -190,35 +192,34 @@ class TSP(PTOProblem):
             kwargs["params"],
             **hyper_params,
         )
-        self.ver0_others = ver0_others
-        self.ver0_Xs_train, self.ver0_Ys_train = (
-            ver0_feats[:n_trains],
-            ver0_costs[:n_trains],
+        ### ver9 val data
+        self.ver9_Ys_val, self.ver9_Xs_val, self.ver9_others = self.gendata(
+            n_vals,
+            n_features,
+            n_nodes,
+            rand_seed,
+            kwargs["type_val"],
+            kwargs["params_val"],
+            **hyper_params,
         )
-        self.ver0_Xs_val, self.ver0_Ys_val = ver0_feats[n_trains:], ver0_costs[n_trains:]
-        # ver1 part
-        ver1_costs, ver1_feats, ver1_others = self.gendata(
+        ### ver1 part
+        ver1_costs, ver1_feats, self.ver1_others = self.gendata(
             num_train_instances + num_test_instances,
             n_features,
             n_nodes,
             rand_seed,
-            kwargs["ood_type"],
-            kwargs["ood_params"],
+            kwargs["type_test"],
+            kwargs["params_test"],
             **hyper_params,
-        )
-        self.ver1_others = ver1_others
-        ver1_train_feats, ver1_train_costs = (
-            ver1_feats[:num_train_instances],
-            ver1_costs[:num_train_instances],
         )
         ### get data split
         self.Xs_train, self.Ys_train = (
-            ver1_train_feats[:n_trains],
-            ver1_train_costs[:n_trains],
+            ver1_feats[:n_trains],
+            ver1_costs[:n_trains],
         )
         self.Xs_val, self.Ys_val = (
-            ver1_train_feats[n_trains:],
-            ver1_train_costs[n_trains:],
+            ver1_feats[n_trains:num_train_instances],
+            ver1_costs[n_trains:num_train_instances],
         )
         self.Xs_test, self.Ys_test = (
             ver1_feats[num_train_instances:],

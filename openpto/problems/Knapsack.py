@@ -29,7 +29,8 @@ class Knapsack(PTOProblem):
         super(Knapsack, self).__init__(data_dir)
         self.kwargs = kwargs
         self.rand_seed = rand_seed
-        if prob_version != "energy":
+        self.prob_version = prob_version
+        if self.prob_version in ["gen", "gen-ood"]:
             num_items = kwargs["num_items"]
             knapsack_dim, num_features = kwargs["knapsack_dim"], kwargs["num_features"]
             mean, var = kwargs["mean"], kwargs["var"]
@@ -42,7 +43,7 @@ class Knapsack(PTOProblem):
         self.prob_version = prob_version
         self.rand_seed = rand_seed
         self._set_seed(rand_seed)
-        # Obtain data
+        ### Obtain data
         if prob_version == "energy":
             self.get_energy_data(val_frac)
         elif prob_version == "gen":
@@ -60,35 +61,48 @@ class Knapsack(PTOProblem):
                 distr=distr,
                 seed=rand_seed,
             )
-            train_feats, test_feats = (
-                feats[:num_train_instances],
-                feats[num_train_instances:],
-            )
-            train_profits, test_profits = (
-                profits[:num_train_instances],
-                profits[num_train_instances:],
-            )
-            # train set
+            # params
             self.weights = weights
-            self.params_train = weights.unsqueeze(0).expand(num_train_instances, -1)
-            self.Xs_train, self.Ys_train = (
-                train_feats,
-                train_profits,
-            )  # (bz, feature_dim), (bz, n_items)
-            # test set
-            self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
-            self.Xs_test, self.Ys_test = test_feats, test_profits
-            # Split training data into train/val
             assert 0 < val_frac < 1
-            self.val_idxs = range(0, int(val_frac * num_train_instances))
+            # train
             self.train_idxs = range(
                 int(val_frac * num_train_instances), num_train_instances
             )
+            train_feats, train_profits = (
+                feats[:num_train_instances],
+                profits[:num_train_instances],
+            )
+            self.Xs_train, self.Ys_train = (
+                train_feats[self.train_idxs],
+                train_profits[self.train_idxs],
+            )  # (bz, feature_dim), (bz, n_items)
+            self.params_train = weights.unsqueeze(0).expand(len(self.train_idxs), -1)
+            # val
+            self.val_idxs = range(0, int(val_frac * num_train_instances))
+            self.Xs_val, self.Ys_val = (
+                train_feats[self.val_idxs],
+                train_profits[self.val_idxs],
+            )
+            self.params_val = weights.unsqueeze(0).expand(len(self.val_idxs), -1)
+            # test
+            test_feats, test_profits = (
+                feats[num_train_instances:],
+                profits[num_train_instances:],
+            )
+            self.Xs_test, self.Ys_test = test_feats, test_profits
+            self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
+            ### Done
         elif prob_version == "gen-ood":
             self.num_items = num_items
-            # ver0 data, train disbution
-            ver0_weights, self.ver0_Xs_train, self.ver0_Ys_train = self.genKPData(
-                num_train_instances,
+            ### Split training data into train/val
+            assert 0 < val_frac < 1
+            n_trains = int(val_frac * num_train_instances)
+            n_vals = num_train_instances - n_trains
+            self.train_idxs = range(0, n_trains)
+            self.val_idxs = range(n_trains, num_train_instances)
+            ### ver0 data, train disbution
+            _, self.ver0_Xs_train, self.ver0_Ys_train = self.genKPData(
+                n_trains,
                 num_features,
                 num_items,
                 mean,
@@ -99,57 +113,73 @@ class Knapsack(PTOProblem):
                 distr=distr,
                 seed=rand_seed,
             )  # (bz, feature_dim), (bz, n_items)
-            ## OOD test distribution
-            # ver1 data, test distribution
-            mean_ood, var_ood = kwargs["mean_ood"], kwargs["var_ood"]
-            ver1_weights, ver1_feats, ver1_profits = self.genKPData(
-                num_train_instances + num_test_instances,
+            #
+            ### ver9 data, val distribution
+            mean_val, var_val = kwargs["mean_val"], kwargs["var_val"]
+            _, self.ver9_Xs_val, self.ver9_Ys_val = self.genKPData(
+                n_vals,
                 num_features,
                 num_items,
-                mean_ood,
-                var_ood,
+                mean_val,
+                var_val,
                 dim=knapsack_dim,
                 poly_deg=poly_deg,
                 noise_width=noise_width,
                 distr=distr,
                 seed=rand_seed,
             )
-            self.Xs_train, self.Xs_test = (
-                ver1_feats[:num_train_instances],
-                ver1_feats[num_train_instances:],
+            ### ver1 data, test distribution
+            mean_test, var_test = kwargs["mean_test"], kwargs["var_test"]
+            ver1_weights, ver1_feats, ver1_profits = self.genKPData(
+                num_train_instances + num_test_instances,
+                num_features,
+                num_items,
+                mean_test,
+                var_test,
+                dim=knapsack_dim,
+                poly_deg=poly_deg,
+                noise_width=noise_width,
+                distr=distr,
+                seed=rand_seed,
             )
-            self.Ys_train, self.Ys_test = (
-                ver1_profits[:num_train_instances],
+            ### train
+            self.Xs_train, self.Ys_train = (
+                ver1_feats[self.train_idxs],
+                ver1_profits[self.train_idxs],
+            )
+            ### val
+            self.Xs_val, self.Ys_val = (
+                ver1_feats[self.val_idxs],
+                ver1_profits[self.val_idxs],
+            )
+            ### test set
+            self.Xs_test, self.Ys_test = (
+                ver1_feats[num_train_instances:],
                 ver1_profits[num_train_instances:],
             )
-            # test set
             print("mean, var:", mean, var)
-            print("mean ood, var ood:", mean_ood, var_ood)
+            print("mean val, var val:", mean_val, var_val)
+            print("mean test, var test:", mean_test, var_test)
             # other parameters
             self.weights = ver1_weights
-            self.params_train = ver1_weights.unsqueeze(0).expand(num_train_instances, -1)
+            self.params_train = ver1_weights.unsqueeze(0).expand(n_trains, -1)
+            self.params_val = ver1_weights.unsqueeze(0).expand(n_vals, -1)
             self.params_test = ver1_weights.unsqueeze(0).expand(num_test_instances, -1)
-            # Split training data into train/val
-            assert 0 < val_frac < 1
-            self.val_idxs = range(0, int(val_frac * num_train_instances))
-            self.train_idxs = range(
-                int(val_frac * num_train_instances), num_train_instances
-            )
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
 
     def get_train_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return (
-                self.Xs_train[self.train_idxs],
-                self.Ys_train[self.train_idxs],
-                self.params_train[self.train_idxs],
+                self.Xs_train,
+                self.Ys_train,
+                self.params_train,
             )
         elif train_mode == "ood":
             return (
-                self.ver0_Xs_train[self.train_idxs],
-                self.ver0_Ys_train[self.train_idxs],
-                self.params_train[self.train_idxs],
+                self.ver0_Xs_train,
+                self.ver0_Ys_train,
+                self.params_train,
             )
         else:
             raise NotImplementedError
@@ -157,21 +187,20 @@ class Knapsack(PTOProblem):
     def get_val_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return (
-                self.Xs_train[self.val_idxs],
-                self.Ys_train[self.val_idxs],
-                self.params_train[self.val_idxs],
+                self.Xs_val,
+                self.Ys_val,
+                self.params_val,
             )
         elif train_mode == "ood":
             return (
-                self.ver0_Xs_train[self.val_idxs],
-                self.ver0_Ys_train[self.val_idxs],
-                self.params_train[self.val_idxs],
+                self.ver9_Xs_val,
+                self.ver9_Ys_val,
+                self.params_val,
             )
         else:
             raise NotImplementedError
 
     def get_test_data(self, train_mode="iid", **kwargs):
-        # output the test data train mode
         return self.Xs_test, self.Ys_test, self.params_test
 
     def get_objective(self, Y, Z, aux_data=None, **kwargs):
@@ -260,8 +289,12 @@ class Knapsack(PTOProblem):
         x, y = sklearn.utils.shuffle(x_train, y_train, random_state=self.rand_seed)
         self.train_idxs = range(0, int(len(x) * (1 - val_frac)))
         self.val_idxs = range(int(len(x) * (1 - val_frac)), len(x))
-        self.Xs_train = to_tensor(x)
-        self.Ys_train = to_tensor(y)
+        # train
+        self.Xs_train = to_tensor(x)[self.train_idxs]
+        self.Ys_train = to_tensor(y)[self.train_idxs]
+        # val
+        self.Xs_val = to_tensor(x)[self.val_idxs]
+        self.Ys_val = to_tensor(y)[self.val_idxs]
         # test
         self.Xs_test = to_tensor(x_test).reshape(-1, 48, x_test.shape[1])
         self.Ys_test = to_tensor(y_test).reshape(-1, 48, 1)

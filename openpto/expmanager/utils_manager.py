@@ -5,9 +5,10 @@ import time
 import pandas as pd
 import torch
 
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 
-from openpto.method.utils_method import do_reduction, get_idxs, to_device
+# from torchsummary import summary
+from openpto.method.utils_method import do_reduction, to_device
 from openpto.metrics.evals import get_eval_results
 
 
@@ -95,6 +96,10 @@ def print_metrics(
             if partition == "test":
                 time_test_start = time.time()
 
+            eval_dataset = ExpDataset(Xs, Ys, Ys_aux)
+            eval_loader = DataLoader(
+                eval_dataset, batch_size=model_args["batch_size"], shuffle=False
+            )
             preds = model(Xs)
             # Prediction quality
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
@@ -122,15 +127,19 @@ def print_metrics(
                 loss = 0
             else:
                 losses = []
-                for idx in range(len(Xs)):
+                for batch_id, batch in enumerate(eval_loader):
+                    X_batch, Y_batch, Y_aux_batch = batch["X"], batch["Y"], batch["Y_aux"]
+                    # for idx in range(len(Xs)):
+                    # print("preds: ", preds.shape)
+                    preds_batch = model(X_batch)
                     losses.append(
                         loss_fn(
                             problem,
-                            coeff_hat=get_idxs(preds, idx),
-                            coeff_true=get_idxs(Ys, idx),
-                            params=get_idxs(Ys_aux, idx),
+                            coeff_hat=preds_batch,
+                            coeff_true=Y_batch,
+                            params=Y_aux_batch,
                             partition=partition,
-                            index=idx,
+                            index=batch_id,
                             do_debug=do_debug,
                             **model_args,
                         )
