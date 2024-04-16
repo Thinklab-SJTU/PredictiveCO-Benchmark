@@ -48,6 +48,9 @@ class Knapsack(PTOProblem):
             self.get_energy_data(val_frac)
         elif prob_version == "gen":
             self.num_items = num_items
+            n_vals = int(val_frac * num_train_instances)
+            n_trains = num_train_instances - n_vals
+            ### gen data
             print("distribution of generated data, mean, var:", mean, var)
             weights, feats, profits = self.genKPData(
                 num_train_instances + num_test_instances,
@@ -61,45 +64,38 @@ class Knapsack(PTOProblem):
                 distr=distr,
                 seed=rand_seed,
             )
-            # params
-            self.weights = weights
+            # splits
             assert 0 < val_frac < 1
-            # train
-            self.train_idxs = range(
-                int(val_frac * num_train_instances), num_train_instances
-            )
-            train_feats, train_profits = (
-                feats[:num_train_instances],
-                profits[:num_train_instances],
-            )
+            self.train_idxs = range(n_vals, num_train_instances)
+            self.val_idxs = range(n_vals)
+            self.weights = weights
+            ### train
             self.Xs_train, self.Ys_train = (
-                train_feats[self.train_idxs],
-                train_profits[self.train_idxs],
+                feats[self.train_idxs],
+                profits[self.train_idxs],
             )  # (bz, feature_dim), (bz, n_items)
-            self.params_train = weights.unsqueeze(0).expand(len(self.train_idxs), -1)
-            # val
-            self.val_idxs = range(0, int(val_frac * num_train_instances))
+            self.params_train = weights.unsqueeze(0).expand(n_trains, -1)
+            ### val
             self.Xs_val, self.Ys_val = (
-                train_feats[self.val_idxs],
-                train_profits[self.val_idxs],
+                feats[self.val_idxs],
+                profits[self.val_idxs],
             )
-            self.params_val = weights.unsqueeze(0).expand(len(self.val_idxs), -1)
-            # test
-            test_feats, test_profits = (
+            self.params_val = weights.unsqueeze(0).expand(n_vals, -1)
+            ### test
+            self.Xs_test, self.Ys_test = (
                 feats[num_train_instances:],
                 profits[num_train_instances:],
             )
-            self.Xs_test, self.Ys_test = test_feats, test_profits
             self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
             ### Done
         elif prob_version == "gen-ood":
             self.num_items = num_items
             ### Split training data into train/val
             assert 0 < val_frac < 1
-            n_trains = int(val_frac * num_train_instances)
-            n_vals = num_train_instances - n_trains
-            self.train_idxs = range(0, n_trains)
-            self.val_idxs = range(n_trains, num_train_instances)
+            n_vals = int(val_frac * num_train_instances)
+            n_trains = num_train_instances - n_vals
+            self.train_idxs = range(n_vals, num_train_instances)
+            self.val_idxs = range(0, n_vals)
             ### ver0 data, train disbution
             _, self.ver0_Xs_train, self.ver0_Ys_train = self.genKPData(
                 n_trains,

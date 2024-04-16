@@ -132,8 +132,7 @@ class TSP(PTOProblem):
         rand_seed,
         **kwargs,
     ):
-        # new version of generated data
-        # deg, noise_width = kwargs["poly_deg"], kwargs["noise_width"]
+        ### new version of generated data
         selected_keys = ["poly_deg", "noise_width", "distance_factor"]
         print("kwargs: ", kwargs)
         hyper_params = {key: kwargs[key] for key in selected_keys}
@@ -149,18 +148,18 @@ class TSP(PTOProblem):
         )
         self.others = others
         print("node_feats: ", feats.shape, "costs: ", costs.shape)
-        train_feats, train_costs = (
-            feats[:num_train_instances],
-            costs[:num_train_instances],
+        ### split data
+        n_vals = int(val_frac * num_train_instances)
+        n_trains = num_train_instances - n_vals
+        self.Xs_train, self.Ys_train = feats[:n_trains], costs[:n_trains]
+        self.Xs_val, self.Ys_val = (
+            feats[n_trains:num_train_instances],
+            costs[n_trains:num_train_instances],
         )
-        test_feats, test_costs = (
+        self.Xs_test, self.Ys_test = (
             feats[num_train_instances:],
             costs[num_train_instances:],
         )
-        n_trains = int((1 - val_frac) * num_train_instances)
-        self.Xs_train, self.Ys_train = train_feats[:n_trains], train_costs[:n_trains]
-        self.Xs_val, self.Ys_val = train_feats[n_trains:], train_costs[n_trains:]
-        self.Xs_test, self.Ys_test = test_feats, test_costs
         # print("train: ", self.Xs_train, "costs: ", self.Ys_train)
         # print("val: ", self.Xs_val, "costs: ", self.Ys_val)
         # print("test: ", self.Xs_test, "costs: ", self.Ys_test)
@@ -176,8 +175,8 @@ class TSP(PTOProblem):
         rand_seed,
         **kwargs,
     ):
-        n_trains = int((1 - val_frac) * num_train_instances)
-        n_vals = num_train_instances - n_trains
+        n_vals = int(val_frac * num_train_instances)
+        n_trains = num_train_instances - n_vals
         ### below is gen data #
         selected_keys = ["poly_deg", "noise_width", "distance_factor"]
         hyper_params = {key: kwargs[key] for key in selected_keys}
