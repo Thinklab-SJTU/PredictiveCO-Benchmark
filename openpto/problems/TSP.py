@@ -449,6 +449,8 @@ def generate_nodes_coord(batch_size: int, n_nodes: int, type, params):
             mean_y=params["mean_y"],
             std=params["gaussian_std"],
         )
+    elif type == "explosion":
+        return 0
     # elif params["type"] == "cluster_fixed_centers":
     #     return generate_cluster_fixed_centers(batch_size, n_nodes)
     else:
