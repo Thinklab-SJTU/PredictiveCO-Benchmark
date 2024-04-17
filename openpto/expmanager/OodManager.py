@@ -42,6 +42,14 @@ class OodManager:
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
         self.ood_model = generalize_wrapper(args, self.args.ood_model, self.pred_model)
         self.logger.info(f"---[{self.args.ood_model}] Training Model")
+        # optimizer:
+        self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
+        if self.args.use_lr_scheduling:
+            self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                self.optimizer,
+                milestones=[self.args.lr_milestone_1, self.args.lr_milestone_2],
+                gamma=0.3162,
+            )
 
     def run(self, problem, loss_fn, ptoSolver=None, n_epochs=1, do_debug=False):
         #   Move everything to device
@@ -105,8 +113,6 @@ class OodManager:
             self.ood_model.load_state_dict(torch.load(self.args.trained_path))
             self.logger.info(f"--- Loaded model from {self.args.trained_path}")
         ############################# Load previous model #############################
-        # optimizer:
-        self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
         # Pretrain prediction model
         total_train_time = 0.0
         best = (float("inf"), None)
@@ -129,6 +135,8 @@ class OodManager:
         twostage_criterion = str2twoStageLoss(problem)
 
         # ############################# Pretrain #############################
+        # # optimizer:
+        # self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
         # # fetch pretrain data:
         # self.logger.info("Pretraining Prediction Model...")
         # if hasattr(problem, "get_pretrain_data"):
@@ -198,8 +206,6 @@ class OodManager:
         #     self.ood_model = deepcopy(best[1])
 
         ############################# Train #############################
-        # optimizer:
-        self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
         # Train PTO
         time_since_best = 0
         self.logger.info("Training Model...")
@@ -223,11 +229,19 @@ class OodManager:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            if self.args.use_lr_scheduling:
+                self.scheduler.step()
             time_since_best += 1
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
+            print(
+                "-" * 10,
+                " Previous best epoch: ",
+                best_epoch,
+                " time since best: ",
+                time_since_best,
+            )
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),

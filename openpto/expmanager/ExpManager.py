@@ -53,7 +53,7 @@ class ExpManager:
             self.scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 self.optimizer,
                 milestones=[args.lr_milestone_1, args.lr_milestone_2],
-                gamma=0.1,
+                gamma=0.3162,
             )
 
     def run(self, problem, loss_fn, ptoSolver=None, n_epochs=1, do_debug=False):
@@ -170,7 +170,13 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
-            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
+            print(
+                "-" * 10,
+                " Previous best epoch: ",
+                best_epoch,
+                " time since best: ",
+                time_since_best,
+            )
             if ptr_epoch % self.args.valfreq != 0:
                 datasets = [
                     (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
@@ -302,7 +308,13 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
+            print(
+                "-" * 10,
+                " Previous best epoch: ",
+                best_epoch,
+                " time since best: ",
+                time_since_best,
+            )
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "pretrain"),

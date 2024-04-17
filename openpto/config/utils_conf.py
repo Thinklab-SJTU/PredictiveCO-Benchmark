@@ -104,7 +104,7 @@ def get_args():
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--use_lr_scheduling", action="store_true")
     parser.add_argument("--lr_milestone_1", type=int, default=100)
-    parser.add_argument("--lr_milestone_2", type=int, default=130)
+    parser.add_argument("--lr_milestone_2", type=int, default=200)
     parser.add_argument("--l1_weight", type=float, default=0)
     parser.add_argument("--l2_weight", type=float, default=0)
     # data
