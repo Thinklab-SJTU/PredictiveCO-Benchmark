@@ -148,6 +148,7 @@ class ExpManager:
         twostage_criterion = str2twoStageLoss(problem)
         self.logger.info("Pretraining Prediction Model...")
         self.pred_model.train()
+        best_epoch = 0
         for ptr_epoch in range(1, self.args.n_ptr_epochs + 1):
             ###### one-shot training
             time_train_start = time.time()
@@ -169,6 +170,7 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
+            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
             if ptr_epoch % self.args.valfreq != 0:
                 datasets = [
                     (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
@@ -212,6 +214,7 @@ class ExpManager:
                 if best[1] is None or compare_result(metrics["val"], best):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
+                    best_epoch = ptr_epoch
                     # save
                     torch.save(
                         self.pred_model.state_dict(),
@@ -244,6 +247,7 @@ class ExpManager:
         time_since_best = 0
         self.logger.info("Training Model...")
         self.pred_model.train()
+        best_epoch = 0
         for iter_idx in range(1, n_epochs + 1):
             time_train_start = time.time()
 
@@ -298,6 +302,7 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
+            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "pretrain"),
@@ -341,6 +346,7 @@ class ExpManager:
                 if best[1] is None or compare_result(metrics["val"], best):
                     best = (metrics["val"]["eval"]["value"], deepcopy(self.pred_model))
                     time_since_best = 0
+                    best_epoch = iter_idx
                     # save
                     torch.save(
                         self.pred_model.state_dict(),

@@ -227,7 +227,7 @@ class OodManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            print("-" * 10, " Previous best epoch: ", best_epoch)
+            print("-" * 10, " Previous best epoch: ", best_epoch, " time since best: ", time_since_best)
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
                     (X_train, Y_train, Y_train_aux, "train"),
