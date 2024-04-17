@@ -114,6 +114,7 @@ def print_metrics(
                     params=Ys_aux,
                     ptoSolver=ptoSolver,
                     isTrain=False,
+                    do_debug=do_debug,
                     **problem.init_API(),
                 )
                 objective_hat = problem.get_objective(

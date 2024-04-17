@@ -23,7 +23,7 @@ class spSolver(ptoSolver):
         self.size = size
         self.neighbourhood_fn = neighbourhood_fn
 
-    def solve(self, matrix):
+    def solve(self, matrix, do_debug=False, **kwargs):
         """
         dijkstra solver
         """
@@ -35,6 +35,8 @@ class spSolver(ptoSolver):
         #
         costs = np.full_like(matrix, 1.0e10)
         costs[0][0] = matrix[0][0]
+        # if do_debug:
+        #     print("initial: ", costs[0][0])
         num_path = np.zeros_like(matrix)
         num_path[0][0] = 1
         priority_queue = [(matrix[0][0], (0, 0))]
@@ -45,9 +47,14 @@ class spSolver(ptoSolver):
             cur_cost, (cur_x, cur_y) = heapq.heappop(priority_queue)
             if (cur_x, cur_y) in certain:
                 pass
-
             for x, y in neighbors_func(cur_x, cur_y):
+                # if do_debug:
+                #     print("x,y:", x, y, end="  ")
                 if (x, y) not in certain:
+                    # if do_debug:
+                    #     print(
+                    #         "  compare: ", matrix[x][y] + costs[cur_x][cur_y], costs[x][y]
+                    #     )
                     if matrix[x][y] + costs[cur_x][cur_y] < costs[x][y]:
                         costs[x][y] = matrix[x][y] + costs[cur_x][cur_y]
                         heapq.heappush(priority_queue, (costs[x][y], (x, y)))
@@ -61,7 +68,11 @@ class spSolver(ptoSolver):
         cur_x, cur_y = x_max - 1, y_max - 1
         on_path = np.zeros_like(matrix)
         on_path[-1][-1] = 1
+        # if do_debug:   print("transitions: ", transitions.keys())
         while (cur_x, cur_y) != (0, 0):
+            if (cur_x, cur_y) not in transitions.keys():
+                return np.zeros(self.size * self.size), {}
+            # print("exists: ", (cur_x, cur_y) in transitions.keys(), end=" ")
             cur_x, cur_y = transitions[(cur_x, cur_y)]
             on_path[cur_x, cur_y] = 1.0
 

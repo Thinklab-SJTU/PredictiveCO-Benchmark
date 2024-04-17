@@ -18,8 +18,8 @@ class Shortestpath(PTOProblem):
 
     def __init__(
         self,
-        num_train_instances=100,  # number of instances to use from the dataset to train
-        num_test_instances=500,  # number of instances to use from the dataset to test
+        num_train_instances=400,  # number of instances to use from the dataset to train
+        num_test_instances=200,  # number of instances to use from the dataset to test
         val_frac=0.2,  # fraction of training data reserved for validation
         size=12,
         normalize=True,
@@ -33,6 +33,11 @@ class Shortestpath(PTOProblem):
         self.size = size
         self.normalize = normalize
         self.prob_version = prob_version
+        # split
+        self.n_vals = int(num_train_instances * val_frac)
+        self.n_trains = num_train_instances - self.n_vals
+        self.n_tests = num_test_instances
+        ###
         if prob_version == "warcraft":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
@@ -92,15 +97,29 @@ class Shortestpath(PTOProblem):
         train_prefix = "train"
         val_prefix = "val"
         test_prefix = "test"
+        #
 
-        (self.train_X, self.train_Z, self.train_Y, _) = self.read_data(
+        train_X, train_Z, train_Y, _ = self.read_data(
             data_dir, train_prefix, normalize
         )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
-        self.val_X, self.val_Z, self.val_Y, _ = self.read_data(
+        self.train_X, self.train_Z, self.train_Y = (
+            train_X[: self.n_trains],
+            train_Z[: self.n_trains],
+            train_Y[: self.n_trains],
+        )
+        val_X, val_Z, val_Y, _ = self.read_data(
             data_dir, val_prefix, normalize
         )  # (1000, 3, 96, 96) (1000, 12 * 12) (1000, 12 * 12)
-        self.test_X, self.test_Z, self.test_Y, _ = self.read_data(
-            data_dir, test_prefix, normalize
+        self.val_X, self.val_Z, self.val_Y = (
+            val_X[: self.n_vals],
+            val_Z[: self.n_vals],
+            val_Y[: self.n_vals],
+        )
+        test_X, test_Z, test_Y, _ = self.read_data(data_dir, test_prefix, normalize)
+        self.test_X, self.test_Z, self.test_Y = (
+            test_X[: self.n_tests],
+            test_Z[: self.n_tests],
+            test_Y[: self.n_tests],
         )
         print(
             "inputs, labels, weights: ",
@@ -113,17 +132,27 @@ class Shortestpath(PTOProblem):
     def load_ood_dataset(self, data_dir, normalize):
         train_prefix, val_prefix, test_prefix = "train", "val", "test"
         ##### Read Data for ver0; as train distribution
-        train_X, self.train_Z, self.train_Y, _ = self.read_data(
+        train_X, train_Z, train_Y, _ = self.read_data(
             data_dir, train_prefix, False
         )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
-        val_X, self.val_Z, self.val_Y, _ = self.read_data(data_dir, val_prefix, False)
-        test_X, self.test_Z, self.test_Y, _ = self.read_data(data_dir, test_prefix, False)
-        self.ver0_train_X, self.ver0_val_X, self.ver0_test_X = train_X, val_X, test_X
+        val_X, val_Z, val_Y, _ = self.read_data(data_dir, val_prefix, False)
+        test_X, test_Z, test_Y, _ = self.read_data(data_dir, test_prefix, False)
+        ### launch the data
+        self.train_Z, self.train_Y = train_Z[: self.n_trains], train_Y[: self.n_trains]
+        self.val_Z, self.val_Y = val_Z[: self.n_vals], val_Y[: self.n_vals]
+        self.test_Z, self.test_Y = test_Z[: self.n_tests], test_Y[: self.n_tests]
+
+        self.ver0_train_X, self.ver0_val_X, self.ver0_test_X = (
+            train_X[: self.n_trains],
+            val_X[: self.n_vals],
+            test_X[: self.n_tests],
+        )
+
         ##### Out the train data, ver0
         self.train_X, self.val_X, self.test_X = (
-            self.do_norm(train_X),
-            self.do_norm(val_X),
-            self.do_norm(test_X),
+            self.do_norm(train_X[: self.n_trains]),
+            self.do_norm(val_X[: self.n_vals]),
+            self.do_norm(test_X[: self.n_tests]),
         )
         ###### pertrub val dataset, get ver1
         ver1_transform = self.get_augmentation(self.val_type, self.val_value)
@@ -229,7 +258,7 @@ class Shortestpath(PTOProblem):
             sol = []
             for i in range(len(Y)):
                 # solve
-                solp, other = ptoSolver.solve(to_array(Y[i]))
+                solp, other = ptoSolver.solve(to_array(Y[i]), **kwargs)
                 sol.append(solp)
             sol = to_tensor(np.array(sol))
             obj = self.get_objective(Y, sol, kwargs)
@@ -259,6 +288,8 @@ class Shortestpath(PTOProblem):
         self,
         env_id,
         num_train_instances,
+        do_debug=False,
+        **kwargs,
     ):
         config = self.env_config[f"env{env_id}"]
         # print("config: ", config)
@@ -266,11 +297,13 @@ class Shortestpath(PTOProblem):
         new_train_X = self.augment_transform(
             to_device(self.ver0_train_X, "cpu"), ver1_transform, self.normalize
         )
+        if do_debug:
+            print("new_train_X: ", new_train_X)
+            if torch.isnan(new_train_X).any():
+                print("envs: ", env_id)
+                print("input", new_train_X[0])
+                assert 0
         # print("input before norm: ", new_train_X[0])
         # new_train_X = self.do_norm(new_train_X)
         # print("input after norm: ", new_train_X[0])
-        if torch.isnan(new_train_X).any():
-            print("envs: ", env_id)
-            print("input", new_train_X[0])
-            assert 0
         return new_train_X, self.train_Y
