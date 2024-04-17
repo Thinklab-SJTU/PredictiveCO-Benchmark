@@ -70,8 +70,8 @@ class spSolver(ptoSolver):
         on_path[-1][-1] = 1
         # if do_debug:   print("transitions: ", transitions.keys())
         while (cur_x, cur_y) != (0, 0):
-            if (cur_x, cur_y) not in transitions.keys():
-                return np.zeros(self.size * self.size), {}
+            # if (cur_x, cur_y) not in transitions.keys():
+            #     return np.zeros(self.size * self.size), {}
             # print("exists: ", (cur_x, cur_y) in transitions.keys(), end=" ")
             cur_x, cur_y = transitions[(cur_x, cur_y)]
             on_path[cur_x, cur_y] = 1.0

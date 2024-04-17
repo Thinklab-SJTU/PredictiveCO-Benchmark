@@ -154,16 +154,17 @@ class Shortestpath(PTOProblem):
             self.do_norm(val_X[: self.n_vals]),
             self.do_norm(test_X[: self.n_tests]),
         )
+        ##### Pertrub train data, get ver2
+        ver2_transform = self.get_augmentation(self.type, self.value)
+        self.ver2_train_X = self.augment_transform(
+            self.ver0_train_X, ver2_transform, normalize
+        )
         ###### pertrub val dataset, get ver1
         ver1_transform = self.get_augmentation(self.val_type, self.val_value)
         self.ver1_val_X = self.augment_transform(
             self.ver0_val_X, ver1_transform, normalize
         )
-        ##### Pertrub test data, get ver2
-        ver2_transform = self.get_augmentation(self.type, self.value)
-        self.ver2_test_X = self.augment_transform(
-            self.ver0_test_X, ver2_transform, normalize
-        )
+
         return
 
     def get_perturbed_data(self, transform, normalize):
@@ -214,7 +215,10 @@ class Shortestpath(PTOProblem):
         if self.prob_version == "direct":
             return self.train_X, self.train_Z, self.train_Y
         else:
-            return self.train_X, self.train_Y, self.train_Z
+            if train_mode == "iid":
+                return self.train_X, self.train_Y, self.train_Z
+            elif train_mode == "ood":
+                return self.ver2_train_X, self.train_Y, self.train_Z
 
     def get_val_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
@@ -229,10 +233,10 @@ class Shortestpath(PTOProblem):
         if self.prob_version == "direct":
             return self.test_X, self.test_Z, self.test_Y
         else:
-            if train_mode == "iid":
-                return self.test_X, self.test_Y, self.test_Z
-            elif train_mode == "ood":
-                return self.ver2_test_X, self.test_Y, self.test_Z
+            # if train_mode == "iid":
+            return self.test_X, self.test_Y, self.test_Z
+            # elif train_mode == "ood":
+            #     return self.ver2_test_X, self.test_Y, self.test_Z
 
     def get_model_shape(self):
         assert self.train_X.shape[2] == 8 * self.size
