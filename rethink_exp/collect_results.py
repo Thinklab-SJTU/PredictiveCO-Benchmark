@@ -289,6 +289,31 @@ def collect_hyper():
         )
 
 
+def collect_kp_search(ood_name, model_name):
+    prefix_names = list()
+    for NENV in [9, 7, 5, 3]:
+        for BETA in [0.5, 1.0, 2.0, 4.0]:
+            for LR in ["1e-3", "1e-2"]:
+                prefix_names.append(f"{ood_name}-{NENV}-{BETA}-{LR}")
+    # print("prefix_names", prefix_names)
+    collect_prefixs("knapsack-gen-ood", ood_name, prefix_names, model_name, "search")
+
+
+def collect_sp_search(ood_name, model_name):
+    prefix_names = list()
+    for nenv in [4, 2]:
+        for lr in ["1e-5", "1e-4"]:
+            for beta in [4.0, 2.0, 1.0, 0.5]:
+                for l1 in ["1e-5", "1e-4", "0"]:
+                    prefix_names.append(
+                        f"new-OOD_resnet_{ood_name}_{nenv}-{beta}-${lr}_{l1}"
+                    )
+    # print("prefix_names", prefix_names)
+    collect_prefixs(
+        "shortestpath-warcraft-ood", ood_name, prefix_names, model_name, "search"
+    )
+
+
 if __name__ == "__main__":
     collect_benchmarks()
     collect_other_benchmarks()
@@ -299,3 +324,5 @@ if __name__ == "__main__":
     collect_time()
     collect_samples()
     collect_hyper()
+    collect_sp_search("EERM", "mse")
+    collect_sp_search("EERM", "spo")

@@ -250,7 +250,7 @@ class OodManager:
                 ]
                 metrics = print_metrics(
                     datasets,
-                    self.pred_model,
+                    self.ood_model.pred_model,
                     problem,
                     loss_fn,
                     twostage_criterion,
@@ -271,7 +271,7 @@ class OodManager:
                 ]
                 metrics = print_metrics(
                     datasets,
-                    self.pred_model,
+                    self.ood_model.pred_model,
                     problem,
                     loss_fn,
                     twostage_criterion,
@@ -319,7 +319,7 @@ class OodManager:
         ]
         results = print_metrics(
             datasets,
-            self.pred_model,
+            self.ood_model.pred_model,
             problem,
             loss_fn,
             twostage_criterion,
