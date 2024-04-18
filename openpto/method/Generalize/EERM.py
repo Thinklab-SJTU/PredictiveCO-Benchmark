@@ -70,6 +70,7 @@ class EERM(nn.Module):
         l1_weight,
         l2_weight,
         ood_reduction,
+        use_train,
         **kwargs,
     ):
         super(EERM, self).__init__()
@@ -78,6 +79,7 @@ class EERM(nn.Module):
         self.alpha, self.beta = alpha, beta
         self.l1_weight, self.l2_weight = l1_weight, l2_weight
         self.ood_reduction = ood_reduction
+        self.use_train = use_train
 
     def inference(self, X):
         return self.pred_model(X)
@@ -112,23 +114,24 @@ class EERM(nn.Module):
         device = X_train.device
         Loss = list()
         # original train data
-        preds = self.pred_model(X_train)
-        env_loss = list()
-        for idx in range(len(X_train)):
-            loss_idx = loss_fn(
-                problem,
-                coeff_hat=get_idxs(preds, idx),
-                coeff_true=get_idxs(Y_train, idx),
-                params=get_idxs(Y_train_aux, idx),
-                partition=partition,
-                index=idx,
-                do_debug=do_debug,
-                **model_args,
-            )
-            env_loss.append(loss_idx)
-        env_loss = torch.stack(env_loss)
-        env_loss = self.do_ood_reduction(env_loss)
-        Loss.append(self.loss_reg(env_loss))
+        if self.use_train:
+            preds = self.pred_model(X_train)
+            env_loss = list()
+            for idx in range(len(X_train)):
+                loss_idx = loss_fn(
+                    problem,
+                    coeff_hat=get_idxs(preds, idx),
+                    coeff_true=get_idxs(Y_train, idx),
+                    params=get_idxs(Y_train_aux, idx),
+                    partition=partition,
+                    index=idx,
+                    do_debug=do_debug,
+                    **model_args,
+                )
+                env_loss.append(loss_idx)
+            env_loss = torch.stack(env_loss)
+            env_loss = self.do_ood_reduction(env_loss)
+            Loss.append(self.loss_reg(env_loss))
         # data
         for env_id in range(self.n_envs):
             # gen env data

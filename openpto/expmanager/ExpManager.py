@@ -171,10 +171,7 @@ class ExpManager:
                 )
             ###### Check metrics on val set
             self.logger.info(
-                " Previous best epoch: ",
-                best_epoch,
-                " time since best: ",
-                time_since_best,
+                f" Previous best epoch: {best_epoch}, time since best: {time_since_best}"
             )
             if ptr_epoch % self.args.valfreq != 0:
                 datasets = [
@@ -308,11 +305,7 @@ class ExpManager:
 
             ###### Check metrics on val set
             self.logger.info(
-                "-" * 10,
-                " Previous best epoch: ",
-                best_epoch,
-                " time since best: ",
-                time_since_best,
+                f" Previous best epoch: {best_epoch}, time since best: {time_since_best}"
             )
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
