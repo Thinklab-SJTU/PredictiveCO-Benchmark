@@ -237,8 +237,7 @@ class OodManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            print(
-                "-" * 10,
+            self.logger.info(
                 " Previous best epoch: ",
                 best_epoch,
                 " time since best: ",

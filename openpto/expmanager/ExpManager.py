@@ -170,8 +170,7 @@ class ExpManager:
                     ),
                 )
             ###### Check metrics on val set
-            print(
-                "-" * 10,
+            self.logger.info(
                 " Previous best epoch: ",
                 best_epoch,
                 " time since best: ",
@@ -308,7 +307,7 @@ class ExpManager:
             total_train_time += time.time() - time_train_start
 
             ###### Check metrics on val set
-            print(
+            self.logger.info(
                 "-" * 10,
                 " Previous best epoch: ",
                 best_epoch,
