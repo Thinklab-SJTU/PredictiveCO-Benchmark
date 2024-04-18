@@ -6,9 +6,10 @@ from openpto.method.utils_method import get_idxs, to_device
 
 
 class ERM(nn.Module):
-    def __init__(self, pred_model, l1_weight, l2_weight, **kwargs):
+    def __init__(self, pred_model, logger, l1_weight, l2_weight, **kwargs):
         super(ERM, self).__init__()
         self.pred_model = pred_model
+        self.logger = logger
         self.l1_weight, self.l2_weight = l1_weight, l2_weight
 
     def inference(self, X):
@@ -64,6 +65,7 @@ class EERM(nn.Module):
     def __init__(
         self,
         pred_model,
+        logger,
         n_envs,
         alpha,
         beta,
@@ -75,6 +77,7 @@ class EERM(nn.Module):
     ):
         super(EERM, self).__init__()
         self.pred_model = pred_model
+        self.logger = logger
         self.n_envs = n_envs
         self.alpha, self.beta = alpha, beta
         self.l1_weight, self.l2_weight = l1_weight, l2_weight
@@ -166,14 +169,8 @@ class EERM(nn.Module):
         Loss = torch.cat(Loss, dim=0)
         Var, Mean = torch.var_mean(Loss)
         outer_loss = self.alpha * Var + self.beta * Mean
-        print(
-            "-" * 10,
-            "len: ",
-            Loss.shape,
-            "Var: ",
-            self.alpha * Var.item(),
-            "Mean: ",
-            self.beta * Mean.item(),
+        self.logger.info(
+            f"--- Env len: {Loss.shape}, Var: {self.alpha * Var.item()}, Mean: {self.beta * Mean.item()}"
         )
         return outer_loss
 

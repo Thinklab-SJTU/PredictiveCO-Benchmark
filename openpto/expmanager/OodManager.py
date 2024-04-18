@@ -42,7 +42,9 @@ class OodManager:
         self.pred_model = pred_model_wrapper(args, pred_model_args)
         print("self.pred_model: ", self.pred_model)
         self.logger.info(f"--- Built [{args.pred_model}] Prediction Model")
-        self.ood_model = generalize_wrapper(args, self.args.ood_model, self.pred_model)
+        self.ood_model = generalize_wrapper(
+            args, self.args.ood_model, self.pred_model, self.logger
+        )
         self.logger.info(f"---[{self.args.ood_model}] Training Model")
         # optimizer:
         self.optimizer = torch.optim.Adam(self.ood_model.parameters(), lr=self.args.lr)
@@ -238,7 +240,7 @@ class OodManager:
 
             ###### Check metrics on val set
             self.logger.info(
-                f" Previous best epoch: {best_epoch}, time since best: {time_since_best}"
+                f"Previous best epoch: {best_epoch}, time since best: {time_since_best}"
             )
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
