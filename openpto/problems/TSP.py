@@ -450,7 +450,16 @@ def generate_nodes_coord(batch_size: int, n_nodes: int, type, params):
             std=params["gaussian_std"],
         )
     elif type == "explosion":
-        return 0
+        return generate_explosion(
+            batch_size=batch_size,
+            n_nodes=n_nodes,
+            low=params["low"],
+            high=params["high"],
+            min_eps=params["min_eps"],
+            max_eps=params["max_eps"],
+            center_low=params["center_low"],
+            center_high=params["center_high"],
+        )
     # elif params["type"] == "cluster_fixed_centers":
     #     return generate_cluster_fixed_centers(batch_size, n_nodes)
     else:
@@ -494,25 +503,64 @@ def generate_cluster(
     return nodes_coords
 
 
-def generate_cluster_fixed_centers(batch_size: int, n_nodes: int):
-    assert n_nodes in [100, 500]
+def generate_explosion(
+    batch_size: int,
+    n_nodes: int,
+    low: float,
+    high: float,
+    min_eps: float,
+    max_eps: float,
+    center_low: float,
+    center_high: float,
+):
+    initial_coords = np.random.uniform(low, high, (batch_size, n_nodes, 2))
+    centers = np.random.uniform(center_low, center_high, (batch_size, 2))
     nodes_coords = np.zeros([batch_size, n_nodes, 2])
     for i in range(batch_size):
-        num_clusters_axis = 2 if n_nodes == 100 else 5
-        num_clusters = num_clusters_axis**2
-        cluster_centers_axis = np.linspace(0, 1, num_clusters_axis * 2 + 1)[1::2]
-        x, y = np.meshgrid(cluster_centers_axis, cluster_centers_axis)
-        cluster_centers = [[x, y] for x, y in zip(x.flatten(), y.flatten())]
-        scale = (
-            1 / (num_clusters_axis * 3 * 3)
-            if n_nodes == 100
-            else 1 / (num_clusters_axis * 3 * 3)
+        nodes_coords[i] = do_explosion_mutation(
+            initial_coords[i], centers[i], min_eps, max_eps
         )
-        cluster_points = []
-        for center in cluster_centers:
-            points = np.random.normal(
-                loc=center, scale=scale, size=(n_nodes // num_clusters, 2)
-            )
-            cluster_points.append(points)
-        nodes_coords[i] = np.concatenate(cluster_points, axis=0)
     return nodes_coords
+
+
+def do_explosion_mutation(coords, center, min_eps, max_eps):
+    #  code adopted from: https://github.com/jakobbossek/tspgen/
+    assert coords.shape[1] == 2, "Coordinates array must have shape (n, 2)"
+    assert min_eps <= max_eps, "min_eps must not be greater than max_eps"
+    assert len(center) == 2, "Center must be a 2-dimensional array"
+    eps = np.random.uniform(min_eps, max_eps)
+    dists = np.linalg.norm(coords - center, axis=1)
+    to_mutate = np.where(dists < eps)[0]
+    if len(to_mutate) < 2:
+        return coords
+    mutants = []
+    for point in coords[to_mutate]:
+        dir_vec = (point - center) / np.linalg.norm(point - center)
+        shift = eps + np.random.exponential(scale=1 / 10)
+        mutants.append(center + dir_vec * shift)
+    coords[to_mutate] = np.array(mutants)
+    return coords
+
+
+# def generate_cluster_fixed_centers(batch_size: int, n_nodes: int):
+#     assert n_nodes in [100, 500]
+#     nodes_coords = np.zeros([batch_size, n_nodes, 2])
+#     for i in range(batch_size):
+#         num_clusters_axis = 2 if n_nodes == 100 else 5
+#         num_clusters = num_clusters_axis**2
+#         cluster_centers_axis = np.linspace(0, 1, num_clusters_axis * 2 + 1)[1::2]
+#         x, y = np.meshgrid(cluster_centers_axis, cluster_centers_axis)
+#         cluster_centers = [[x, y] for x, y in zip(x.flatten(), y.flatten())]
+#         scale = (
+#             1 / (num_clusters_axis * 3 * 3)
+#             if n_nodes == 100
+#             else 1 / (num_clusters_axis * 3 * 3)
+#         )
+#         cluster_points = []
+#         for center in cluster_centers:
+#             points = np.random.normal(
+#                 loc=center, scale=scale, size=(n_nodes // num_clusters, 2)
+#             )
+#             cluster_points.append(points)
+#         nodes_coords[i] = np.concatenate(cluster_points, axis=0)
+#     return nodes_coords
