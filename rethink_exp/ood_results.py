@@ -60,3 +60,4 @@ if __name__ == "__main__":
         f" Start training [{args.pred_model}] model on [{args.opt_model}] loss..."
     )
     exp.run(problem, loss_fn, ptoSolver, n_epochs=args.n_epochs, do_debug=args.do_debug)
+    logger.info(f"Done in {args.log_dir} \n")

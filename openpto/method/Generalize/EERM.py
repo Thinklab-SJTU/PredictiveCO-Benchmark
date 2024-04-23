@@ -147,7 +147,6 @@ class EERM(nn.Module):
             # forward and get output
             env_preds = self.pred_model(env_X_train)
             env_loss = list()
-            # print(f"env {env_id}: env_preds: ", env_preds)
             for idx in range(len(X_train)):
                 loss_idx = loss_fn(
                     problem,
@@ -162,9 +161,7 @@ class EERM(nn.Module):
                 env_loss.append(loss_idx)
             env_loss = torch.stack(env_loss)
             env_loss = self.do_ood_reduction(env_loss)
-            # print(f"env {env_id}: env_loss(pre): ", env_loss)
             env_loss = self.loss_reg(env_loss)
-            # print(f"env {env_id}: env_loss(after): ", env_loss)
             Loss.append(self.loss_reg(env_loss))
         Loss = torch.cat(Loss, dim=0)
         Var, Mean = torch.var_mean(Loss)
@@ -256,15 +253,12 @@ class EERM(nn.Module):
     #             **model_args,
     #         )
     #         env_loss = do_reduction(loss, model_args["reduction"])
-    #         # print("env_loss: ", env_loss)
     #         # add penalty
     #         if self.l1_weight > 0:
     #             env_loss += self.l1_weight * l1_penalty(self.pred_model)
     #         if self.l2_weight > 0:
     #             env_loss += self.l2_weight * l2_penalty(self.pred_model)
-    #         # print("env loss: ", env_loss)
     #         Loss.append(env_loss.view(-1))
-    #     # print("Loss: ", len(Loss), Loss)
     #     Loss = torch.cat(Loss, dim=0)
     #     Var, Mean = torch.var_mean(Loss)
     #     print(
