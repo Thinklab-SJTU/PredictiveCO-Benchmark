@@ -121,20 +121,19 @@ class OodManager:
         total_train_time = 0.0
         best = (float("inf"), None)
         time_since_best = 0
-        train_logs = {
-            "epoch": [],
-            "obj": [],
-            "loss": [],
-            "pred_loss": [],
-            "eval": [],
-        }
-        val_logs = {
-            "epoch": [],
-            "obj": [],
-            "loss": [],
-            "pred_loss": [],
-            "eval": [],
-        }
+
+        def init_log():
+            return {
+                "epoch": [],
+                "obj": [],
+                "loss": [],
+                "pred_loss": [],
+                "eval": [],
+            }
+
+        train_logs = init_log()
+        val_logs = init_log()
+        test_logs = init_log()
         # loss function
         twostage_criterion = str2twoStageLoss(problem)
 
@@ -191,6 +190,7 @@ class OodManager:
         #         )
         #         add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
         #         add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
+        #         add_log(test_logs, "Ptr-" + str(ptr_epoch), metrics, "test")
         #         # Save model if it's the best one
         #         if best[1] is None or compare_result(metrics["val"], best):
         #             best = (metrics["val"]["eval"]["value"], deepcopy(self.ood_model))
@@ -290,6 +290,7 @@ class OodManager:
                 )
                 add_log(train_logs, "Tr-" + str(iter_idx), metrics, "train")
                 add_log(val_logs, "Tr-" + str(iter_idx), metrics, "val")
+                add_log(test_logs, "Tr-" + str(iter_idx), metrics, "test")
                 # Save model if it's the best one
                 if best[1] is None or compare_result(metrics["val"], best):
                     best_epoch = iter_idx
@@ -342,9 +343,11 @@ class OodManager:
         # save logs
         save_pd(train_logs, os.path.join(self.args.log_dir, "train_logs.csv"))
         save_pd(val_logs, os.path.join(self.args.log_dir, "val_logs.csv"))
+        save_pd(test_logs, os.path.join(self.args.log_dir, "test_logs.csv"))
         # save logs 2
         save_pd(train_logs, os.path.join(self.args.bkup_log_dir, "train_logs.csv"))
         save_pd(val_logs, os.path.join(self.args.bkup_log_dir, "val_logs.csv"))
+        save_pd(test_logs, os.path.join(self.args.bkup_log_dir, "test_logs.csv"))
         # save objectives
         np.save(
             os.path.join(self.args.log_dir, "results.npy"),
