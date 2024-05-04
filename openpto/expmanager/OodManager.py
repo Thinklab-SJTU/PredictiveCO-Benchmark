@@ -226,6 +226,7 @@ class OodManager:
                 Y_train_aux,
                 loss_fn,
                 problem,
+                iter_idx,
                 do_debug,
                 "train",
                 **self.model_args,
@@ -237,7 +238,14 @@ class OodManager:
                 self.scheduler.step()
             time_since_best += 1
             total_train_time += time.time() - time_train_start
-
+            ### save model with savefreq
+            if self.args.savefreq > 0 and iter_idx % self.args.savefreq == 0:
+                torch.save(
+                    self.ood_model.state_dict(),
+                    os.path.join(
+                        self.args.log_dir, "checkpoints", f"model-{iter_idx}.pt"
+                    ),
+                )
             ###### Check metrics on val set
             self.logger.info(
                 f"Previous best epoch: {best_epoch}, time since best: {time_since_best}"

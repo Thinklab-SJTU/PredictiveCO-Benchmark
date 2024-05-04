@@ -114,6 +114,7 @@ def get_args():
     parser.add_argument("--testinstances", type=int, default=200)
     # debug
     parser.add_argument("--valfreq", type=int, default=1)
+    parser.add_argument("--savefreq", type=int, default=-1)
     parser.add_argument("--prefix", type=str, default="default")
     # model
     parser.add_argument("--n_layers", type=int, default=2)
@@ -204,6 +205,8 @@ def get_logger(args, conf):
     )
     args.log_dir = log_dir
     os.makedirs(os.path.join(log_dir, "checkpoints"), exist_ok=True)
+    if args.do_debug:
+        os.makedirs(os.path.join(log_dir, "tensors"), exist_ok=True)
 
     now = datetime.now()
     formatted_time = f"{now.year:04d}-{now.month:02d}-{now.day:02d} {now.hour:02d}-{now.minute:02d}-{now.second:02d}.{now.microsecond:06d}"

@@ -14,4 +14,5 @@ def generalize_wrapper(args, ood_name, pred_model, logger):
         l2_weight=args.l2_weight,
         ood_reduction=args.ood_reduction,
         use_train=args.use_train,
+        log_dir=args.log_dir,
     )

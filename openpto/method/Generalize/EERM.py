@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 
@@ -11,6 +13,7 @@ class ERM(nn.Module):
         self.pred_model = pred_model
         self.logger = logger
         self.l1_weight, self.l2_weight = l1_weight, l2_weight
+        self.log_dir = kwargs["log_dir"]
 
     def inference(self, X):
         return self.pred_model(X)
@@ -22,6 +25,7 @@ class ERM(nn.Module):
         Y_train_aux,
         loss_fn,
         problem,
+        iter_idx,
         do_debug,
         partition="train",
         **model_args,
@@ -83,6 +87,7 @@ class EERM(nn.Module):
         self.l1_weight, self.l2_weight = l1_weight, l2_weight
         self.ood_reduction = ood_reduction
         self.use_train = use_train
+        self.log_dir = kwargs["log_dir"]
 
     def inference(self, X):
         return self.pred_model(X)
@@ -110,6 +115,7 @@ class EERM(nn.Module):
         Y_train_aux,
         loss_fn,
         problem,
+        iter_idx,
         do_debug,
         partition="train",
         **model_args,
@@ -164,6 +170,11 @@ class EERM(nn.Module):
             env_loss = self.loss_reg(env_loss)
             Loss.append(self.loss_reg(env_loss))
         Loss = torch.cat(Loss, dim=0)
+        if do_debug:
+            torch.save(
+                Loss.cpu().detach(),
+                os.path.join(self.log_dir, "tensors", f"Loss-{iter_idx}.pt"),
+            )
         Var, Mean = torch.var_mean(Loss)
         outer_loss = self.alpha * Var + self.beta * Mean
         self.logger.info(
