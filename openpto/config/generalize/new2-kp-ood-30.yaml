@@ -9,14 +9,14 @@ dataset:
   distr: normal
   mean: 10
   var: 10
-  mean_valid: 8
-  var_valid: 8
-  mean_ood: 0
-  var_ood: 1
+  mean_val: 5
+  var_val: 5
+  mean_test: 0
+  var_test: 1
   envs:
     env0:
-        mean: 1
-        var: 1
+      mean: 1
+      var: 1
     env1:
       mean: 2
       var: 1
@@ -32,18 +32,7 @@ dataset:
     env5:
       mean: 32
       var: 1
-    env6:
-      mean: 64
-      var: 1
-    env7:
-      mean: 128
-      var: 1
-    env8:
-      mean: 256
-      var: 1
-    env9:
-      mean: 512
-      var: 1
+
       
 solver:
   gurobi:
