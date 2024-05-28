@@ -8,13 +8,15 @@ from openpto.method.utils_method import to_array
 
 # optimization model
 class AdOrToolSolver(ptoSolver):
-    def __init__(self, modelSense, **kwargs):
+    def __init__(self, modelSense, n_combs, **kwargs):
         super().__init__(modelSense)
-        self.n_vars = 1
+        self.n_vars = 1  # TODO: this is not used
+        self.n_combs = n_combs
 
     def solve(self, profits, cost_pv, given_pv):
+        # TODO: only support batch size = 1
         # ceil rounded solution
-        profits = profits.reshape(-1, 4)
+        profits = profits.reshape(-1, self.n_combs)
         coefficient = to_array(profits)
         num_users = len(coefficient)
         num_channels = len(coefficient[0])

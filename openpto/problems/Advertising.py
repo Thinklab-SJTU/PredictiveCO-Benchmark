@@ -18,6 +18,7 @@ class Advertising(PTOProblem):
         super(Advertising, self).__init__(data_dir)
         self.avg_budget = avg_budget
         self.cost_pv = [0, 0.5, 1, 1.5]
+        self.n_combs = kwargs["n_combs"]  # number of combinations
         if prob_version == "real":
             # load data #TODO: edit data dir
             data12_train, data12_test = gen_opt_data(data_dir)
@@ -117,7 +118,7 @@ class Advertising(PTOProblem):
         sols, objs = list(), list()
         for ins_id in range(len(Y)):
             Y_idx = Y[ins_id]
-            n_users = len(Y_idx) // 4  # TODO: 2 channels, 4 combinations
+            n_users = len(Y_idx) // self.n_combs  # TODO: 2 channels, 4 combinations
             total_budget = self.avg_budget * n_users
             sol = ptoSolver.solve(Y_idx, self.cost_pv, total_budget)
             if torch.is_tensor(Y_idx):
@@ -146,6 +147,7 @@ class Advertising(PTOProblem):
         return {
             "modelSense": GRB.MAXIMIZE,
             "avg_budget": self.avg_budget,
+            "n_combs": self.n_combs,
         }
 
     def get_eval_metric(self):
