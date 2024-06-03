@@ -112,24 +112,33 @@ class SPOPlusFunc(torch.autograd.Function):
             grad = 2 * (sols_true - sols_proxy)
         elif ctx.modelSense == GRB.MAXIMIZE:
             grad = -2 * (sols_true - sols_proxy)
+        # print("1:: grad_output, grad: ", grad_output.shape, grad.shape)
         ##### work around #####
         coeff_hat_cpu = ctx.coeff_hat_cpu
         if grad.shape != coeff_hat_cpu.shape:
             if np.prod(grad.shape) == np.prod(coeff_hat_cpu.shape):
                 grad = grad.reshape(coeff_hat_cpu.shape)
             else:
-                grad_shape = grad.shape
-                grad = grad.view(*grad_shape, 1).expand(
-                    *grad_shape, coeff_hat_cpu.shape[-1]
-                )
-        ##### end #####
-        ##### work around 2: #####
-        ## when a batch contains multiple items, do:
-        if grad_output.ndim < grad.ndim:
-            grad_output_shape = grad_output.shape
-            grad_output = grad_output.unsqueeze(1)
-            grad_output = grad_output.view(*grad_output_shape, 1).expand(
-                grad_output_shape[0], coeff_hat_cpu.shape[1], *grad_output_shape[1:]
-            )
+                if grad.ndim < coeff_hat_cpu.ndim:
+                    grad_shape = grad.shape
+                    grad = grad.view(*grad_shape, 1).expand(
+                        *grad_shape, coeff_hat_cpu.shape[-1]
+                    )
+                if grad_output.ndim < coeff_hat_cpu.ndim:
+                    grad_output_shape = grad_output.shape
+                    grad_output = grad_output.view(*grad_output_shape, 1).expand(
+                        *grad_output_shape, coeff_hat_cpu.shape[-1]
+                    )
+                # print("2:: grad_output, grad: ", grad_output.shape, grad.shape)
+                ## when a batch contains multiple items, do:
+                if grad_output.ndim < grad.ndim:
+                    grad_output_shape = grad_output.shape
+                    grad_output = grad_output.unsqueeze(1)
+                    grad_output = grad_output.view(*grad_output_shape, 1).expand(
+                        grad_output_shape[0],
+                        coeff_hat_cpu.shape[1],
+                        *grad_output_shape[1:],
+                    )
+        # print("3:: grad_output, grad: ", grad_output.shape, grad.shape)
         ##### end #####
         return (grad_output * grad, None, None, None, None, None, None)

@@ -349,6 +349,7 @@ class Knapsack(PTOProblem):
             ]
         )
         self.params_train = self.weights.unsqueeze(0).expand(len(self.Xs_train), -1)
+        self.params_val = self.weights.unsqueeze(0).expand(len(self.Xs_val), -1)
         self.params_test = self.weights.unsqueeze(0).expand(len(self.Xs_test), -1)
 
     def get_energy(self, fname=None, trainTestRatio=0.70):

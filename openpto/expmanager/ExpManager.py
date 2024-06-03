@@ -252,10 +252,6 @@ class ExpManager:
         best_epoch = 0
         for iter_idx in range(1, n_epochs + 1):
             time_train_start = time.time()
-
-            if do_debug:
-                print("preds: ", preds)
-                print("Y_train: ", Y_train)
             losses = list()
             for batch_id, batch in enumerate(train_loader):
                 X_batch, Y_batch, Y_aux_batch = batch["X"], batch["Y"], batch["Y_aux"]
