@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
 
 REQUIRES = """
+scikit-learn
 ruamel.yaml
 chardet
 requests

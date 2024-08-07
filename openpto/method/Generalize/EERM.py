@@ -1,5 +1,3 @@
-import os
-
 import torch
 import torch.nn as nn
 
@@ -170,11 +168,11 @@ class EERM(nn.Module):
             env_loss = self.loss_reg(env_loss)
             Loss.append(self.loss_reg(env_loss))
         Loss = torch.cat(Loss, dim=0)
-        if do_debug:
-            torch.save(
-                Loss.cpu().detach(),
-                os.path.join(self.log_dir, "tensors", f"Loss-{iter_idx}.pt"),
-            )
+        # if do_debug:
+        #     torch.save(
+        #         Loss.cpu().detach(),
+        #         os.path.join(self.log_dir, "tensors", f"Loss-{iter_idx}.pt"),
+        #     )
         Var, Mean = torch.var_mean(Loss)
         outer_loss = self.alpha * Var + self.beta * Mean
         self.logger.info(
