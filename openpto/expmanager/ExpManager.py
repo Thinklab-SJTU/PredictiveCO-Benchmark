@@ -175,7 +175,7 @@ class ExpManager:
             )
             if ptr_epoch % self.args.valfreq != 0:
                 datasets = [
-                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
+                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "pretrain"),
                 ]
                 metrics = print_metrics(
                     datasets,
@@ -190,11 +190,11 @@ class ExpManager:
                     batch_size=self.args.batch_size,
                     **self.model_args,
                 )
-                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "pretrain")
             else:
                 # Compute metrics
                 datasets = [
-                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "train"),
+                    (X_pretrain, Y_pretrain, Y_pretrain_aux, "pretrain"),
                     (X_val, Y_val, Y_val_aux, "val"),
                 ]
                 metrics = print_metrics(
@@ -210,7 +210,7 @@ class ExpManager:
                     batch_size=self.args.batch_size,
                     **self.model_args,
                 )
-                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "train")
+                add_log(train_logs, "Ptr-" + str(ptr_epoch), metrics, "pretrain")
                 add_log(val_logs, "Ptr-" + str(ptr_epoch), metrics, "val")
                 # Save model if it's the best one
                 if best[1] is None or compare_result(metrics["val"], best):
@@ -288,7 +288,7 @@ class ExpManager:
             if self.args.opt_name == "gd":
                 losses = do_reduction(torch.stack(losses), self.model_args["reduction"])
                 self.optimizer.zero_grad()
-                loss.backward()
+                losses.backward()
                 self.optimizer.step()
                 if self.args.use_lr_scheduling:
                     self.scheduler.step()
@@ -305,7 +305,7 @@ class ExpManager:
             )
             if iter_idx % self.args.valfreq != 0:
                 datasets = [
-                    (X_train, Y_train, Y_train_aux, "pretrain"),
+                    (X_train, Y_train, Y_train_aux, "train"),
                 ]
                 metrics = print_metrics(
                     datasets,

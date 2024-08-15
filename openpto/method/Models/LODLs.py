@@ -82,6 +82,7 @@ class LODL(optModel):
         if os.path.exists(samples_filename_read):
             with open(samples_filename_read, "rb") as filehandle:
                 num_existing_samples, SL_dataset_old = pickle.load(filehandle)
+                print("num_existing_samples: ", num_existing_samples, SL_dataset_old)
         else:
             num_existing_samples = 0
             SL_dataset_old = {
@@ -216,6 +217,8 @@ class LODL(optModel):
             # Sanity check that the saved data is the same as the problem's data
             for idx, (Y, Y_aux) in enumerate(zip(Ys, Ys_aux)):
                 Y_dataset, opt_objective, _, objectives = SL_dataset[partition][idx]
+                # print("Y_dataset: ", Y_dataset)
+                # print("opt_objective: ", opt_objective)
                 Y_dataset = Y_dataset.to(problem.device)
                 opt_objective = opt_objective.to(problem.device)
                 objectives = objectives.to(problem.device)
@@ -512,6 +515,7 @@ class LODL(optModel):
                     loss = twostage_criterion(
                         problem, pred, objectives_train, reduction="sum"
                     )
+                    # print("line 515 loss: ", loss)
                     loss.backward()
                     return loss
 
@@ -522,6 +526,7 @@ class LODL(optModel):
                     loss_val = twostage_criterion(
                         problem, pred_val, objectives_val, reduction="sum"
                     )
+                    # print("line 526 loss val: ", loss_val.shape)
 
                     # Print statistics
                     if verbose and iter_idx % (val_freq * print_freq) == 0:

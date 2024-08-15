@@ -158,8 +158,9 @@ def print_metrics(
             if partition == "test":
                 test_time = time.time() - time_test_start
 
-            if partition == "pretrain" and not problem.is_eval_train():
-                eval_result = {"value": torch.zeros(len(Ys))}
+            if partition == "pretrain":
+                if problem.is_eval_train():
+                    eval_result = {"value": torch.zeros(len(Ys))}
             else:
                 optimal_z = optimal_dict[partition]
                 eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)

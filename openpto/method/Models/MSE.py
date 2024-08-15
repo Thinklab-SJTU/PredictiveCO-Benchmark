@@ -165,6 +165,8 @@ class DFL(optModel):
         else:
             raise ValueError(f"Unknown model sense {self.ptoSolver.modelSense}")
         # debug
+        # print("loss: ", loss.shape)
+        # assert 0
         if (
             hyperparams["do_debug"]
             and hyperparams["partition"] == "train"
