@@ -1,7 +1,5 @@
 <h1 align="center"><b> PredictiveCO Benchmark </b></h1>
 
----
-
 Official Implementation of NeurIPS 2024 Datasets and Benchmarks Track paper:    
 "Benchmarking PtO and PnO Methods in the Predictive Combinatorial Optimization Regime"
 
