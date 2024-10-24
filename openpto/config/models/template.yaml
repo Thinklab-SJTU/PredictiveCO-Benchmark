@@ -1,0 +1,33 @@
+models:
+  spo:
+    reduction: sum
+  blackbox:
+    reduction: sum
+  Identity:
+    reduction: sum
+  QPTL:
+    reduction: sum
+    tau: 1.0
+  listLTR:
+    reduction: sum
+    tau: 1.0
+  pairLTR:
+    reduction: sum
+  pointLTR:
+    reduction: sum
+  nce:
+    reduction: sum
+  LODL:
+    sampling: random, random_flip, random_uniform, numerical_jacobian, random_jacobian, random_hessian, random
+    sampling: random
+    sampling_std: -1
+    quadrank: 20
+    quadalpha: 0
+    model_type: dense, weightedmse, quad, weightedmse, weightedmse++, weightedce, weightedmsesum, quad++
+    serial: True
+    reduction: sum
+    num_iters: 100
+    losslr: 1e-3
+  dfl:
+    dflalpha: 0.1
+    reduction: sum

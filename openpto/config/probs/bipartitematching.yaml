@@ -1,0 +1,7 @@
+dataset:
+  num_nodes: 50
+  prob_version: cora
+
+solver:
+  cvxpy:
+    kwargs: none

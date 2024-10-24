@@ -1,0 +1,10 @@
+dataset:
+  num_targets: 10
+  num_fake_targets: 10
+  budget: 1
+  num_items: 5
+  prob_version: real
+
+solver:
+  neural: 
+    num_iters: 100

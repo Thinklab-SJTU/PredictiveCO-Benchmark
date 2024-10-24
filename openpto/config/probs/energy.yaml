@@ -1,0 +1,6 @@
+dataset:
+  prob_version: energy
+    
+solver:
+  gurobi:
+    kwargs: none

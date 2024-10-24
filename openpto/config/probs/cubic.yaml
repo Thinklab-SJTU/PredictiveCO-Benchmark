@@ -1,0 +1,11 @@
+dataset:
+  budget: 5
+  num_items: 50
+  prob_version: gen
+
+solver:
+  heuristic:
+    kwargs: none
+  neural:
+    epsilon: 0.01
+    max_iter: 200
