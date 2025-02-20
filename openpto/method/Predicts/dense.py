@@ -17,9 +17,10 @@ act_dict = {
 }
 
 act_func_dict = {
+    "tanh": nn.Tanh,
     "relu": nn.ReLU,
+    "softmax": partial(nn.Softmax, dim=-1),
     "sigmoid": nn.Sigmoid,
-    "identity": lambda x: x,
 }
 
 
@@ -64,7 +65,7 @@ class MLP(nn.Module):
                     nn.Linear(num_features, reduce(operator.mul, num_targets, 1)),
                     View(num_targets),
                 ]
-        if output_activation != "identity":
+        if output_activation not in ["identity", "none"]:
             net_layers.append(act_func_dict[output_activation])
 
         self.net = nn.Sequential(*net_layers)

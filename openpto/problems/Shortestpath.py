@@ -1,3 +1,4 @@
+import glob
 import os
 
 import numpy as np
@@ -71,17 +72,35 @@ class Shortestpath(PTOProblem):
         # in_std[in_std == 0] = epsilon
         return (inputs - in_mean) / in_std
 
+    @staticmethod
+    def read_npy_files(directory, prefix):
+        """
+        读取以指定前缀开头、以 partx 为后缀的 .npy 文件。
+        """
+        data_path = os.path.join(directory, prefix + ".npy")
+        if os.path.exists(data_path):
+            outputs = np.load(data_path).astype(np.float32)
+        else:
+            # 构造文件查找模式
+            file_pattern = os.path.join(directory, f"{prefix}_part*.npy")
+            file_list = glob.glob(file_pattern)
+            print("file_pattern: ", file_pattern, "file_list: ", file_list)
+            outputs_list = []
+            for file_path in file_list:
+                if os.path.exists(file_path):
+                    outputs_list.append(np.load(file_path).astype(np.float32))
+            outputs = np.vstack(outputs_list)
+        return outputs
+
     def read_data(self, data_dir, split_prefix, normalize):
         data_suffix = "maps"
-        inputs = np.load(
-            os.path.join(data_dir, split_prefix + "_" + data_suffix + ".npy")
-        ).astype(np.float32)
+        inputs = self.read_npy_files(data_dir, split_prefix + "_" + data_suffix)
         # channel last
         # inputs = inputs.transpose(0, 3, 1, 2)  # channel first
 
-        labels = np.load(os.path.join(data_dir, split_prefix + "_shortest_paths.npy"))
-        Y = np.load(os.path.join(data_dir, split_prefix + "_vertex_weights.npy"))
-        full_images = np.load(os.path.join(data_dir, split_prefix + "_maps.npy"))
+        labels = self.read_npy_files(data_dir, split_prefix + "_shortest_paths")
+        Y = self.read_npy_files(data_dir, split_prefix + "_vertex_weights")
+        full_images = self.read_npy_files(data_dir, split_prefix + "_maps")
         # print("inputs: ", inputs.shape, "Y: ", Y.shape) #inputs:  (10000, 96, 96, 3) Y:  (10000, 12, 12)
         if normalize:
             inputs = self.do_norm(inputs)
