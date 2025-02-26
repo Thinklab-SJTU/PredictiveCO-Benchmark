@@ -39,6 +39,7 @@ class BipartiteMatching(PTOProblem):
         # self.Xs = torch.load('data/cora_features_bipartite.pt').reshape((27, 50, 50, 2866))
         # self.Ys = torch.load('data/cora_graphs_bipartite.pt').reshape((27, 50, 50))
         # Split data into train/val/test
+        print("training y does have negative:", sum(sum(self.Ys < 0)))
         assert 0 < val_frac < 1
         self.val_frac = val_frac
 
@@ -155,7 +156,7 @@ class BipartiteMatching(PTOProblem):
             # print(sum_before/2, adj.sum())
             percent_removed.append((edges_before - adj.sum()) / edges_before)
             Ps[i] = adj.flatten()
-            print(Ps[i].sum)
+            # print(Ps[i].sum)
             msubs[i] = M[lhs_nodes_idx][:, rhs_nodes_idx].flatten()
             node_ids_lhs = [nodes_before[v] for v in lhs_nodes]
             node_ids_rhs = [nodes_before[v] for v in rhs_nodes]

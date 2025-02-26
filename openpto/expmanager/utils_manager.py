@@ -105,7 +105,7 @@ def print_metrics(
             pred_loss = twostage_criterion(problem, preds, Ys, **model_args)
             # Decision Quality
             # print("partition: ", partition,  problem.is_eval_train())
-            if partition == "pretrain" and not problem.is_eval_train():
+            if partition == "pretrain":  # and not problem.is_eval_train():
                 objective_hat = torch.zeros_like(pred_loss, device="cpu")
                 Zs_hat = torch.zeros_like(pred_loss)
             else:
@@ -158,9 +158,8 @@ def print_metrics(
             if partition == "test":
                 test_time = time.time() - time_test_start
 
-            if partition == "pretrain":
-                if problem.is_eval_train():
-                    eval_result = {"value": torch.zeros(len(Ys))}
+            if partition == "pretrain":  # or not problem.is_eval_train():
+                eval_result = {"value": torch.zeros(len(Ys))}
             else:
                 optimal_z = optimal_dict[partition]
                 eval_result = get_eval_results(problem, Ys, optimal_z, Zs_hat, Ys_aux)

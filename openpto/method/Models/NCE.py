@@ -65,7 +65,7 @@ class NCE(optModel):
         solpool = to_tensor(self.solpool).to(device)
 
         # get obj
-        print(solpool.shape, coeff_hat.shape)
+        # print(solpool.shape, coeff_hat.shape)
         expand_shape = torch.Size([solpool.shape[0]] + list(coeff_hat.shape[1:]))
         coeff_hat_pool = coeff_hat.expand(*expand_shape)
         obj_cp = problem.get_objective(coeff_hat, sol_true, params)

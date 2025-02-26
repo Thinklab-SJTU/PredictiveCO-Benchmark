@@ -65,6 +65,7 @@ class BCE(optModel):
     ):
         if torch.is_tensor(coeff_hat):
             coeff_true = coeff_true.float()
+            print("coeff_hat:", coeff_hat, "coeff_true: ", coeff_true)
             return nn.BCELoss(reduction=hyperparams["reduction"])(coeff_hat, coeff_true)
         elif isinstance(coeff_hat, list):
             loss_list = list()
@@ -182,4 +183,5 @@ class DFL(optModel):
                 coeff_hat_grad[0].shape,
                 twostage_grad,
             )
+        print(loss.shape)
         return loss

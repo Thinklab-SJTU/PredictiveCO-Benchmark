@@ -18,12 +18,12 @@ pointLTR:
 nce:
   reduction: sum
 lodl:
-  num_samples: 2
-  sampling: random_hessian
+  num_samples: 5
+  sampling: random_uniform
   sampling_std: -1
   quadrank: 20
   quadalpha: 0
-  model_type: quad++
+  model_type: weightedmse
   serial: True
   reduction: sum
   num_iters: 100
@@ -31,7 +31,7 @@ lodl:
   train_frac: 0.6
   test_frac: 0.2
   patience: 25
-  verbose: True
+  verbose: False
 mse:
   reduction: sum
 msesum:

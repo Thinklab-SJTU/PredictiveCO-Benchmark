@@ -150,10 +150,18 @@ class blackboxFunc(torch.autograd.Function):
         # convert tenstor
         dl = grad_output.detach().cpu().numpy()
         # perturbed costs
-        ##### work around #####
         if dl.shape != coeff_hat_array.shape:
-            cq = coeff_hat_array + lambd * dl.mean(-1, keepdims=True)
-        ##### end #####
+            ##### work around #####
+            print("dl.shape: ", dl.shape, "coeff_hat_array.shape:", coeff_hat_array.shape)
+            if np.prod(dl.shape) == np.prod(coeff_hat_array.shape):
+                dl = dl.reshape(coeff_hat_array.shape)
+                cq = coeff_hat_array + lambd * dl
+            else:
+                if dl.ndim > coeff_hat_array.ndim:
+                    cq = coeff_hat_array + lambd * dl.mean(-1, keepdims=True)
+                else:
+                    cq = coeff_hat_array + lambd * np.expand_dims(dl, axis=-1)
+            ##### end #####
         else:
             cq = coeff_hat_array + lambd * dl
         # second np call

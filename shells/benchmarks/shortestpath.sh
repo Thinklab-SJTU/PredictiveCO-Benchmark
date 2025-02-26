@@ -16,7 +16,3 @@ python rethink_exp/main_results.py --problem=shortestpath --opt_model listLTR  -
 python rethink_exp/main_results.py --problem=shortestpath --opt_model pairLTR  --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --batch_size 1
 python rethink_exp/main_results.py --problem=shortestpath --opt_model lodl     --solver heuristic --pred_model ${P_MODEL} --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --method_path "openpto/config/models/lodl50k.yaml"
 
-# prediction + decision
-python rethink_exp/main_results.py --problem=shortestpath --opt_model blackbox --solver heuristic --pred_model ${P_MODEL} --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
-python rethink_exp/main_results.py --problem=shortestpath --opt_model identity --solver heuristic --pred_model ${P_MODEL} --prefix "ptr-ftn" --n_ptr_epochs 150 --n_epochs 150 --gpu ${GPU} --prefix "bench"
-

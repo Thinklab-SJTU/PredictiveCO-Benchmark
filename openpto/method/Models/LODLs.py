@@ -383,6 +383,7 @@ class LODL(optModel):
         else:
             raise LookupError()
         #   Make sure that the points are valid predictions
+        # print("pre clamp: ",Yhats)
         if isinstance(problem, BudgetAllocation) or isinstance(
             problem, BipartiteMatching
         ):
@@ -391,6 +392,9 @@ class LODL(optModel):
             )  # Assuming Yhats must be in the range [0, 1]
         elif isinstance(problem, RMAB):
             Yhats /= Yhats.sum(-1, keepdim=True)
+        # print("after clamp: ",Yhats)
+        print("yhat does have negative:", sum(sum(Yhats < 0)))
+        print("y does have negative:", sum(sum(Y < 0)))
 
         # Calculate decision-focused loss for points
         #   Calculate for 'true label'
@@ -515,7 +519,7 @@ class LODL(optModel):
                     loss = twostage_criterion(
                         problem, pred, objectives_train, reduction="sum"
                     )
-                    # print("line 515 loss: ", loss)
+                    print("line 518 loss: ", loss)
                     loss.backward()
                     return loss
 
@@ -541,6 +545,7 @@ class LODL(optModel):
                         break
 
                 # Make an update step
+                # print("loss_closure: ", loss_closure)
                 optimizer.step(loss_closure)
                 time_since_best += 1
             self.lodl_model = best[1]

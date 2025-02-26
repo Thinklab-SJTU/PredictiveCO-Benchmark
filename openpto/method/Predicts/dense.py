@@ -17,10 +17,10 @@ act_dict = {
 }
 
 act_func_dict = {
-    "tanh": nn.Tanh,
-    "relu": nn.ReLU,
+    "tanh": nn.Tanh(),
+    "relu": nn.ReLU(),
     "softmax": partial(nn.Softmax, dim=-1),
-    "sigmoid": nn.Sigmoid,
+    "sigmoid": nn.Sigmoid(),
 }
 
 
@@ -45,11 +45,11 @@ class MLP(nn.Module):
                 raise Exception("Invalid activation function: " + str(activation))
             net_layers = [
                 nn.Linear(num_features, intermediate_size),
-                activation_fn(),
+                activation_fn,
             ]
             for _ in range(num_layers - 2):
                 net_layers.append(nn.Linear(intermediate_size, intermediate_size))
-                net_layers.append(activation_fn())
+                net_layers.append(activation_fn)
             if not isinstance(num_targets, tuple):
                 net_layers.append(nn.Linear(intermediate_size, num_targets))
             else:
