@@ -1,5 +1,5 @@
 dataset:
-  prob_version: warcraft-ood
+  prob_version: warcraft
   size: 12
   normalize: True
   type: contrast

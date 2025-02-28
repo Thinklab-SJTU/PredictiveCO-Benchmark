@@ -36,22 +36,6 @@ class TSP(PTOProblem):
                 rand_seed,
                 **kwargs,
             )
-        elif prob_version == "gen-ood":
-            n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
-            self.n_nodes = n_nodes
-            self.n_features = n_features
-            self.poly_deg = kwargs["poly_deg"]
-            self.noise_width = kwargs["noise_width"]
-            self.env_config = kwargs["envs"]
-            self.load_ood_dataset(
-                num_train_instances,
-                num_test_instances,
-                n_nodes,
-                n_features,
-                val_frac,
-                rand_seed,
-                **kwargs,
-            )
         elif prob_version == "gen-global":
             n_nodes, n_features = kwargs["num_nodes"], kwargs["num_features"]
             self.n_nodes = n_nodes
@@ -73,16 +57,12 @@ class TSP(PTOProblem):
     def get_train_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return self.Xs_train, self.Ys_train, self.Ys_train
-        elif train_mode == "ood":
-            return self.ver0_Xs_train, self.ver0_Ys_train, self.ver0_Ys_train
         else:
             raise NotImplementedError(train_mode)
 
     def get_val_data(self, train_mode="iid", **kwargs):
         if train_mode == "iid":
             return self.Xs_val, self.Ys_val, self.Ys_val
-        elif train_mode == "ood":
-            return self.ver9_Xs_val, self.ver9_Ys_val, self.ver9_Ys_val
         else:
             raise NotImplementedError(train_mode)
 
@@ -165,66 +145,6 @@ class TSP(PTOProblem):
         # print("test: ", self.Xs_test, "costs: ", self.Ys_test)
         return
 
-    def load_ood_dataset(
-        self,
-        num_train_instances,
-        num_test_instances,
-        n_nodes,
-        n_features,
-        val_frac,
-        rand_seed,
-        **kwargs,
-    ):
-        n_vals = int(val_frac * num_train_instances)
-        n_trains = num_train_instances - n_vals
-        ### below is gen data #
-        selected_keys = ["poly_deg", "noise_width", "distance_factor"]
-        hyper_params = {key: kwargs[key] for key in selected_keys}
-        ### ver0 train data
-        self.hyper_params = hyper_params
-        self.ver0_Ys_train, self.ver0_Xs_train, self.ver0_others = self.gendata(
-            n_trains,
-            n_features,
-            n_nodes,
-            rand_seed,
-            kwargs["type"],
-            kwargs["params"],
-            **hyper_params,
-        )
-        ### ver9 val data
-        self.ver9_Ys_val, self.ver9_Xs_val, self.ver9_others = self.gendata(
-            n_vals,
-            n_features,
-            n_nodes,
-            rand_seed,
-            kwargs["type_val"],
-            kwargs["params_val"],
-            **hyper_params,
-        )
-        ### ver1 part
-        ver1_costs, ver1_feats, self.ver1_others = self.gendata(
-            num_train_instances + num_test_instances,
-            n_features,
-            n_nodes,
-            rand_seed,
-            kwargs["type_test"],
-            kwargs["params_test"],
-            **hyper_params,
-        )
-        ### get data split
-        self.Xs_train, self.Ys_train = (
-            ver1_feats[:n_trains],
-            ver1_costs[:n_trains],
-        )
-        self.Xs_val, self.Ys_val = (
-            ver1_feats[n_trains:num_train_instances],
-            ver1_costs[n_trains:num_train_instances],
-        )
-        self.Xs_test, self.Ys_test = (
-            ver1_feats[num_train_instances:],
-            ver1_costs[num_train_instances:],
-        )
-        return
 
     def load_from_global_feats(
         self,
@@ -388,27 +308,6 @@ class TSP(PTOProblem):
         others = {"coords": coords}
         return costs, feats, others
 
-    def genEnv(
-        self,
-        env_id,
-        num_train_instances,
-    ):
-        if self.prob_version == "gen-ood":
-            config = self.env_config[f"env{env_id}"]
-            env_type = config["type"]
-            env_params = config["params"]
-            Y_train, X_train, _ = self.gendata(
-                num_train_instances,
-                self.n_features,
-                self.n_nodes,
-                self.rand_seed,
-                env_type,
-                env_params,
-                **self.hyper_params,
-            )
-        else:
-            raise NotImplementedError("no version " + self.prob_version)
-        return X_train, Y_train
 
 
 #########################################

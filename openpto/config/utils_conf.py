@@ -122,17 +122,6 @@ def get_args():
     parser.add_argument("--pooling", type=str, default="mean")
     parser.add_argument("--activation", type=str, default="relu")
     parser.add_argument("--kernel_size", type=int, default=1)
-    # generalization model
-    parser.add_argument("--ood_model", type=str, choices=["ERM", "EERM"])
-    parser.add_argument("--train_mode", type=str, default="iid", choices=["iid", "ood"])
-    parser.add_argument("--n_envs", type=int, default=1)
-    parser.add_argument("--alpha", type=float, default=1.0)
-    parser.add_argument("--beta", type=float, default=1.0)
-    parser.add_argument("--use_train", type=ast.literal_eval, default=True)
-
-    parser.add_argument(
-        "--ood_reduction", type=str, default="sum", choices=["sum", "mean"]
-    )
 
     args = parser.parse_args()
 

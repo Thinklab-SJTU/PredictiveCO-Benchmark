@@ -30,7 +30,7 @@ class Knapsack(PTOProblem):
         self.kwargs = kwargs
         self.rand_seed = rand_seed
         self.prob_version = prob_version
-        if self.prob_version in ["gen", "gen-ood"]:
+        if self.prob_version in ["gen"]:
             num_items = kwargs["num_items"]
             knapsack_dim, num_features = kwargs["knapsack_dim"], kwargs["num_features"]
             mean, var = kwargs["mean"], kwargs["var"]
@@ -88,79 +88,6 @@ class Knapsack(PTOProblem):
             )
             self.params_test = weights.unsqueeze(0).expand(num_test_instances, -1)
             ### Done
-        elif prob_version == "gen-ood":
-            self.num_items = num_items
-            ### Split training data into train/val
-            assert 0 < val_frac < 1
-            n_vals = int(val_frac * num_train_instances)
-            n_trains = num_train_instances - n_vals
-            self.train_idxs = range(n_vals, num_train_instances)
-            self.val_idxs = range(0, n_vals)
-            ### ver0 data, train disbution
-            _, self.ver0_Xs_train, self.ver0_Ys_train = self.genKPData(
-                n_trains,
-                num_features,
-                num_items,
-                mean,
-                var,
-                dim=knapsack_dim,
-                poly_deg=poly_deg,
-                noise_width=noise_width,
-                distr=distr,
-                seed=rand_seed,
-            )  # (bz, feature_dim), (bz, n_items)
-            #
-            ### ver9 data, val distribution
-            mean_val, var_val = kwargs["mean_val"], kwargs["var_val"]
-            _, self.ver9_Xs_val, self.ver9_Ys_val = self.genKPData(
-                n_vals,
-                num_features,
-                num_items,
-                mean_val,
-                var_val,
-                dim=knapsack_dim,
-                poly_deg=poly_deg,
-                noise_width=noise_width,
-                distr=distr,
-                seed=rand_seed,
-            )
-            ### ver1 data, test distribution
-            mean_test, var_test = kwargs["mean_test"], kwargs["var_test"]
-            ver1_weights, ver1_feats, ver1_profits = self.genKPData(
-                num_train_instances + num_test_instances,
-                num_features,
-                num_items,
-                mean_test,
-                var_test,
-                dim=knapsack_dim,
-                poly_deg=poly_deg,
-                noise_width=noise_width,
-                distr=distr,
-                seed=rand_seed,
-            )
-            ### train
-            self.Xs_train, self.Ys_train = (
-                ver1_feats[self.train_idxs],
-                ver1_profits[self.train_idxs],
-            )
-            ### val
-            self.Xs_val, self.Ys_val = (
-                ver1_feats[self.val_idxs],
-                ver1_profits[self.val_idxs],
-            )
-            ### test set
-            self.Xs_test, self.Ys_test = (
-                ver1_feats[num_train_instances:],
-                ver1_profits[num_train_instances:],
-            )
-            print("mean, var:", mean, var)
-            print("mean val, var val:", mean_val, var_val)
-            print("mean test, var test:", mean_test, var_test)
-            # other parameters
-            self.weights = ver1_weights
-            self.params_train = ver1_weights.unsqueeze(0).expand(n_trains, -1)
-            self.params_val = ver1_weights.unsqueeze(0).expand(n_vals, -1)
-            self.params_test = ver1_weights.unsqueeze(0).expand(num_test_instances, -1)
         else:
             raise ValueError("Not a valid problem version: {}".format(prob_version))
 
@@ -171,12 +98,6 @@ class Knapsack(PTOProblem):
                 self.Ys_train,
                 self.params_train,
             )
-        elif train_mode == "ood":
-            return (
-                self.ver0_Xs_train,
-                self.ver0_Ys_train,
-                self.params_train,
-            )
         else:
             raise NotImplementedError
 
@@ -185,12 +106,6 @@ class Knapsack(PTOProblem):
             return (
                 self.Xs_val,
                 self.Ys_val,
-                self.params_val,
-            )
-        elif train_mode == "ood":
-            return (
-                self.ver9_Xs_val,
-                self.ver9_Ys_val,
                 self.params_val,
             )
         else:
@@ -206,7 +121,7 @@ class Knapsack(PTOProblem):
             if torch.is_tensor(Y):
                 Z = to_tensor(Z).to(Y.device)
             return (Y.squeeze(-1) * Z).sum(-1)
-        elif self.prob_version in ["gen", "gen-ood"]:
+        elif self.prob_version in ["gen"]:
             assert Y.shape == Z.shape
             assert Y.ndim == Z.ndim == 2
             if torch.is_tensor(Y):
@@ -259,7 +174,7 @@ class Knapsack(PTOProblem):
         }
 
     def get_model_shape(self):
-        if self.prob_version in ["gen", "gen-ood"]:
+        if self.prob_version in ["gen"]:
             return self.Xs_train.shape[-1], self.num_items
         else:
             return self.Xs_train.shape[-1], 1

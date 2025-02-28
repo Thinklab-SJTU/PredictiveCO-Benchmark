@@ -44,16 +44,6 @@ class Shortestpath(PTOProblem):
                 data_dir + f"/{size}x{size}/",
                 normalize=normalize,
             )
-        elif prob_version == "warcraft-ood":
-            if "envs" in kwargs:
-                self.env_config = kwargs["envs"]
-            print("self.env_config: ", self.env_config)
-            self.type, self.value = kwargs["type"], kwargs["value"]
-            self.val_type, self.val_value = kwargs["val_type"], kwargs["val_value"]
-            self.load_ood_dataset(
-                data_dir + f"/{size}x{size}/",
-                normalize=normalize,
-            )
         elif prob_version == "direct":
             self.load_dataset(
                 data_dir + f"/{size}x{size}/",
@@ -148,43 +138,7 @@ class Shortestpath(PTOProblem):
         )
         return
 
-    def load_ood_dataset(self, data_dir, normalize):
-        train_prefix, val_prefix, test_prefix = "train", "val", "test"
-        ##### Read Data for ver0; as train distribution
-        train_X, train_Z, train_Y, _ = self.read_data(
-            data_dir, train_prefix, False
-        )  # (10000, 3, 96, 96) (10000, 12 * 12) (10000, 12 * 12)
-        val_X, val_Z, val_Y, _ = self.read_data(data_dir, val_prefix, False)
-        test_X, test_Z, test_Y, _ = self.read_data(data_dir, test_prefix, False)
-        ### launch the data
-        self.train_Z, self.train_Y = train_Z[: self.n_trains], train_Y[: self.n_trains]
-        self.val_Z, self.val_Y = val_Z[: self.n_vals], val_Y[: self.n_vals]
-        self.test_Z, self.test_Y = test_Z[: self.n_tests], test_Y[: self.n_tests]
 
-        self.ver0_train_X, self.ver0_val_X, self.ver0_test_X = (
-            train_X[: self.n_trains],
-            val_X[: self.n_vals],
-            test_X[: self.n_tests],
-        )
-
-        ##### Out the train data, ver0
-        self.train_X, self.val_X, self.test_X = (
-            self.do_norm(train_X[: self.n_trains]),
-            self.do_norm(val_X[: self.n_vals]),
-            self.do_norm(test_X[: self.n_tests]),
-        )
-        ##### Pertrub train data, get ver2
-        ver2_transform = self.get_augmentation(self.type, self.value)
-        self.ver2_train_X = self.augment_transform(
-            self.ver0_train_X, ver2_transform, normalize
-        )
-        ###### pertrub val dataset, get ver1
-        ver1_transform = self.get_augmentation(self.val_type, self.val_value)
-        self.ver1_val_X = self.augment_transform(
-            self.ver0_val_X, ver1_transform, normalize
-        )
-
-        return
 
     def get_perturbed_data(self, transform, normalize):
         new_train_X, new_val_X, new_test_X = (
@@ -236,8 +190,6 @@ class Shortestpath(PTOProblem):
         else:
             if train_mode == "iid":
                 return self.train_X, self.train_Y, self.train_Z
-            elif train_mode == "ood":
-                return self.ver2_train_X, self.train_Y, self.train_Z
 
     def get_val_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
@@ -245,17 +197,12 @@ class Shortestpath(PTOProblem):
         else:
             if train_mode == "iid":
                 return self.val_X, self.val_Y, self.val_Z
-            elif train_mode == "ood":
-                return self.ver1_val_X, self.val_Y, self.val_Z
 
     def get_test_data(self, train_mode="iid", **kwargs):
         if self.prob_version == "direct":
             return self.test_X, self.test_Z, self.test_Y
         else:
-            # if train_mode == "iid":
             return self.test_X, self.test_Y, self.test_Z
-            # elif train_mode == "ood":
-            #     return self.ver2_test_X, self.test_Y, self.test_Z
 
     def get_model_shape(self):
         assert self.train_X.shape[2] == 8 * self.size
