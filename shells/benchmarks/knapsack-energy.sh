@@ -1,7 +1,7 @@
 GPU=0
-EPOCHS=1
+EPOCHS=300
 PTH="./openpto/config/probs/knapsack-real.yaml"
-DIR="/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/openpto/data/"
+DIR="./openpto/data/"
 PREFIX="bench"
 
 # Prediction-focused learning

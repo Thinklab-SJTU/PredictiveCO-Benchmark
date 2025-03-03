@@ -138,8 +138,6 @@ class Shortestpath(PTOProblem):
         )
         return
 
-
-
     def get_perturbed_data(self, transform, normalize):
         new_train_X, new_val_X, new_test_X = (
             self.augment_transform(self.ver0_train_X, transform, normalize),

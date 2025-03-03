@@ -2,7 +2,7 @@ GPU=0
 EPOCHS=300
 
 # # Prediction-focused learning
-python rethink_exp/main_results.py --problem=knapsack --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"
+python rethink_exp/main_results.py --problem=knapsack --opt_model mse      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench"  --loadnew True
 
 # Decisoin-focused learning
 python rethink_exp/main_results.py --problem=knapsack --opt_model dfl      --solver gurobi --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --batch_size 10000

@@ -63,9 +63,7 @@ global_model_names = [
 def collect_benchmarks():
     prefix_name = "default"
     for data_name in global_data_names:
-        df_main = collect_results(data_name, "default", global_model_names)
-        df_add = collect_ptr_ftn(data_name, "default")
-        df = pd.concat((df_main, df_add), axis=1)
+        df = collect_results(data_name, "default", global_model_names)
         print("-" * 130)
         print(data_name, prefix_name)
         print(df)
@@ -76,7 +74,6 @@ def collect_benchmarks():
             index=False,
             float_format="%.6f",
         )
-
 
 
 def collect_prefixs(prob_name, ood_name, prefix_names, model_name, collect_name):
@@ -104,7 +101,5 @@ def collect_prefixs(prob_name, ood_name, prefix_names, model_name, collect_name)
     )
 
 
-
 if __name__ == "__main__":
     collect_benchmarks()
-

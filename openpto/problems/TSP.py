@@ -145,7 +145,6 @@ class TSP(PTOProblem):
         # print("test: ", self.Xs_test, "costs: ", self.Ys_test)
         return
 
-
     def load_from_global_feats(
         self,
         num_train_instances,
@@ -307,7 +306,6 @@ class TSP(PTOProblem):
         feats = torch.cat((node_feats, edge_feats), dim=-1)
         others = {"coords": coords}
         return costs, feats, others
-
 
 
 #########################################

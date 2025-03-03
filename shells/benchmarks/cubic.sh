@@ -1,8 +1,8 @@
 GPU=0
-EPOCHS=1
+EPOCHS=300
 
 # Prediction-focused learning
-python rethink_exp/main_results.py --problem=cubic --opt_model mse      --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2 --instances 250 --testinstances 400  --prefix "bench"
+python rethink_exp/main_results.py --problem=cubic --opt_model mse      --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2 --instances 250 --testinstances 400  --prefix "bench"  --loadnew True
 
 # Decisoin-focused learning
 python rethink_exp/main_results.py --problem=cubic --opt_model dfl      --solver heuristic --n_epochs ${EPOCHS} --gpu ${GPU} --lr 5e-2 --instances 250 --testinstances 400 --prefix "bench"

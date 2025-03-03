@@ -1,6 +1,6 @@
 GPU=0
-EPOCHS=1
-DIR="/mnt/nas/home/genghaoyu/OR/PTO/Rethink1.0/openpto/data/"
+EPOCHS=300
+DIR="./openpto/data/"
 # # Prediction-focused learning
 python rethink_exp/main_results.py --problem=portfolio --opt_model mse      --solver cvxpy --n_epochs ${EPOCHS} --gpu ${GPU} --prefix "bench" --data_dir ${DIR} --loadnew True
 
